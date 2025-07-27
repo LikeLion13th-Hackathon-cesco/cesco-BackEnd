@@ -1,0 +1,26 @@
+# Gradle 관련
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE 관련
+.idea/
+.vscode/
+*.iws
+*.iml
+*.ipr
+.classpath
+.project
+.settings/
+
+# 로그 파일
+logs/
+*.log
+
+# 기타
+.git/
+.gitignore
+README.md
+docker-compose.yml
+Dockerfile
+.dockerignore

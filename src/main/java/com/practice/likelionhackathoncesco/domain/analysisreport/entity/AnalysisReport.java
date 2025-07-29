@@ -21,8 +21,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // 외부 객체 생성 방지하기 위한 접근제어자 설정
 @AllArgsConstructor
-@Table(name = "analiysis_reports")
-public class AnaliysisReport extends BaseTimeEntity {
+@Table(name = "analysis_reports")
+public class AnalysisReport extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,14 +37,14 @@ public class AnaliysisReport extends BaseTimeEntity {
   // s3 경로 -> 추후에 s3key로 객체 url(웹 형태) 생성 (동적 생성 가능)
 
   // 분석 결과 관련
-  @Column(name = "safety_score", nullable = false)
+  @Column(name = "safety_score")
   private Double safetyScore; // 안전 점수
 
-  @Column(name = "insurance_percent", nullable = false)
+  @Column(name = "insurance_percent")
   private Integer insurancePercent; // 보험 가입 여부 가능성
 
   @Lob // gpt 응답이 들어가기 때문에 긴 문자열로 저장
-  @Column(name = "description", nullable = false)
+  @Column(name = "description")
   private String description; // 안전 점수 설명
 
   // OCR 관련

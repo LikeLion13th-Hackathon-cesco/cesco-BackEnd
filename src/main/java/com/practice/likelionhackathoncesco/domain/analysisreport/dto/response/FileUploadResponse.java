@@ -14,8 +14,6 @@ public class FileUploadResponse {
   @Schema(description = "업로드한 파일 이름", example = "등기부등본.pdf")
   private String fileName;
 
-  private
-
   @Schema(description = "진행 상태(파일 업로드 성공)")
   private ProcessingStatus processingStatus;
 

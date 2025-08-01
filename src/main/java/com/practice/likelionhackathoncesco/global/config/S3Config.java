@@ -31,7 +31,10 @@ public class S3Config {
   private String bucket; // S3 버킷 이름 -> serbangsari
 
   @Value("${cloud.aws.s3.path.documents}")
-  private String userDocumentsPath; // 버킷 내 저장 경로(폴더 구조)
+  private String documentsPath; // 버킷 내 등기부등본 관련 저장 경로(폴더 구조)
+
+  @Value("${cloud.aws.s3.path.fraud}")
+  private String fraudPath; // 버킷 내 등기부등본 관련 저장 경로(폴더 구조)
 
   @PostConstruct
   public void init() {

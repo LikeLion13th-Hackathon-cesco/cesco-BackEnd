@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 public class FileUploadMapper {
   public FileUploadResponse toFileUploadResponse(AnalysisReport analysisReport) {
     return FileUploadResponse.builder()
+        .reportId(analysisReport.getReportId())
         .fileName(analysisReport.getFileName())
         .processingStatus(analysisReport.getProcessingStatus())
         .build();

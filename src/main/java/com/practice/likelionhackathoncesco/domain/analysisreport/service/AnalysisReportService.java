@@ -35,18 +35,19 @@ public class AnalysisReportService {
   public FileUploadResponse uploadDocuments(PathName pathName, MultipartFile file)
   {
 
-    uploadFile(pathName, file); // S3에 업로드
+    AnalysisReport savedReport = uploadFile(pathName, file);
 
     return FileUploadResponse.builder()
+        .reportId(savedReport.getReportId())
         .fileName(file.getOriginalFilename())
-        .processingStatus(ProcessingStatus.UPLOADED)
+        .processingStatus(savedReport.getProcessingStatus()) // 엔티티 생성 시 업로드 상태로 생성
         .build();
 
   }
 
-  // 파일을 S3에 업로드 하고 DB에 관련 정보 저장
+  // 파일을 S3에 업로드 하고 DB에 관련 정보 저장 후 엔티티 반환
   @Transactional
-  public void uploadFile(PathName pathName, MultipartFile file) {
+  public AnalysisReport uploadFile(PathName pathName, MultipartFile file) {
 
     validateFile(file); // 파일 유료성 검사
 
@@ -74,7 +75,7 @@ public class AnalysisReportService {
       throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
     }
 
-    // DB 저장 로직
+    // 등기부 등본  엔티티 생성
     AnalysisReport analysisReport = AnalysisReport.builder()
         .fileName(originalFilename)
         .s3Key(KeyName)
@@ -82,7 +83,11 @@ public class AnalysisReportService {
         // User 일단 null로 설정
         .build();
 
-    analysisReportRepository.save(analysisReport);
+    // DB 저장
+    AnalysisReport savedReport = analysisReportRepository.save(analysisReport);
+    log.info("DB 저장 성공: reportId={}, fileName={}", savedReport.getReportId(), originalFilename);
+
+    return savedReport; // 엔티티 반환
   }
 
   // S3에 업로드된 파일 전체 조회 (S3 Url 반환)
@@ -166,35 +171,37 @@ public class AnalysisReportService {
     }
   }
 
-  /*// 업로드 한 파일 삭제
-  @Transactional
-  public void deleteReport(Long reportId, String keyname) {
-
-    // DB에서 분석리포트 조회
-    AnalysisReport report = analysisReportRepository.findById(reportId)
-        .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND));
-
-    try {
-      amazonS3.deleteObject(new DeleteObjectRequest(s3Config.getBucket(), keyname));
-    } catch (Exception e) {
-      log.error("S3 삭제 중 오류 발생", e);
-      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
-    }
-  }
-
-  public void deleteFile(PathName pathName, String fileName) {
-    String prefix = switch (pathName) {
-      case PROPERTYREGISTRY ->s3Config.getDocumentsPath(); // 버킷 내 등기부등본 폴더구조 선택
-      case FRAUD -> s3Config.getFraudPath(); // 버킷 내 신고 관련 폴더구조 선택
-    };
-    String keyname = prefix + "/" + fileName;
-    deleteReport(keyname);
-  }*/
-
   // 파일이 s3에 존재하는지 s3key 값으로 확인
   private void existFile(String keyName) {
     if (!amazonS3.doesObjectExist(s3Config.getBucket(), keyName)) {
       throw new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND);
+    }
+  }
+
+  // 업로드 한 파일 삭제
+  @Transactional
+  public Boolean deleteReport(Long reportId) {
+
+    // DB에서 등기부등본 조회
+    AnalysisReport report = analysisReportRepository.findById(reportId)
+        .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND));
+
+    // S3에 파일이 존재하는지 s3key 값으로 확인
+    existFile(report.getS3Key());
+
+    try {
+      // S3에서 삭제
+      amazonS3.deleteObject(new DeleteObjectRequest(s3Config.getBucket(), report.getS3Key()));
+      log.info("S3 파일 삭제 성공: {}", report.getFileName());
+
+      // DB에서 레코드 삭제
+      analysisReportRepository.delete(report);
+      log.info("DB 레코드 삭제 성공: reportId={}, fileName={}", reportId, report.getFileName());
+
+      return true;
+    } catch (Exception e) {
+      log.error("파일 삭제 중 오류 발생: reportId={}, fileName={}", reportId, report.getFileName(), e);
+      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
     }
   }
 

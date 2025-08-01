@@ -1,5 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.analysisreport.entity;
 
+import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.global.common.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,7 +9,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -61,4 +64,8 @@ public class AnalysisReport extends BaseTimeEntity {
   @Column(name = "processing_status", nullable = false)
   private ProcessingStatus processingStatus;
 
+  // 고정된 사용자 매핑
+  @ManyToOne
+  @JoinColumn(name = "userId")
+  private User user;
 }

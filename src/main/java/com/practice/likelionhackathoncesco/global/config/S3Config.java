@@ -19,22 +19,22 @@ public class S3Config {
   private AWSCredentials awsCredentials;
 
   @Value("${cloud.aws.credentials.access-key}")
-  private String accessKey;
+  private String accessKey; // 엑세스 키 -> 노션에 있음
 
   @Value("${cloud.aws.credentials.secret-key}")
-  private String secretKey;
+  private String secretKey; // 비밀 엑세스 키 -> 노션에 있음
 
   @Value("${cloud.aws.region.static}")
-  private String region;
+  private String region; // AWS 리전 -> 서울
 
   @Value("${cloud.aws.s3.bucket}")
-  private String bucket;
+  private String bucket; // S3 버킷 이름 -> serbangsari
 
-  @Value("${cloud.aws.s3.path.folder1}")
-  private String folder1Path;
+  @Value("${cloud.aws.s3.path.documents}")
+  private String documentsPath; // 버킷 내 등기부등본 관련 저장 경로(폴더 구조)
 
-  @Value("${cloud.aws.s3.path.folder2}")
-  private String folder2Path;
+  @Value("${cloud.aws.s3.path.fraud}")
+  private String fraudPath; // 버킷 내 등기부등본 관련 저장 경로(폴더 구조)
 
   @PostConstruct
   public void init() {

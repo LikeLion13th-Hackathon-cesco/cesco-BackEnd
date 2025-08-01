@@ -23,13 +23,13 @@ public class AnalysisReportController {
 
   private final AnalysisReportService analysisReportService;
 
-  @Operation(summary = "문서 업로드 API", description = "문서를 업로드하고 문서 원본이름과 상태를 리턴하는 API")
+  @Operation(summary = "등기부등본 업로드 API", description = "등기부등본 문서를 업로드하고 문서 원본이름과 상태를 리턴하는 API")
   @PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<BaseResponse<FileUploadResponse>> uploadImage(
-      @RequestParam PathName pathName, MultipartFile file) {
+      @RequestParam MultipartFile file) {
 
-    FileUploadResponse uploadResponse = analysisReportService.uploadDocuments(pathName, file);
-    return ResponseEntity.ok(BaseResponse.success("문서 업로드에 성공했습니다.", uploadResponse));
+    FileUploadResponse uploadResponse = analysisReportService.uploadDocuments(PathName.PROPERTYREGISTRY, file);
+    return ResponseEntity.ok(BaseResponse.success("등기부등본 업로드에 성공했습니다.", uploadResponse));
   }
 
 }

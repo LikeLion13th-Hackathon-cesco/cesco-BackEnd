@@ -1,11 +1,16 @@
 package com.practice.likelionhackathoncesco.domain.user.entity;
 
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,12 +30,16 @@ public class User {
   private Long userId; // 사용자 고유 번호 (어차피 1명)
 
   @Column(name = "username")
-  private final String username = "세스코"; // final로 고정
+  private final String username = "cesco"; // final로 고정
 
   @Column(name = "credit")
   private Integer credit; // 사용자 크레딧
 
   @Column(name = "pay_status")
   private PayStatus payStatus; // 결제 유무
+
+  // analysisReport 테이블의 user 필드와 연관 -> user는 analysisReport를 여러개 가짐
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<AnalysisReport> reports = new ArrayList<>();
 
 }

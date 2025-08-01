@@ -5,6 +5,6 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AnalysisReportRepository extends JpaRepository<AnalysisReport, Long> {
-  //List<AnalysisReport> findById(Long reportId);
+  List<AnalysisReport> findAllByOrderByCreatedAtDesc(); // 등기부등본 최신순으로 조회
 
 }

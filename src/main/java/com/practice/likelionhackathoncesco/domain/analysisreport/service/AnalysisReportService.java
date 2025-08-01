@@ -1,6 +1,7 @@
 package com.practice.likelionhackathoncesco.domain.analysisreport.service;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -13,6 +14,7 @@ import com.practice.likelionhackathoncesco.domain.analysisreport.repository.Anal
 import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -77,17 +79,17 @@ public class AnalysisReportService {
         .fileName(originalFilename)
         .s3Key(KeyName)
         .processingStatus(ProcessingStatus.UPLOADED)
+        // User 일단 null로 설정
         .build();
 
     analysisReportRepository.save(analysisReport);
-
-
   }
 
   // S3에 업로드된 파일 전체 조회 (S3 Url 반환)
   public List<String> getAllS3Files(PathName pathName) {
     String prefix = switch (pathName) {
-      case DOCUMENTS ->s3Config.getUserDocumentsPath();
+      case PROPERTYREGISTRY ->s3Config.getDocumentsPath(); // 버킷 내 등기부등본 폴더구조 선택
+      case FRAUD -> s3Config.getFraudPath(); // 버킷 내 신고 관련 폴더구조 선택
     };
 
     log.info(">>>> S3 prefix: {}", prefix);
@@ -121,14 +123,79 @@ public class AnalysisReportService {
     }
   }
 
-  // S3 파일 경로 생성 (여기서 keyName은 {documents/원본파일 이름})
+  // S3 파일 경로 생성 (여기서 keyName은 {PathName/원본파일 이름})
   public String createS3Key(PathName pathName, String originalFilename) {
-    return switch (pathName) {
-      case DOCUMENTS ->s3Config.getUserDocumentsPath();
-    }
-        + "/"
-        + originalFilename; // 원본 파일 이름
+    String basePath = switch (pathName) {
+      case PROPERTYREGISTRY ->s3Config.getDocumentsPath(); // 버킷 내 등기부등본 폴더구조 선택
+      case FRAUD -> s3Config.getFraudPath(); // 버킷 내 신고 관련 폴더구조 선택
+    };
 
+    String uuid = UUID.randomUUID().toString(); // key 값을 식별 할 uuid 문자열 생성
+    String fileExtension = getFileExtension(originalFilename); // 파일 확장자 추출
+
+    return basePath + "/" + uuid + fileExtension; // 고유성은 보장하지만 원본파일 이름 추척이 힘들거 같음
+
+  }
+
+  // 파일 확장자 추출(".pdf"로 추출)
+  private String getFileExtension(String filename) {
+    if (filename == null || !filename.contains(".")) {
+      return "";
+    }
+    return filename.substring(filename.lastIndexOf("."));
+  }
+
+  // 업로드한 파일 목록 전체 조회
+  public List<String> getAllFiles(PathName pathName) {
+    String prefix = switch (pathName) {
+      case PROPERTYREGISTRY ->s3Config.getDocumentsPath(); // 버킷 내 등기부등본 폴더구조 선택
+      case FRAUD -> s3Config.getFraudPath(); // 버킷 내 신고 관련 폴더구조 선택
+    };
+
+    try {
+      return amazonS3
+          .listObjectsV2(
+              new ListObjectsV2Request().withBucketName(s3Config.getBucket()).withPrefix(prefix))
+          .getObjectSummaries()
+          .stream()
+          .map(obj -> amazonS3.getUrl(s3Config.getBucket(), obj.getKey()).toString())
+          .collect(Collectors.toList());
+    } catch (Exception e) {
+      log.error("S3 파일 목록 조회 중 오류 발생", e);
+      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
+    }
+  }
+
+  /*// 업로드 한 파일 삭제
+  @Transactional
+  public void deleteReport(Long reportId, String keyname) {
+
+    // DB에서 분석리포트 조회
+    AnalysisReport report = analysisReportRepository.findById(reportId)
+        .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND));
+
+    try {
+      amazonS3.deleteObject(new DeleteObjectRequest(s3Config.getBucket(), keyname));
+    } catch (Exception e) {
+      log.error("S3 삭제 중 오류 발생", e);
+      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
+    }
+  }
+
+  public void deleteFile(PathName pathName, String fileName) {
+    String prefix = switch (pathName) {
+      case PROPERTYREGISTRY ->s3Config.getDocumentsPath(); // 버킷 내 등기부등본 폴더구조 선택
+      case FRAUD -> s3Config.getFraudPath(); // 버킷 내 신고 관련 폴더구조 선택
+    };
+    String keyname = prefix + "/" + fileName;
+    deleteReport(keyname);
+  }*/
+
+  // 파일이 s3에 존재하는지 s3key 값으로 확인
+  private void existFile(String keyName) {
+    if (!amazonS3.doesObjectExist(s3Config.getBucket(), keyName)) {
+      throw new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND);
+    }
   }
 
 }

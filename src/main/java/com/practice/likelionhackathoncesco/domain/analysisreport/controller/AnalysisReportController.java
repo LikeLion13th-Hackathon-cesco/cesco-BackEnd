@@ -6,6 +6,7 @@ import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName
 import com.practice.likelionhackathoncesco.domain.analysisreport.service.AnalysisReportService;
 import com.practice.likelionhackathoncesco.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -21,7 +22,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api")
+@RequestMapping("/api/analysis-reports")
+@Tag(name = "Analysis Report Upload", description = "등기부등본 업로드 관련 API")
 public class AnalysisReportController {
 
   private final AnalysisReportService analysisReportService;

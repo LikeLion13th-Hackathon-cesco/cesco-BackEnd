@@ -4,6 +4,8 @@ import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Analysis
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -30,12 +32,13 @@ public class User {
   private Long userId; // 사용자 고유 번호 (어차피 1명)
 
   @Column(name = "username")
-  private final String username = "cesco"; // final로 고정
+  private String username; // 사용자 이름 -> cesco 고정(스프링 실행 시 생성)
 
   @Column(name = "credit")
   private Integer credit; // 사용자 크레딧
 
-  @Column(name = "pay_status")
+  @Enumerated(EnumType.STRING)
+  @Column(name = "pay_status", nullable = false)
   private PayStatus payStatus; // 결제 유무
 
   // analysisReport 테이블의 user 필드와 연관 -> user는 analysisReport를 여러개 가짐

@@ -11,6 +11,8 @@ import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
 import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
+import com.practice.likelionhackathoncesco.domain.user.entity.User;
+import com.practice.likelionhackathoncesco.domain.user.repository.UserRepository;
 import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import java.util.List;
@@ -30,10 +32,12 @@ public class AnalysisReportService {
   private final AmazonS3 amazonS3; // AWS SDK에서 제공하는 S3 클라이언트 객체
   private final S3Config s3Config; // 버킷 이름과 경로 등 설정 정보
   private final AnalysisReportRepository analysisReportRepository;
+  private final UserRepository userRepository;
 
   // 문서 업로드
   public FileUploadResponse uploadDocuments(PathName pathName, MultipartFile file)
   {
+
 
     AnalysisReport savedReport = uploadFile(pathName, file);
 
@@ -49,7 +53,10 @@ public class AnalysisReportService {
   @Transactional
   public AnalysisReport uploadFile(PathName pathName, MultipartFile file) {
 
-    validateFile(file); // 파일 유료성 검사
+    User user = userRepository.findByUsername("cesco")
+        .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.USER_NOT_FOUND));
+
+    validateFile(file); // 파일 유효성 검사
 
     String originalFilename = file.getOriginalFilename(); // 기존 파일 이름
     if(originalFilename == null || originalFilename.isBlank()) {
@@ -75,12 +82,12 @@ public class AnalysisReportService {
       throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
     }
 
-    // 등기부 등본  엔티티 생성
+    // 등기부 등본 엔티티 생성
     AnalysisReport analysisReport = AnalysisReport.builder()
         .fileName(originalFilename)
         .s3Key(KeyName)
         .processingStatus(ProcessingStatus.UPLOADED)
-        // User 일단 null로 설정
+        .user(user)
         .build();
 
     // DB 저장

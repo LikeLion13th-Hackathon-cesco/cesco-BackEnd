@@ -20,7 +20,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
   // 현재 시간 기준으로 결제 만료일이 지났지만 PAID 상태인 사용자 조회 (잘못된 상태임)
   List<User> findByPayStatusAndExpirationDateBefore(PayStatus payStatus, LocalDateTime dateTime);
 
-  // 결제 상태가 만료인 사용자 조회 (u는 User엔티티에 대한 별칭)
-  @Query("SELECT u FROM User u WHERE u.payStatus = 'PAID' AND u.expirationDate < :currentTime")
-  List<User> findExpiredPaidUsers(@Param("currentTime") LocalDateTime currentTime);
 }

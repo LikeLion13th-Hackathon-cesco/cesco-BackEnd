@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 @Schema(title="CreatePostRequest DTO", description="게시글 생성 요청")
 public class CreatePostRequest {
 
+  @Schema(description = "게시글 작성 사용자 ID", example = "1")
+  private Long userId;
+
   @Schema(description = "게시글 대상 커뮤니티 ID", example = "1")
   private Long communityId;
 

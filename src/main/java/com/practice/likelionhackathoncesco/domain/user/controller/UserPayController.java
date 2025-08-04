@@ -1,6 +1,7 @@
 package com.practice.likelionhackathoncesco.domain.user.controller;
 
 import com.practice.likelionhackathoncesco.domain.user.service.UserPayService;
+import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,6 +28,8 @@ public class UserPayController {
     try {
       userPayService.completePayment(userId);
       return ResponseEntity.ok("결제가 성공적으로 처리되었습니다.");
+    } catch (CustomException e) {
+      return ResponseEntity.status(e.getErrorCode().getStatus()).body(e.getMessage());
     } catch (IllegalArgumentException e) {
       return ResponseEntity.badRequest().body(e.getMessage());
     } catch (Exception e) {

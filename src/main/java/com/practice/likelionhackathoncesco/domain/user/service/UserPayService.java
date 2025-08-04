@@ -25,6 +25,11 @@ public class UserPayService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
+    if(user.getPayStatus() == PayStatus.PAID) {
+      log.info("사용자 {}는 이미 결제를 완료했습니다. 만료일: {}", user.getUsername(), user.getExpirationDate());
+      throw new CustomException(UserErrorCode.USER_ALREADT_PAID);
+    }
+
     user.processPayment(); // 사용자 결제 처리
     userRepository.save(user); // DB 저장
 

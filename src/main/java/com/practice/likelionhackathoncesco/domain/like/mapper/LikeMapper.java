@@ -10,8 +10,8 @@ public class LikeMapper {
   public LikeResponse toLikeResponse(Like like) {
 
     return LikeResponse.builder()
+        .userId(like.getUser().getUserId())
         .postId(like.getPost().getPostId())
-        .communityId(like.getCommunity().getCommunityId())
         .build();
   }
 }

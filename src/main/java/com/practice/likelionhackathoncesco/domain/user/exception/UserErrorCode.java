@@ -10,7 +10,8 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum UserErrorCode implements BaseErrorCode {
 
-  USER_NOT_FOUND("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+  USER_NOT_FOUND("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  USER_ALREADT_PAID("USER_ALREADY_PAID", "이미 결제 완료된 사용자 입니다.", HttpStatus.CONFLICT);
 
   private final String code;
   private final String message;

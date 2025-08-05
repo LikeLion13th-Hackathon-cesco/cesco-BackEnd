@@ -68,4 +68,8 @@ public class AnalysisReport extends BaseTimeEntity {
   @ManyToOne
   @JoinColumn(name = "userId")
   private User user;
+
+  public void updateProcessingStatus(ProcessingStatus processingStatus) {
+    this.processingStatus = processingStatus;
+  }
 }

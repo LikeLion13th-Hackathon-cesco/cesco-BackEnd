@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
   // 게시글 별 댓글 전체 조회
-  List<Comment> findAllByPostId(Long postId);
+  List<Comment> findAllByPostPostId(Long postId);
 }

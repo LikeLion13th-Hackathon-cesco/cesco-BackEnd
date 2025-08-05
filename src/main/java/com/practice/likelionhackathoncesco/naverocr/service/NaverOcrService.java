@@ -12,6 +12,7 @@ import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.naverocr.dto.ImageDto;
 import com.practice.likelionhackathoncesco.naverocr.dto.request.OcrRequest;
 import com.practice.likelionhackathoncesco.naverocr.dto.response.OcrResponse;
+import com.practice.likelionhackathoncesco.naverocr.exception.OcrErrorCode;
 import com.practice.likelionhackathoncesco.naverocr.global.config.NaverOcrConfig;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,16 +51,24 @@ public class NaverOcrService {
       log.info("OCR 처리 시작: s3key={}", analysisReport.getS3Key());
 
       // s3에서 파일 다운로드
-      InputStream pdfFile = downloadPdfFromS3(reportId);
+      downloadPdfFromS3(reportId);
 
       // OCR API 요청 생성
       OcrRequest requestDto = createOcrRequest(analysisReport.getS3Key(),
           analysisReport.getFileName());
 
+      // DB에 진행 상태 필드 업데이트
+      analysisReport.updateProcessingStatus(ProcessingStatus.OCR_PROCESSING);
+      analysisReportRepository.save(analysisReport);
+
       // Ocr API 호출
       String ocrResult = callOcrApi(requestDto);
 
       log.info("OCR 처리 완료: reportId={}, 텍스트 길이={}", reportId, ocrResult.length());
+
+      // DB에 진행 상태 필드 업데이트
+      analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);
+      analysisReportRepository.save(analysisReport);
 
       return OcrResponse.builder()
           .s3Key(analysisReport.getS3Key())
@@ -79,8 +88,8 @@ public class NaverOcrService {
     }
   }
 
-  // S3에서 사용자가 업로드한 등기부등본 pdf파일 다운로드 후 인코딩
-  // InputStream을 Base64로 인코딩 (ocr API는 파일을 Base64 인코딩 된 문자열로 받기 때문)
+  // S3에서 사용자가 업로드한 등기부등본 pdf파일 다운로드
+  // 인코딩 진행 X -> image를 url로 ocr api한테 보내면 인코딩 필요 없음 (s3 객체 url로 전송 -> 누구나 접근 가능함)
   private InputStream downloadPdfFromS3(Long reportId) {
     log.info("S3에서 PDF 다운로드 시작: reportId={}", reportId);
 
@@ -91,23 +100,16 @@ public class NaverOcrService {
 
     try {
       if (!amazonS3.doesObjectExist(s3Config.getBucket(), s3Key)) {
-        throw new IllegalArgumentException("S3에 파일이 존재하지 않습니다: " + s3Key);
+        throw new CustomException(S3ErrorCode.FILE_NOT_FOUND);
       }
 
       S3Object s3Object = amazonS3.getObject(s3Config.getBucket(), s3Key); // 파일을 가져올 때 getObject()를 사용함
 
-      try (InputStream inputStream = s3Object.getObjectContent()) { // 다운로드 된 파일 인코딩 실행
-        byte[] fileBytes = inputStream.readAllBytes();
-      } catch (Exception e) {
-        log.error("S3 파일 다운로드/인코딩 실패: {}", s3Key, e);
-        throw new IOException("파일 처리 실패: " + s3Key, e);
-      }
-
       return s3Object.getObjectContent();
 
-    } catch (Exception e) {
+    } catch (CustomException e) {
       log.error("S3 파일 다운로드 실패: {}", s3Key, e);
-      throw new RuntimeException("S3 파일 다운로드 실패: " + s3Key, e);
+      throw new CustomException(S3ErrorCode.FILE_DOWNLOAD_FAIL);
     }
   }
 

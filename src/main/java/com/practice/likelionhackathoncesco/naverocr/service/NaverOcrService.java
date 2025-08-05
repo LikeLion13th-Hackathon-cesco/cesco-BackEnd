@@ -41,7 +41,7 @@ public class NaverOcrService {
   private final NaverOcrConfig naverOcrConfig; // API InvokeUrl, seceretKey
 
   // ocr로 텍스트 추출
-  private OcrResponse extractText(Long reportId) {
+  public OcrResponse extractText(Long reportId) {
 
     AnalysisReport analysisReport = analysisReportRepository.findById(reportId)
         .orElseThrow(() -> new CustomException(S3ErrorCode.FILE_NOT_FOUND));
@@ -116,6 +116,9 @@ public class NaverOcrService {
 
     // s3 객체 url로 요청을 보냄
     String s3Url = amazonS3.getUrl(s3Config.getBucket(), s3key).toString();
+
+    log.info("생성된 S3 URL: {}", s3Url);
+    log.info("버킷명: {}, S3 키: {}", s3Config.getBucket(), s3key);
 
     ImageDto pdfImage = ImageDto.builder()
         .format("pdf")

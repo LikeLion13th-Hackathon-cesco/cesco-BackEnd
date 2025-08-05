@@ -2,19 +2,15 @@ package com.practice.likelionhackathoncesco.domain.like.controller;
 
 import com.practice.likelionhackathoncesco.domain.like.dto.response.LikeResponse;
 import com.practice.likelionhackathoncesco.domain.like.service.LikeService;
-import com.practice.likelionhackathoncesco.domain.post.dto.request.CreatePostRequest;
-import com.practice.likelionhackathoncesco.domain.post.dto.response.PostResponse;
 import com.practice.likelionhackathoncesco.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 

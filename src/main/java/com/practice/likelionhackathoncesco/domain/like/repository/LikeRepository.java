@@ -1,6 +1,5 @@
 package com.practice.likelionhackathoncesco.domain.like.repository;
 
-import com.practice.likelionhackathoncesco.domain.community.entity.Community;
 import com.practice.likelionhackathoncesco.domain.like.entity.Like;
 import com.practice.likelionhackathoncesco.domain.post.entity.Post;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;

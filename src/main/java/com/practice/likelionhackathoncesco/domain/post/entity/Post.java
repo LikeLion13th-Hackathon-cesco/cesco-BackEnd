@@ -1,6 +1,5 @@
 package com.practice.likelionhackathoncesco.domain.post.entity;
 
-import com.practice.likelionhackathoncesco.domain.community.entity.Community;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.global.common.BaseTimeEntity;
 import jakarta.persistence.Column;
@@ -16,7 +15,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 @Entity
 @Getter
@@ -33,13 +31,15 @@ public class Post extends BaseTimeEntity {
   @Column(nullable = false)
   private String content;   // 게시글 내용
 
+  @Column(nullable = false)
+  private String roadCode;    // 도로명 코드
+  
+  @Column(nullable = false)
+  private String buildingNumber;    // 건물 본번
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id",nullable = false)
   private User user;  // 사용자 ID(FK)
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "community_id",nullable = false)
-  private Community community;  // 커뮤니티 ID(FK)
 
   public void update(String content) {
     this.content = content;

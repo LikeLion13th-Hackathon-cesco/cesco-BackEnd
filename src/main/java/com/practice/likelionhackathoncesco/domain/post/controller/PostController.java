@@ -56,7 +56,7 @@ public class PostController {
   // 게시글 삭제 API
   @Operation(summary = "게시글 삭제", description = "게시글 삭제 버튼을 눌렀을때 요청되는 API")
   @DeleteMapping("/posts/{postId}")
-  public ResponseEntity<BaseResponse> deletePost(
+  public ResponseEntity<BaseResponse<Boolean>> deletePost(
       @Parameter(description = "삭제할 게시글 ID") @PathVariable Long postId) {
     boolean isDeleted = postService.deletePost(postId);
     return ResponseEntity.ok(BaseResponse.success("게시글 삭제 성공", isDeleted));
@@ -71,30 +71,33 @@ public class PostController {
     return ResponseEntity.ok(BaseResponse.success("게시글 단일 조회 성공", postResponse));
   }
 
-  // 커뮤니티 별 게시글 전체 조회 API
-  @Operation(summary = "커뮤니티 별 게시글 전체 조회", description = "커뮤니티 페이지에서 특정 주소를 검색완료 했을때 호출되는 API")
-  @GetMapping("/posts/{communityId}")
-  public ResponseEntity<BaseResponse<List<PostResponse>>> getPostByCommunityId(
-      @Parameter(description = "조회할 게시글 목록의 커뮤니티 ID") @PathVariable Long communityId){
-    List<PostResponse> postList = postService.getAllPostsByCommunityId(communityId);
-    return ResponseEntity.ok(BaseResponse.success("커뮤니티 별 게시글 목록 조회 완료", postList));
+  // (도로명코드+건물본번) 별 게시글 전체 조회 API
+  @Operation(summary = "(도로명코드+건물본번) 별 게시글 전체 조회", description = "(도로명코드+건물본번) 페이지에서 특정 주소를 검색완료 했을때 호출되는 API")
+  @GetMapping("/posts")
+  public ResponseEntity<BaseResponse<List<PostResponse>>> getPostByRoadCodeAndBuildingNumber(
+      @Parameter(description = "조회할 게시글 목록의 도로명코드") @PathVariable String roadCode,
+      @Parameter(description = "조회할 게시글 목록의 건물본번") @PathVariable String buildingNumber) {
+    List<PostResponse> postList = postService.getAllPostsByRoadCodeAndBuildingNumber(roadCode, buildingNumber);
+    return ResponseEntity.ok(BaseResponse.success("(도로명코드+건물본번) 별 게시글 목록 조회 완료", postList));
   }
 
-  // 커뮤니티 별 게시글 최신순으로 조회 API
-  @Operation(summary = "커뮤니티 별 게시글 최신순 조회", description = "커뮤니티 별 게시글 목록에서 최신순 버튼을 눌렀을때 호출되는 API")
-  @GetMapping("/post/{communityId}/lastest")
-  public ResponseEntity<BaseResponse<List<PostResponse>>> getPostByCommunityIdAndLastest(
-      @Parameter(description = "최신순으로 조회할 게시글 목록의 커뮤니티 ID") @PathVariable Long communityId){
-    List<PostResponse> postList = postService.getAllPostsByCommunityIdAndCreatedAtDesc(communityId);
-    return ResponseEntity.ok(BaseResponse.success("커뮤니티 별 게시글 최신순 조회 완료", postList));
+  // (도로명코드+건물본번) 별 게시글 최신순으로 조회 API
+  @Operation(summary = "(도로명코드+건물본번) 별 게시글 최신순 조회", description = "(도로명코드+건물본번) 별 게시글 목록에서 최신순 버튼을 눌렀을때 호출되는 API")
+  @GetMapping("/post/latest")
+  public ResponseEntity<BaseResponse<List<PostResponse>>> getPostByRoadCodeAndBuildingNumberAndLatest(
+      @Parameter(description = "최신순으로 조회할 게시글 목록의 도로명코드") @PathVariable String roadCode,
+      @Parameter(description = "최신순으로 조회할 게시글 목록의 건물본번") @PathVariable String buildingNumber) {
+    List<PostResponse> postList = postService.getAllPostsByRoadCodeAndBuildingNumberAndCreatedAtDesc(roadCode, buildingNumber);
+    return ResponseEntity.ok(BaseResponse.success("(도로명코드+건물본번) 별 게시글 최신순 조회 완료", postList));
   }
 
-  // 커뮤니티 별 게시글 인기순으로 조회 API
-  @Operation(summary = "커뮤니티 별 게시글 좋아요 많은순 조회", description = "커뮤니티 별 게시글 목록에서 인기순 버튼을 눌렀을때 호출되는 API")
-  @GetMapping("/post/{communityId}/popular")
-  public ResponseEntity<BaseResponse<List<PostResponse>>> getPostByCommunityIdAndPopular(
-      @Parameter(description = "인기순으로 조회할 게시글 목록의 커뮤니티 ID") @PathVariable Long communityId){
-    List<PostResponse> postList = postService.getAllPostsByCommunityIdAndLikeCountDesc(communityId);
-    return ResponseEntity.ok(BaseResponse.success("커뮤니티 별 게시글 인기순 조회 완료", postList));
+  // (도로명코드+건물본번) 별 게시글 인기순으로 조회 API
+  @Operation(summary = "(도로명코드+건물본번) 별 게시글 좋아요 많은순 조회", description = "(도로명코드+건물본번) 별 게시글 목록에서 인기순 버튼을 눌렀을때 호출되는 API")
+  @GetMapping("/post/popular")
+  public ResponseEntity<BaseResponse<List<PostResponse>>> getPostByRoadCodeAndBuildingNumberAndPopular(
+      @Parameter(description = "인기순으로 조회할 게시글 목록의 도로명코드") @PathVariable String roadCode,
+      @Parameter(description = "인기순으로 조회할 게시글 목록의 건물본번") @PathVariable String buildingNumber) {
+    List<PostResponse> postList = postService.getAllPostsByRoadCodeBuildingNumberAndLikeCountDesc(roadCode, buildingNumber);
+    return ResponseEntity.ok(BaseResponse.success("(도로명코드+건물본번) 별 게시글 인기순 조회 완료", postList));
   }
 }

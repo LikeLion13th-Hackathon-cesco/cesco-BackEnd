@@ -1,8 +1,5 @@
 package com.practice.likelionhackathoncesco.domain.post.service;
 
-import com.practice.likelionhackathoncesco.domain.community.entity.Community;
-import com.practice.likelionhackathoncesco.domain.community.exception.CommunityErrorCode;
-import com.practice.likelionhackathoncesco.domain.community.repository.CommunityRepository;
 import com.practice.likelionhackathoncesco.domain.like.repository.LikeRepository;
 import com.practice.likelionhackathoncesco.domain.post.dto.request.CreatePostRequest;
 import com.practice.likelionhackathoncesco.domain.post.dto.request.UpdatePostRequest;
@@ -25,8 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class PostService {
-  
-  private final CommunityRepository communityRepository;
+
   private final PostRepository postRepository;
   private final PostMapper postMapper;
   private final LikeRepository likeRepository;
@@ -38,13 +34,11 @@ public class PostService {
   public PostResponse createPost(CreatePostRequest createPostRequest) { // user는 인증객체 X , 그냥 고정된 더미데이터 쓸거라서 파라미터에 user 추가 X
 
 
-    log.info("[PostService] 게시글 생성 시도 : userId={}, communityId={}, content={}", createPostRequest.getUserId(), createPostRequest.getCommunityId(), createPostRequest.getContent());
+    log.info("[PostService] 게시글 생성 시도 : userId={}, content={}, roadCode={}, buildingNumber={}", createPostRequest.getUserId(),createPostRequest.getContent(), createPostRequest.getRoadCode(), createPostRequest.getBuildingNumber());
 
     if(createPostRequest.getContent() == null || createPostRequest.getContent().isBlank()){
       throw new CustomException(PostErrorCode.INVALID_POST_CONTENT);
     }
-    Community community = communityRepository.findById(createPostRequest.getCommunityId()).orElseThrow(()-> new CustomException(
-        CommunityErrorCode.COMMUNITY_NOT_FOUND));
 
     User user = userRepository.findById(createPostRequest.getUserId()).orElseThrow(()-> new CustomException(
         UserErrorCode.USER_NOT_FOUND));   // createPostRequest의 userId로 user 찾아서 builder로 post 객체 만들때 씀
@@ -52,13 +46,14 @@ public class PostService {
     Post post = Post.builder()
         .content(createPostRequest.getContent())
         .user(user)
-        .community(community)
+        .roadCode(createPostRequest.getRoadCode())
+        .buildingNumber(createPostRequest.getBuildingNumber())
         .build();
 
     postRepository.save(post);
     long likeCount = likeRepository.countByPost(post);  // toPostResponse에 좋아요 개수 계산해서 넣기 위해 -> 여기선 0
 
-    log.info("[PostService] 게시글 생성 완료 : postId={}, userId={}, content={}", post.getPostId(), post.getUser().getUserId(), createPostRequest.getContent());
+    log.info("[PostService] 게시글 생성 완료 : postId={}, userId={}, content={}, roadCode={}, buildingNumber={}", post.getPostId(), post.getUser().getUserId(), post.getContent(), post.getRoadCode(), post.getBuildingNumber());
 
     return postMapper.toPostResponse(post, likeCount);
   }
@@ -94,7 +89,7 @@ public class PostService {
 
     long likeCount = likeRepository.countByPost(post);  // toPostResponse에 좋아요 개수 계산해서 넣기 위해
 
-    log.info("[PostService] 게시글 수정 완료 : postId={}, content = {}", postId, updatePostRequest.getContent());
+    log.info("[PostService] 게시글 수정 완료 : postId={}, content = {}", postId, post.getContent());
 
     return postMapper.toPostResponse(post, likeCount);
 
@@ -114,11 +109,11 @@ public class PostService {
   }
 
 
-  // 커뮤니티 별 게시글 전체 조회 기능
+  // (도로명코드+건물본번) 별 게시글 전체 조회 기능
   @Transactional
-  public List<PostResponse> getAllPostsByCommunityId(Long communityId) {
-    log.info("[PostService] 커뮤니티 별 게시글 전체 조회 시도");
-    List<Post> postList = postRepository.findAllByCommunityId(communityId);
+  public List<PostResponse> getAllPostsByRoadCodeAndBuildingNumber(String roadCode, String buildingNumber) {
+    log.info("[PostService] (도로명코드+건물본번) 별 게시글 전체 조회 시도");
+    List<Post> postList = postRepository.findAllByRodeCodeAndBuildingNumber(roadCode, buildingNumber);
 
     if(postList == null || postList.isEmpty()){
       throw new CustomException(PostErrorCode.POST_NOT_FOUND);
@@ -130,10 +125,11 @@ public class PostService {
   }
 
 
-  // 커뮤니티 별 게시글 최신순 조회 기능
+  // (도로명코드+건물본번) 별 게시글 최신순 조회 기능
   @Transactional
-  public List<PostResponse> getAllPostsByCommunityIdAndCreatedAtDesc(Long communityId) {
-    List<Post> postListCreatedAtDesc = postRepository.findAllByCommunityIdOrderByCreatedAtDesc(communityId);
+  public List<PostResponse> getAllPostsByRoadCodeAndBuildingNumberAndCreatedAtDesc(String roadCode, String buildingNumber) {
+    log.info("[PostService] (도로명코드+건물본번) 별 게시글 최신순 조회 시도");
+    List<Post> postListCreatedAtDesc = postRepository.findAllByRoadCodeAndBuildingNumberOrderByCreatedAtDesc(roadCode, buildingNumber);
 
     return postListCreatedAtDesc.stream().map(post -> {
       long likeCount = likeRepository.countByPost(post);
@@ -142,10 +138,11 @@ public class PostService {
   }
 
 
-  // 커뮤니티 별 게시글 인기순 조회 기능
+  // (도로명코드+건물본번) 별 게시글 인기순 조회 기능
   @Transactional
-  public List<PostResponse> getAllPostsByCommunityIdAndLikeCountDesc(Long communityId) {
-    List<Post> postListLikeCount = postRepository.findAllByCommunityIdOrderByLikeCountDesc(communityId);
+  public List<PostResponse> getAllPostsByRoadCodeBuildingNumberAndLikeCountDesc(String roadCode, String buildingNumber) {
+    log.info("[PostService] (도로명코드+건물본번) 별 게시글 인기순 조회 시도");
+    List<Post> postListLikeCount = postRepository.findAllByRoadCodeAndBuildingNumberOrderByLikeCountDesc(roadCode, buildingNumber);
 
     return postListLikeCount.stream().map(post -> {
       long likeCount = likeRepository.countByPost(post);

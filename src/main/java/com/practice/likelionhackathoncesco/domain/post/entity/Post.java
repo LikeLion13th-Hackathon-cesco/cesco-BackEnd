@@ -37,6 +37,9 @@ public class Post extends BaseTimeEntity {
   @Column(nullable = false)
   private String buildingNumber;    // 건물 본번
 
+  @Column(nullable = false)
+  private int likeCount;  // 좋아요 수
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id",nullable = false)
   private User user;  // 사용자 ID(FK)

@@ -113,7 +113,7 @@ public class PostService {
   @Transactional
   public List<PostResponse> getAllPostsByRoadCodeAndBuildingNumber(String roadCode, String buildingNumber) {
     log.info("[PostService] (도로명코드+건물본번) 별 게시글 전체 조회 시도");
-    List<Post> postList = postRepository.findAllByRodeCodeAndBuildingNumber(roadCode, buildingNumber);
+    List<Post> postList = postRepository.findAllByRoadCodeAndBuildingNumber(roadCode, buildingNumber);
 
     if(postList == null || postList.isEmpty()){
       throw new CustomException(PostErrorCode.POST_NOT_FOUND);

@@ -32,8 +32,9 @@ public class AnalysisReportController {
   @PostMapping(value = "/file-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<BaseResponse<FileUploadResponse>> uploadImage(
       @RequestParam MultipartFile file) {
-
+    // 이 api에서는 등기부등본만 업로드 할 수 있음 (s3 PathName 고정)
     FileUploadResponse uploadResponse = analysisReportService.uploadDocuments(PathName.PROPERTYREGISTRY, file);
+
     return ResponseEntity.ok(BaseResponse.success("등기부등본 업로드에 성공했습니다.", uploadResponse));
   }
 

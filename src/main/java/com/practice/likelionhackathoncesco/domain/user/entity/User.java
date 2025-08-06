@@ -57,7 +57,7 @@ public class User extends BaseTimeEntity {
   }
 
   // 결제 만료가 되면 expirationDate 필드는 null로 변경
-  public void expirePayment() {
+  public void updateExpire() {
     this.payStatus = PayStatus.UNPAID;
     this.expirationDate = null;
   }

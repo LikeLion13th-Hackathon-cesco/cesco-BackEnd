@@ -123,7 +123,7 @@ public class AnalysisReportService {
 
   // 업로드 파일 유효성 검사
   public void validateFile(MultipartFile file) {
-    if (file.getSize() > 5 * 1024 * 1024) { // 파일 크기 5MB 이하 업로드 가능
+    if (file.getSize() > 50 * 1024 * 1024) { // 파일 크기 50MB 이하 업로드 가능
       throw new CustomException(AnalysisReportErrorCode.FILE_SIZE_INVALID);
     }
 
@@ -211,5 +211,4 @@ public class AnalysisReportService {
       throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
     }
   }
-
 }

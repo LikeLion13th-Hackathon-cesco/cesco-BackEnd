@@ -54,8 +54,7 @@ public class NaverOcrService {
       downloadPdfFromS3(reportId);
 
       // OCR API 요청 생성
-      OcrRequest requestDto = createOcrRequest(analysisReport.getS3Key(),
-          analysisReport.getFileName());
+      OcrRequest requestDto = createOcrRequest(analysisReport.getS3Key(), analysisReport.getFileName());
 
       // DB에 진행 상태 필드 업데이트
       analysisReport.updateProcessingStatus(ProcessingStatus.OCR_PROCESSING);
@@ -122,6 +121,7 @@ public class NaverOcrService {
     log.info("생성된 S3 URL: {}", s3Url);
     log.info("버킷명: {}, S3 키: {}", s3Config.getBucket(), s3key);
 
+    // 공식 문서 기준 이미지 요청 방식
     ImageDto pdfImage = ImageDto.builder()
         .format("pdf")
         .name(fileName)
@@ -135,7 +135,7 @@ public class NaverOcrService {
         .timestamp(System.currentTimeMillis()) // 임의의 API 호출 시각
         .lang("ko") // OCR 인식 요청 언어 정보
         .enableTableDetection(true) // 표 형태 제공 (우리는 등기부등본이기 때문에 표 형태로 제공받아야 보기 편할 듯)
-        .images(List.of(pdfImage)) // JSON Array로 작성, 호출당 1개의 이미지 Array 작성 가능, 이미지 크기: 최대 50 MB
+        .images(List.of(pdfImage)) // JSON Array로 작성, 호출당 1개의 이미지 Array 작성 가능, 이미지 크기: 최대 50MB
         .build();
   }
 
@@ -152,41 +152,21 @@ public class NaverOcrService {
 
       log.info("Naver OCR API 호출 시작: requestId={}", request.getRequestId());
 
+      // 이 요청방식 대로 요청을 보내면 응답을 받을 수 있음
       ResponseEntity<String> response = restTemplate.exchange(
           naverOcrConfig.getInvokeUrl(),
           HttpMethod.POST,
-          requestEntity,
+          requestEntity, // 헤더와 생성한 요청
           String.class
       );
 
-      // 응답에서 텍스트 파싱 (응답을 정리한다고 생각) -> 추후 확장
-      // return extractTextFromResponse(response.getBody());
-      return response.getBody();
+      // 응답에서 텍스트 파싱 (응답을 정리한다고 생각) -> 추후 확장 !!! 응답 정리할 필요 없음
+      return response.getBody(); // 응답의 바디만 리턴
 
     } catch (Exception e) {
       log.error("OCR API 호출 실패", e);
       throw new IOException("OCR API 호출 실패", e);
     }
   }
-
-  /*// Ocr API 응답 파싱
-  private String extractTextFromResponse(String responseBody) throws IOException {
-    try {
-      // API 응답을 JSON으로 파싱함
-      JsonNode response = objectMapper.readTree(responseBody);
-      JsonNode images = response.get("images");
-
-      // images 배열 존재 확인 (인코딩된 pdf 문서가 담긴 배열)
-      if (images == null || !images.isArray() || images.size() == 0) {
-        log.warn("OCR 응답에서 images 배열을 찾을 수 없음");
-        return "";
-      }
-
-      // 배열의 첫 번째 이미지 결과 가져오기 (PDF는 단일 처리)
-      JsonNode imageResult = images.get(0);
-
-    }
-  }*/
-
 
 }

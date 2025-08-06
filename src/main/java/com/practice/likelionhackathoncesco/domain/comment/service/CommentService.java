@@ -86,7 +86,7 @@ public class CommentService {
   @Transactional
   public List<CommentResponse> getAllCommentsByPostId(Long postId) {
     log.info("[CommentService] 게시글 별 댓글 전체 조회");
-    List<Comment> commentList = commentRepository.findAllByPostId(postId);
+    List<Comment> commentList = commentRepository.findAllByPostPostId(postId);
 
     return commentList.stream().map(comment -> commentMapper.toCommentResponse(comment)).toList();
   }

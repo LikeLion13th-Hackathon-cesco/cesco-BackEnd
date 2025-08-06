@@ -69,6 +69,10 @@ public class NaverOcrService {
       analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);
       analysisReportRepository.save(analysisReport);
 
+      // DB에 추출된 텍스트 업데이트
+      /*analysisReport.upadateOcrText(ocrResult);
+      analysisReportRepository.save(analysisReport);*/
+
       return OcrResponse.builder()
           .s3Key(analysisReport.getS3Key())
           .ocrText(ocrResult)
@@ -161,7 +165,7 @@ public class NaverOcrService {
       );
 
       // 응답에서 텍스트 파싱 (응답을 정리한다고 생각) -> 추후 확장 !!! 응답 정리할 필요 없음
-      return response.getBody(); // 응답의 바디만 리턴
+      return response.getBody(); // 응답의 바디만 리턴 (공식문서 기준 응답 형태로 제공됨)
 
     } catch (Exception e) {
       log.error("OCR API 호출 실패", e);

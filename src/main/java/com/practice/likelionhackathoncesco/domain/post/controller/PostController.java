@@ -73,7 +73,7 @@ public class PostController {
 
   // (도로명코드+건물본번) 별 게시글 전체 조회 API
   @Operation(summary = "(도로명코드+건물본번) 별 게시글 전체 조회", description = "(도로명코드+건물본번) 페이지에서 특정 주소를 검색완료 했을때 호출되는 API")
-  @GetMapping("/posts")
+  @GetMapping("/posts/{roadCode}/{buildingNumber}")
   public ResponseEntity<BaseResponse<List<PostResponse>>> getPostByRoadCodeAndBuildingNumber(
       @Parameter(description = "조회할 게시글 목록의 도로명코드") @PathVariable String roadCode,
       @Parameter(description = "조회할 게시글 목록의 건물본번") @PathVariable String buildingNumber) {
@@ -83,7 +83,7 @@ public class PostController {
 
   // (도로명코드+건물본번) 별 게시글 최신순으로 조회 API
   @Operation(summary = "(도로명코드+건물본번) 별 게시글 최신순 조회", description = "(도로명코드+건물본번) 별 게시글 목록에서 최신순 버튼을 눌렀을때 호출되는 API")
-  @GetMapping("/post/latest")
+  @GetMapping("/post/{roadCode}/{buildingNumber}/latest")
   public ResponseEntity<BaseResponse<List<PostResponse>>> getPostByRoadCodeAndBuildingNumberAndLatest(
       @Parameter(description = "최신순으로 조회할 게시글 목록의 도로명코드") @PathVariable String roadCode,
       @Parameter(description = "최신순으로 조회할 게시글 목록의 건물본번") @PathVariable String buildingNumber) {
@@ -93,7 +93,7 @@ public class PostController {
 
   // (도로명코드+건물본번) 별 게시글 인기순으로 조회 API
   @Operation(summary = "(도로명코드+건물본번) 별 게시글 좋아요 많은순 조회", description = "(도로명코드+건물본번) 별 게시글 목록에서 인기순 버튼을 눌렀을때 호출되는 API")
-  @GetMapping("/post/popular")
+  @GetMapping("/post/{roadCode}/{buildingNumber}/popular")
   public ResponseEntity<BaseResponse<List<PostResponse>>> getPostByRoadCodeAndBuildingNumberAndPopular(
       @Parameter(description = "인기순으로 조회할 게시글 목록의 도로명코드") @PathVariable String roadCode,
       @Parameter(description = "인기순으로 조회할 게시글 목록의 건물본번") @PathVariable String buildingNumber) {

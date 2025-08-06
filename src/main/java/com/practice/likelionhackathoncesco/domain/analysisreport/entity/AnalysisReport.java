@@ -50,15 +50,6 @@ public class AnalysisReport extends BaseTimeEntity {
   @Column(name = "description")
   private String description; // 안전 점수 설명
 
-  // OCR 관련
-  @Lob // 긴 텍스트를 위해 사용
-  @Column(name = "ocr_text", columnDefinition = "LONGTEXT")
-  private String ocrText; // 추출한 등기부등본의 원본 내용 저장(원본 데이터 저장 + 검증 목적)
-
-  // 감지된 위험 키워드
-  @Column(name = "detected_keywords")
-  private String detectedKeywords; // 감지된 모든 문자열을 한 문자열로 저장
-
   // 처리 상태 관리
   @Enumerated(EnumType.STRING)
   @Column(name = "processing_status", nullable = false)
@@ -68,11 +59,6 @@ public class AnalysisReport extends BaseTimeEntity {
   @ManyToOne
   @JoinColumn(name = "userId")
   private User user;
-
-  // 등기부등본 OCR로 텍스트 성공 후 추출된 텍스트 DB 업데이트
-  public void upadateOcrText(String ocrText) {
-    this.ocrText = ocrText;
-  }
 
   // 진행 상태 DB 업데이트
   public void updateProcessingStatus(ProcessingStatus processingStatus) {

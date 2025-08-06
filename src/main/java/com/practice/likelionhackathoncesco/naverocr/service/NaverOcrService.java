@@ -69,14 +69,9 @@ public class NaverOcrService {
       analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);
       analysisReportRepository.save(analysisReport);
 
-      // DB에 추출된 텍스트 업데이트
-      /*analysisReport.upadateOcrText(ocrResult);
-      analysisReportRepository.save(analysisReport);*/
-
       return OcrResponse.builder()
           .s3Key(analysisReport.getS3Key())
           .ocrText(ocrResult)
-          // .detectedKeywords(keywords) // 감지된 언어 추후에 적용
           .processingStatus(ProcessingStatus.OCR_COMPLETED)
           .build();
 

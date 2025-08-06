@@ -17,9 +17,6 @@ public class OcrResponse {
   @Schema(description = "추출된 텍스트", example = ".")
   private String ocrText;
 
-  @Schema(description = "감지된 텍스트", example = "가압류, 가등기")
-  private String detectedKeywords;
-
   @Schema(description = "진행 상태", example = "OCR_COMPLETED")
   private ProcessingStatus processingStatus;
 

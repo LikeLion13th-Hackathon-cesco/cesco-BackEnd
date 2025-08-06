@@ -36,7 +36,7 @@ public class LikeController {   // like처럼 request 가 없는 도메인은 RE
   
   // 좋아요 삭제 API
   @DeleteMapping("/likes/{userId}/{postId}")    // like 도메인에 request DTO를 안만들어서 이럼
-  @Operation(summary = "좋아요 생성", description = "특정 게시글에 대해 이미 좋아요가 되어있는데 좋아요 버튼을 눌렀을때 요청되는 API")
+  @Operation(summary = "좋아요 삭제", description = "특정 게시글에 대해 이미 좋아요가 되어있는데 좋아요 버튼을 눌렀을때 요청되는 API")
   public ResponseEntity<BaseResponse<Boolean>> deleteLike(
       @Parameter(description = "좋아요를 삭제하는 사용자 ID") @PathVariable Long userId,
       @Parameter(description = "좋아요를 삭제하는 게시글 ID") @PathVariable Long postId){

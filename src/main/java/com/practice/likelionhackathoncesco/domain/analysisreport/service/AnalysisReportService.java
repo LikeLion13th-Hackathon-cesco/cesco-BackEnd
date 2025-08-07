@@ -211,4 +211,8 @@ public class AnalysisReportService {
       throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
     }
   }
+
+  // gpt api로 추출된 텍스트 분석하는 메소드
+
+  //
 }

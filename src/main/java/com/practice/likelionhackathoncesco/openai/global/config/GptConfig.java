@@ -18,6 +18,10 @@ public class GptConfig {
   @Value("${openai.api.model}")
   private String model;
 
+  @Value("${open.api.url}")
+  private String url;
+
+  // 아래 두 메소드는 없어도 되긴함
   @Bean
   public RestTemplate restTemplate() {
     return new RestTemplate();

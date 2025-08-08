@@ -3,6 +3,7 @@ package com.practice.likelionhackathoncesco.openai.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.openai.dto.request.GptAnalysisRequest;
 import com.practice.likelionhackathoncesco.openai.dto.response.GptResponse;
@@ -33,7 +34,10 @@ public class GptService {
   private final ObjectMapper objectMapper;
 
   // 프롬프트 생성 메소드
-  public List<Map<String, String>> createPrompt(GptAnalysisRequest gptAnalysisRequest){
+  public List<Map<String, String>> createPrompt(GptAnalysisRequest gptAnalysisRequest, Long reportId) {
+
+    // 이 부분 나중에 DB에 OCR 추출된 택스트 추가되면 수정필요 reportId 써서 분석리포트 테이즐에서 가져와야 함!!!!!!!!!!!!!!!!
+    String text = null;
 
     List<Map<String, String>> prompts = new ArrayList<>();
 
@@ -77,7 +81,7 @@ public class GptService {
         """, rentType, gptAnalysisRequest.getDeposit(), gptAnalysisRequest.getOfficialPrice())));
 
     // gpt에게 추출된 택스트 입력
-    prompts.add(Map.of("role", "user", "content", gptAnalysisRequest.getText()));
+    prompts.add(Map.of("role", "user", "content", text));
 
 
     return prompts;

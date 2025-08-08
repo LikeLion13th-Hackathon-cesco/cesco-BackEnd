@@ -9,8 +9,8 @@ import lombok.Getter;
 @Schema(title = "GptAnalysisRequestDTO", description = "텍스트 분석 요청 DTO")
 public class GptAnalysisRequest {
 
-  @Schema(description = "분석할 텍스트", example = "...")
-  private String text;   // ocr 분석 후 추출된 텍스트(DB에서 가져오지 않고 바로 받아올 예정)
+  //@Schema(description = "분석할 텍스트", example = "...")
+  //private String text;   // ocr 분석 후 추출된 텍스트
 
   @Schema(description = "전월세 여부", example = "0")
   private Integer isMonthlyRent;  // 월세일 경우 : 1 , 전세일 경우 : 0

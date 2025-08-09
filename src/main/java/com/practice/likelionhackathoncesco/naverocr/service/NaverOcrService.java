@@ -55,31 +55,36 @@ public class NaverOcrService {
       log.info("OCR 처리 시작: s3key={}", analysisReport.getS3Key());
 
       // s3에서 파일 다운로드
-      downloadPdfFromS3(reportId);
+      // S3ObjectInputStream은 네트워크 연결을 유지하는 스트림이기 때문에 사용 후 닫아야 함(try-with-resource구문)
+      try(InputStream pdfStream = downloadPdfFromS3(reportId)) {
 
-      // OCR API 요청 생성
-      OcrRequest requestDto = createOcrRequest(analysisReport.getS3Key(), analysisReport.getFileName());
+        // OCR API 요청 생성
+        OcrRequest requestDto = createOcrRequest(analysisReport.getS3Key(), analysisReport.getFileName());
 
-      // DB에 진행 상태 필드 업데이트
-      analysisReport.updateProcessingStatus(ProcessingStatus.OCR_PROCESSING);
-      analysisReportRepository.save(analysisReport);
+        // DB에 진행 상태 필드 업데이트
+        analysisReport.updateProcessingStatus(ProcessingStatus.OCR_PROCESSING);
+        analysisReportRepository.save(analysisReport);
 
-      // Ocr API 호출
-      OcrResponse ocrResult = callOcrApi(requestDto);
+        // Ocr API 호출
+        OcrResponse ocrResult = callOcrApi(requestDto);
 
-      log.info("OCR 처리 완료: reportId={}", reportId);
+        log.info("OCR 처리 완료: reportId={}", reportId);
 
       /*// 추출된 텍스트 DB에 저장
       analysisReport.updateOcrText(ocrResult.getSections().toString()); // toString()으로 저장*/
 
-      // DB에 진행 상태 필드 업데이트
-      analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);
-      analysisReportRepository.save(analysisReport);
+        // DB에 진행 상태 필드 업데이트
+        analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);
+        analysisReportRepository.save(analysisReport);
 
-      return OcrResponse.builder()
-          .sections(ocrResult.getSections())
-          .processingStatus(ProcessingStatus.OCR_COMPLETED)
-          .build();
+        return OcrResponse.builder()
+            .sections(ocrResult.getSections())
+            .processingStatus(ProcessingStatus.OCR_COMPLETED)
+            .build();
+
+      } catch (CustomException e) {
+        throw new CustomException(S3ErrorCode.FILE_DOWNLOAD_FAIL);
+      }
 
     } catch (CustomException e) { // 추후에 ocrErrorCode 작성 후 예외 던지기
       log.error("OCR 처리 중 예상치 못한 오류: s3key={}", analysisReport.getS3Key(), e);

@@ -3,6 +3,7 @@ package com.practice.likelionhackathoncesco.naverocr.service;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.S3ErrorCode;
@@ -12,15 +13,18 @@ import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.naverocr.dto.ImageDto;
 import com.practice.likelionhackathoncesco.naverocr.dto.request.OcrRequest;
 import com.practice.likelionhackathoncesco.naverocr.dto.response.OcrResponse;
-import com.practice.likelionhackathoncesco.naverocr.exception.OcrErrorCode;
 import com.practice.likelionhackathoncesco.naverocr.global.config.NaverOcrConfig;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -61,24 +65,22 @@ public class NaverOcrService {
       analysisReportRepository.save(analysisReport);
 
       // Ocr API 호출
-      String ocrResult = callOcrApi(requestDto);
+      OcrResponse ocrResult = callOcrApi(requestDto);
 
-      log.info("OCR 처리 완료: reportId={}, 텍스트 길이={}", reportId, ocrResult.length());
+      log.info("OCR 처리 완료: reportId={}", reportId);
 
       // DB에 진행 상태 필드 업데이트
       analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);
       analysisReportRepository.save(analysisReport);
 
       return OcrResponse.builder()
-          .s3Key(analysisReport.getS3Key())
-          .ocrText(ocrResult)
+          .sections(ocrResult.getSections())
           .processingStatus(ProcessingStatus.OCR_COMPLETED)
           .build();
 
     } catch (CustomException e) { // 추후에 ocrErrorCode 작성 후 예외 던지기
       log.error("OCR 처리 중 예상치 못한 오류: s3key={}", analysisReport.getS3Key(), e);
       return OcrResponse.builder()
-          .s3Key(analysisReport.getS3Key()) // 파일의 s3key 반환
           .processingStatus(ProcessingStatus.FAILED) // ocr 실패
           .build();
     } catch (IOException e) { // callOcrApi()에서 IOException을 던지고 있기 때문에 받아서 다시 던져야 함
@@ -139,7 +141,7 @@ public class NaverOcrService {
   }
 
   // OCR API 호출
-  private String callOcrApi(OcrRequest request) throws IOException {
+  private OcrResponse callOcrApi(OcrRequest request) throws IOException {
     try {
       // HTTP 헤더 설정 (공식 문서 -> X-OCR-SECRET / Content-Type 2가지 필드 필요
       HttpHeaders headers = new HttpHeaders();
@@ -151,21 +153,77 @@ public class NaverOcrService {
 
       log.info("Naver OCR API 호출 시작: requestId={}", request.getRequestId());
 
-      // 이 요청방식 대로 요청을 보내면 응답을 받을 수 있음
+      // 이 요청방식 대로 요청을 보내면 응답을 받을 수 있음 -> 응답을 생성
       ResponseEntity<String> response = restTemplate.exchange(
           naverOcrConfig.getInvokeUrl(),
           HttpMethod.POST,
           requestEntity, // 헤더와 생성한 요청
-          String.class
+          String.class,
+          new ParameterizedTypeReference<Map<String, List<String>>>() {}
       );
 
-      // 응답에서 텍스트 파싱 (응답을 정리한다고 생각) -> 추후 확장 !!! 응답 정리할 필요 없음
-      return response.getBody(); // 응답의 바디만 리턴 (공식문서 기준 응답 형태로 제공됨)
+      // 응답에서 텍스트 파싱 (응답을 정리한다고 생각) 하여 반환
+      return parseResponse(response);
 
     } catch (Exception e) {
       log.error("OCR API 호출 실패", e);
       throw new IOException("OCR API 호출 실패", e);
     }
+  }
+
+  public OcrResponse parseResponse(ResponseEntity<String> response) throws IOException {
+    ObjectMapper objectMapper = new ObjectMapper();
+    JsonNode root = objectMapper.readTree(response.getBody()); // 응답 바디를 트리 구조로 파싱해서 jsonNode 객체로 생성
+
+    Map<String, List<String>> result = new LinkedHashMap<>(); // 표제부, 갑구, 을구 순서 보장
+    List<String> fallbackNames = List.of("표제부", "갑구", "을구");
+
+    // 응답 바디의 image 배열의 첫번째 요소(ocr한 첫 페이지)의 table(표)를 가져옴
+    JsonNode tablesNode = root
+        .path("images")
+        .get(0)
+        .path("tables");
+
+    int index = 0;
+
+    if (tablesNode.isArray()) {
+      for (JsonNode table : tablesNode) {
+        // 테이블 제목 추출: "표제부", "갑구", "을구"
+        String sectionName = table.path("title").path("inferText").asText().trim();
+
+        if (sectionName.isEmpty()) {
+          sectionName = fallbackNames.get(index);
+        }
+
+        index++;
+
+        List<String> inferTexts = new ArrayList<>();
+        JsonNode cells = table.path("cells");
+        if (cells.isArray()) {
+          for (JsonNode cell : cells) {
+            JsonNode cellTextLines = cell.path("cellTextLines");
+            if (cellTextLines.isArray()) {
+              for (JsonNode line : cellTextLines) {
+                JsonNode cellWords = line.path("cellWords");
+                if (cellWords.isArray()) {
+                  for (JsonNode word : cellWords) {
+                    String text = word.path("inferText").asText();
+                    inferTexts.add(text);
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        result.put(sectionName, inferTexts);
+      }
+    }
+    return OcrResponse.builder()
+        .sections(result)
+        .processingStatus(ProcessingStatus.OCR_COMPLETED)
+        .build();
+
   }
 
 }

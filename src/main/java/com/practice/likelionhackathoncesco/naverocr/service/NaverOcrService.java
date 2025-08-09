@@ -69,8 +69,8 @@ public class NaverOcrService {
 
       log.info("OCR 처리 완료: reportId={}", reportId);
 
-      // 추출된 텍스트 DB에 저장
-      analysisReport.updateOcrText(ocrResult.getSections().toString()); // toString()으로 저장
+      /*// 추출된 텍스트 DB에 저장
+      analysisReport.updateOcrText(ocrResult.getSections().toString()); // toString()으로 저장*/
 
       // DB에 진행 상태 필드 업데이트
       analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);

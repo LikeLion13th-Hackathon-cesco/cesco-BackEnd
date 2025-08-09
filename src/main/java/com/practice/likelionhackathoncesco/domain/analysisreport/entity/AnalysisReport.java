@@ -40,9 +40,9 @@ public class AnalysisReport extends BaseTimeEntity {
   // s3 경로 -> 추후에 s3key로 객체 url(웹 형태) 생성 (동적 생성 가능)
 
   // 분석 결과 관련
-  @Lob
+/*  @Lob
   @Column(name = "ocr_text")
-  private String ocrText; // 추출된 텍스트 저장
+  private String ocrText; // 추출된 텍스트 저장*/
 
   @Column(name = "safety_score")
   private Double safetyScore; // 안전 점수
@@ -65,9 +65,9 @@ public class AnalysisReport extends BaseTimeEntity {
   private User user;
 
   // 추출된 텍스트 DB에 저장
-  public void updateOcrText(String ocrText) {
+/*  public void updateOcrText(String ocrText) {
     this.ocrText = ocrText;
-  }
+  }*/
 
   // 진행 상태 DB 업데이트
   public void updateProcessingStatus(ProcessingStatus processingStatus) {

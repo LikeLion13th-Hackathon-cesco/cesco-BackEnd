@@ -148,7 +148,7 @@ public class NaverOcrService {
         .build();
   }
 
-  // OCR API 호출
+  // OCR API 호출하여 파싱된 데이터 반환
   private OcrResponse callOcrApi(OcrRequest request) throws IOException {
     try {
       // HTTP 헤더 설정 (공식 문서 -> X-OCR-SECRET / Content-Type 2가지 필드 필요
@@ -156,18 +156,17 @@ public class NaverOcrService {
       headers.setContentType(MediaType.APPLICATION_JSON);
       headers.set("X-OCR-SECRET", naverOcrConfig.getSecretKey());
 
-      // API 요청 실행 (OcrRequest DTO를 직접 전송)
+      // API 요청 엔티티 생성 (OcrRequest DTO와 헤더를 함께 포장해서 전송)
       HttpEntity<OcrRequest> requestEntity = new HttpEntity<>(request, headers);
 
       log.info("Naver OCR API 호출 시작: requestId={}", request.getRequestId());
 
       // 이 요청방식 대로 요청을 보내면 응답을 받을 수 있음 -> 응답을 생성
       ResponseEntity<String> response = restTemplate.exchange(
-          naverOcrConfig.getInvokeUrl(),
-          HttpMethod.POST,
+          naverOcrConfig.getInvokeUrl(), // api 엔드포인트
+          HttpMethod.POST, // http 메서드
           requestEntity, // 헤더와 생성한 요청
-          String.class,
-          new ParameterizedTypeReference<Map<String, List<String>>>() {}
+          String.class // 응답 타입
       );
 
       // 응답에서 텍스트 파싱 (응답을 정리한다고 생각) 하여 반환

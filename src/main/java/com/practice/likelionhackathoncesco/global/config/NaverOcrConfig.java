@@ -1,4 +1,4 @@
-package com.practice.likelionhackathoncesco.naverocr.global.config;
+package com.practice.likelionhackathoncesco.global.config;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;

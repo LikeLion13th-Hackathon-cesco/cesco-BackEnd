@@ -13,7 +13,7 @@ import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.naverocr.dto.ImageDto;
 import com.practice.likelionhackathoncesco.naverocr.dto.request.OcrRequest;
 import com.practice.likelionhackathoncesco.naverocr.dto.response.OcrResponse;
-import com.practice.likelionhackathoncesco.naverocr.global.config.NaverOcrConfig;
+import com.practice.likelionhackathoncesco.global.config.NaverOcrConfig;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -24,7 +24,6 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;

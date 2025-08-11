@@ -29,7 +29,7 @@ public class CodefClient {
       codef.setPublicKey(publicKey);
 
       log.info("CODEF API 토큰 발급 요청 시작");
-      String token = codef.requestNewToken(EasyCodefServiceType.DEMO);
+      String token = codef.requestNewToken(EasyCodefServiceType.API); // 이거 뭐로 해야할까..공식문서에서 본거 같은데 어딧거 봤는지 모르겠음
       log.info("CODEF API 토큰 발급 성공");
 
       return token;

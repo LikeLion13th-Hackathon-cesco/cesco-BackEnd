@@ -50,10 +50,7 @@ public class AccessTokenService {
       log.error("토큰 처리 중 오류: {}", e.getMessage(), e);
       throw new RuntimeException("토큰 처리 실패", e);
     }
-
-
   }
-
 
   private boolean isExpired(AccessToken token) {
     return token.getExpiresAt().isBefore(LocalDateTime.now().plusMinutes(5)); // 여유 5분 전 만료 판단

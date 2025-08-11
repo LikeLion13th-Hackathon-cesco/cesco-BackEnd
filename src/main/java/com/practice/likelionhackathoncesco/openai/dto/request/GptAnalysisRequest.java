@@ -21,7 +21,7 @@ public class GptAnalysisRequest {
   @Schema(description = "월세", example = "3000000")
   private Integer monthlyRent;  // 전세인 경우 0으로 설정 필요^^^^^^^^^^
 
-  @Schema(description = "공시가격", example = "450000000")    //4.5억
-  private Long officialPrice;   // 공시가격
+  //@Schema(description = "공시가격", example = "450000000")    //4.5억
+  //private Long officialPrice;   // 공시가격
 
 }

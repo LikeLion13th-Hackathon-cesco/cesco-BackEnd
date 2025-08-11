@@ -4,7 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
+import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
+import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
+import com.practice.likelionhackathoncesco.naverocr.dto.response.OcrResponse;
+import com.practice.likelionhackathoncesco.naverocr.service.NaverOcrService;
 import com.practice.likelionhackathoncesco.openai.dto.request.GptAnalysisRequest;
 import com.practice.likelionhackathoncesco.openai.dto.response.GptResponse;
 import com.practice.likelionhackathoncesco.openai.exception.GptErrorCode;
@@ -32,17 +37,30 @@ public class GptService {
 
   private final GptConfig gptConfig;
   private final ObjectMapper objectMapper;
+  private final NaverOcrService naverOcrService;
+  private final AnalysisReportRepository analysisReportRepository;
+
+
+  // 보증보험 심사에서 긍정적/부정적으로 심사될 수 있다는 느낌으로 + 주소 반환하게
 
   // 프롬프트 생성 메소드
   public List<Map<String, String>> createPrompt(GptAnalysisRequest gptAnalysisRequest, Long reportId) {
 
-    // 이 부분 나중에 DB에 OCR 추출된 택스트 추가되면 수정필요 reportId 써서 분석리포트 테이즐에서 가져와야 함!!!!!!!!!!!!!!!!
-    String text = null;
+    Integer officalPrice = 0;  // 이거 나중에 공시가격 api로 가져와야함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    // ocr로 추출한 택스트 바로 가져오기
+    OcrResponse ocrResponse = naverOcrService.extractText(reportId);
+    String text = ocrResponse.getOcrText();
 
     List<Map<String, String>> prompts = new ArrayList<>();
 
     // 전월세 여부 문자열로 변환
     String rentType = gptAnalysisRequest.getIsMonthlyRent() == 1 ? "월세" : "전세" ;
+
+    // 분석 상태 수정 -> GPT 설명 생성 중
+    AnalysisReport analysisReport = analysisReportRepository.findById(reportId)
+        .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.REPORT_NOT_FOUND));
+    analysisReport.updateProcessingStatus(ProcessingStatus.GPT_PROCESSING);
     
     // gpt에게 행동지침을 주는 역할의 프롬프트
     prompts.add(Map.of("role", "system", "content", "너는 부동산 등기부 등본을 분석해서 위험요소를 판단하는 전문가야."));
@@ -75,11 +93,12 @@ public class GptService {
         이제 아래 등기부등본 택스트를 분석해서 결과를 다음 JSON 형식으로 응답해줘:
         {
           "dangerNum":"점수총합" 예시 : "-2"
+          "address":"표제부에 있는 이 부동산의 주소"
           "summary":"거래에 대한 두줄 요약"
-          "analysis":"두줄 요약 판단의 이유 10줄 정도를 공인중개사처럼 부드러운 상담톤으로 해줘"
+          "safetyDescription":"두줄 요약 판단의 이유 10줄 정도를 공인중개사처럼 부드러운 상담톤으로 해줘"
           "dept":"말소되지 않은 근저당 금액의 총합"
         }
-        """, rentType, gptAnalysisRequest.getDeposit(), gptAnalysisRequest.getOfficialPrice()))); // 위치 어디로 바꾸지?
+        """, rentType, gptAnalysisRequest.getDeposit(), officalPrice))); // 위치 어디로 바꾸지?
 
     if(gptAnalysisRequest.getIsMonthlyRent() == 0) {  // 전세 계약의 경우
 
@@ -97,7 +116,7 @@ public class GptService {
           "insurance":"위 조건들을 바탕으로 이 부동산이 보증보험 가입이 가능할지 여부와 그 이유를 10줄 정도로 점수나 수치를 언급하지 않고 이해하기 쉽게 말하는 부드러운 상담톤으로 적어주고,
            만약 보증보험 가입이 가능하다면 임대인의 세금 체납과 신용은 고려하지 않은 결과이기에 더 정확한 결과는 직접 주택도시보증공사에서 자세한 상담이 필요하다는 말을 추가해줘"
         }
-        """,Math.round(gptAnalysisRequest.getOfficialPrice()*1.3)))); // 형변환 필요
+        """,Math.round(officalPrice*1.3)))); // 형변환 필요
       
     }else if(gptAnalysisRequest.getIsMonthlyRent() == 1) {  // 월세 계약인 경우
       prompts.add(Map.of("role", "user", "content", String.format("""
@@ -115,7 +134,7 @@ public class GptService {
            만약 보증보험 가입이 가능하다면 임대인의 세금 체납과 신용은 고려하지 않은 결과이기에 더 정확한 결과는 직접 주택도시보증공사에서 자세한 상담이 필요하다는 말을 추가해줘"
         }
         다음은 등기부등본 텍스트야:
-        """,Math.round(gptAnalysisRequest.getOfficialPrice()*1.3), gptAnalysisRequest.getMonthlyRent()*12*100/6+gptAnalysisRequest.getDeposit())));
+        """,Math.round(officalPrice*1.3), gptAnalysisRequest.getMonthlyRent()*12*100/6+gptAnalysisRequest.getDeposit())));
     }
     // gpt에게 추출된 택스트 입력
     prompts.add(Map.of("role", "user", "content", text));
@@ -126,7 +145,7 @@ public class GptService {
 
 
   // gpt-4o API 불러오는 메소드
-  public String callGptAPI(List<Map<String, String>> prompts, String requestId) {
+  public String callGptAPI(List<Map<String, String>> prompts, String reportId) {
 
     RestTemplate restTemplate = new RestTemplate();
 
@@ -145,12 +164,12 @@ public class GptService {
     HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 
     try{
-      log.info("[GptService] GPT API 요청 시도 : requestId={}",requestId);
+      log.info("[GptService] GPT API 요청 시도 : reportId={}",reportId);
       // POST 요청 
       ResponseEntity<Map> response = restTemplate.postForEntity(gptConfig.getUrl(), requestEntity, Map.class);
 
       if(response.getStatusCode() != HttpStatus.OK){  // 응답코드 200일때만 응답 꺼내기
-        log.error("[GptService] GPT API 응답 실패 : requestId={}, httpStatus={}", requestId, response.getStatusCode());
+        log.error("[GptService] GPT API 응답 실패 : reportId={}, httpStatus={}", reportId, response.getStatusCode());
         throw new CustomException(GptErrorCode.GPT_API_CALL_FAILED);
       }
 
@@ -159,26 +178,26 @@ public class GptService {
       List<Map<String, Object>> choices = (List<Map<String, Object>>) responseBody.get("choices");
 
       if(choices == null || choices.isEmpty()){
-        log.warn("[GptService] GPT API 응답 성공했으나 choices 변수 null : requestId={}",requestId);
+        log.warn("[GptService] GPT API 응답 성공했으나 choices 변수 null : reportId={}",reportId);
         throw new CustomException(GptErrorCode.GPT_EMPTY_RESPONSE);
       }
 
       // message 변수에 gpt 응답이 담김
       Map<String,Object> message = objectMapper.convertValue(choices.get(0).get("message"), new TypeReference<Map<String,Object>>(){});
       String content = (String) message.get("content"); // message안에는 role과 content가 있는데 이중 content가 진짜 답변!
-      log.info("[GptService] 응답 성공 : requestId={}, content={}", requestId, content);
+      log.info("[GptService] 응답 성공 : reportId={}, content={}", reportId, content);
       return content; // 이게 찐 gpt 응답 텍스트!
 
     }catch (HttpClientErrorException e) {
-      log.error("[GptService][{}] GPT API 클라이언트 오류: {}", requestId, e.getResponseBodyAsString());
+      log.error("[GptService] GPT API 클라이언트 오류: reportId={}, {}", reportId, e.getResponseBodyAsString());
       throw new CustomException(GptErrorCode.GPT_INVALID_PROMPT);
 
     } catch (ResourceAccessException e) {
-      log.error("[GptService][{}] GPT API 타임아웃 또는 접근 실패: {}", requestId, e.getMessage());
+      log.error("[GptService] GPT API 타임아웃 또는 접근 실패: reportId={}, {}", reportId, e.getMessage());
       throw new CustomException(GptErrorCode.GPT_TIMEOUT);
 
     } catch (Exception e) {
-      log.error("[GptService][{}] GPT API 호출 중 예외 발생: {}", requestId, e.getMessage());
+      log.error("[GptService] GPT API 호출 중 예외 발생: reportId={}, {}", reportId, e.getMessage());
       throw new CustomException(GptErrorCode.GPT_API_CALL_FAILED);
     }
   }
@@ -188,7 +207,7 @@ public class GptService {
   // gpt-4o API 응답 파싱해서 데이터 가공하는 메소드
   public GptResponse parseGptResponse(String content){
     try{
-      return objectMapper.readValue(content, GptResponse.class);    // 지정한 응답 형식대로 파싱해서 반환
+      return objectMapper.readValue(content, GptResponse.class);    // GptResponse 에서 지정한 응답 형식대로 자동 파싱해서 반환
     }catch (JsonProcessingException e){
       throw new CustomException(GptErrorCode.GPT_RESPONSE_PARSING_FAILED);
     }

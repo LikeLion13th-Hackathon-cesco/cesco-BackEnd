@@ -76,7 +76,7 @@ public class PostService {
   // 게시글 수정
   @Transactional
   public PostResponse updatePost(UpdatePostRequest updatePostRequest, Long postId) {
-    log.info("[PostService] 후기 수정 시도 : postId={}, newContent={}",
+    log.info("[PostService] 게시글 수정 시도 : postId={}, newContent={}",
         postId, updatePostRequest.getContent());
 
     if (updatePostRequest.getContent() == null || updatePostRequest.getContent().isBlank()) {

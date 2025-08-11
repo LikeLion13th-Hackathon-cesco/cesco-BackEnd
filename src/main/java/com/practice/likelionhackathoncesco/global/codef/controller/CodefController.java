@@ -3,8 +3,6 @@ package com.practice.likelionhackathoncesco.global.codef.controller;
 import com.practice.likelionhackathoncesco.global.codef.dto.response.CodefResponse;
 import com.practice.likelionhackathoncesco.global.codef.service.AccessTokenService;
 import com.practice.likelionhackathoncesco.global.codef.service.CallCodefApi;
-import com.practice.likelionhackathoncesco.global.codef.service.CodefClient;
-import com.practice.likelionhackathoncesco.naverocr.dto.response.OcrResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

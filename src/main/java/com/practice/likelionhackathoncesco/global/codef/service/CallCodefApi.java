@@ -37,6 +37,7 @@ public class CallCodefApi {
   @Value("${CODEF_ENDPOINT}")
   private String url;
 
+  // api 호출하여 공시가격 파싱
   public CodefResponse extractPrice(Long reportId) {
     AnalysisReport analysisReport = analysisReportRepository.findById(reportId)
         .orElseThrow(() -> new CustomException(S3ErrorCode.FILE_NOT_FOUND));
@@ -66,7 +67,7 @@ public class CallCodefApi {
   // CODEF API 호출하여 파싱된 데이터 반환
   public CodefResponse callCodefApi(CodefRequest codefRequest) throws IOException {
 
-    // 생성한 엑세스를 헤더에 포함하기 위하여 저장
+    // 엑세스 토큰을 생성한 후 헤더에 포함하기 위하여 저장
     String accessToken = accessTokenService.getValidToken();
 
     try{

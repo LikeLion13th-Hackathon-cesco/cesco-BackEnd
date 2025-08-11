@@ -1,11 +1,16 @@
 package com.practice.likelionhackathoncesco.domain.analysisreport.controller;
 
+import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.AnalysisReportResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.FileUploadResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
+import com.practice.likelionhackathoncesco.domain.analysisreport.service.AnalysisFlowService;
 import com.practice.likelionhackathoncesco.domain.analysisreport.service.AnalysisReportService;
 import com.practice.likelionhackathoncesco.global.response.BaseResponse;
+import com.practice.likelionhackathoncesco.openai.dto.request.GptAnalysisRequest;
+import com.practice.likelionhackathoncesco.openai.dto.response.GptResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +32,18 @@ import org.springframework.web.multipart.MultipartFile;
 public class AnalysisReportController {
 
   private final AnalysisReportService analysisReportService;
+  private final AnalysisFlowService analysisFlowService;
+
+  // 안전지수, 지피티 분석 설명 반환하는 api -> 단, s3 url 가지고 파일 객체 생성해야함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  @Operation(summary = "등기부등본 분석 결과 API", description = "분석리포트 페이지에 결과 반환")
+  @PostMapping(value = "/reports/{reportId}")
+  public ResponseEntity<BaseResponse<AnalysisReportResponse>> getAnalysisReport(
+      @Parameter(description = "gpt-4o 분석 요청 내용") @PathVariable GptAnalysisRequest gptAnalysisRequest,
+      @Parameter(description = "조회할 분석리포트 ID") @PathVariable Long reportId){
+    AnalysisReportResponse analysisReportResponse = analysisFlowService.processAnalysisReport(reportId, gptAnalysisRequest);
+    return ResponseEntity.ok(BaseResponse.success("분석리포트 결과 반환 완료",analysisReportResponse));
+  }
+
 
   @Operation(summary = "등기부등본 업로드 API", description = "등기부등본 문서를 업로드하고 문서 원본이름과 상태를 리턴하는 API")
   @PostMapping(value = "/file-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

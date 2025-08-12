@@ -98,8 +98,9 @@ public class AnalysisReportService {
   // S3에 업로드된 파일 전체 조회 (S3 Url 반환)
   public List<String> getAllS3Files(PathName pathName) {
     String prefix = switch (pathName) {
-      case PROPERTYREGISTRY ->s3Config.getDocumentsPath(); // 버킷 내 등기부등본 폴더구조 선택
-      case FRAUD -> s3Config.getFraudPath(); // 버킷 내 신고 관련 폴더구조 선택
+      case PROPERTYREGISTRY ->s3Config.getPropertyRegistryPath(); // 버킷 내 등기부등본 폴더구조 선택
+      case COMPLAINT -> s3Config.getComplaintPath(); // 버킷 내 고소증 관련 폴더구조 선택
+      case FRAUDREPORT -> s3Config.getFraudReportPath(); // 버킷 내 신고 등기부등본 관련 폴더구조 선택
     };
 
     log.info(">>>> S3 prefix: {}", prefix);
@@ -136,8 +137,9 @@ public class AnalysisReportService {
   // S3 파일 경로 생성 (여기서 keyName은 {PathName/원본파일 이름})
   public String createS3Key(PathName pathName, String originalFilename) {
     String basePath = switch (pathName) {
-      case PROPERTYREGISTRY ->s3Config.getDocumentsPath(); // 버킷 내 등기부등본 폴더구조 선택
-      case FRAUD -> s3Config.getFraudPath(); // 버킷 내 신고 관련 폴더구조 선택
+      case PROPERTYREGISTRY ->s3Config.getPropertyRegistryPath(); // 버킷 내 등기부등본 폴더구조 선택
+      case COMPLAINT -> s3Config.getComplaintPath(); // 버킷 내 고소증 관련 폴더구조 선택
+      case FRAUDREPORT -> s3Config.getFraudReportPath(); // 버킷 내 신고 등기부등본 관련 폴더구조 선택
     };
 
     String uuid = UUID.randomUUID().toString(); // key 값을 식별 할 uuid 문자열 생성

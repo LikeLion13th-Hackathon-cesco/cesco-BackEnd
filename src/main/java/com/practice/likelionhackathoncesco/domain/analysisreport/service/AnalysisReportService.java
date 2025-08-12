@@ -37,8 +37,6 @@ public class AnalysisReportService {
   // 문서 업로드
   public FileUploadResponse uploadDocuments(PathName pathName, MultipartFile file)
   {
-
-
     AnalysisReport savedReport = uploadFile(pathName, file);
 
     return FileUploadResponse.builder()

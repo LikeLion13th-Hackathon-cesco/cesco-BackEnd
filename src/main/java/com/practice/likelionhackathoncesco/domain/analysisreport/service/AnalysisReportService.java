@@ -12,6 +12,7 @@ import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Processi
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
 import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
+import com.practice.likelionhackathoncesco.domain.user.exception.UserErrorCode;
 import com.practice.likelionhackathoncesco.domain.user.repository.UserRepository;
 import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
@@ -52,7 +53,7 @@ public class AnalysisReportService {
   public AnalysisReport uploadFile(PathName pathName, MultipartFile file) {
 
     User user = userRepository.findByUsername("cesco")
-        .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.USER_NOT_FOUND));
+        .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
     validateFile(file); // 파일 유효성 검사
 

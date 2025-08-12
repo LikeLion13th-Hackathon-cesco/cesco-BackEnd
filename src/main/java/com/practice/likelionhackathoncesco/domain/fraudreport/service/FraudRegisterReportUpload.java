@@ -4,11 +4,12 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.FileUploadResponse;
+
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
+import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.RegisterResponse;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
@@ -22,20 +23,20 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class FraudReportService { // 사기 신고 서비스 로직
+public class FraudRegisterReportService { // 사기 신고 서비스 로직
 
   private final AmazonS3 amazonS3; // AWS SDK에서 제공하는 S3 클라이언트 객체
   private final S3Config s3Config; // 버킷 이름과 경로 등 설정 정보
 
   // 문서 업로드
-  public FileUploadResponse uploadDocuments(PathName pathName, MultipartFile file)
+  public RegisterResponse uploadDocuments(PathName pathName, MultipartFile file)
   {
     AnalysisReport savedReport = uploadFile(pathName, file);
 
-    return FileUploadResponse.builder()
-        .reportId(savedReport.getReportId())
+    return RegisterResponse.builder()
+        .fraudRegisterReportId(savedReport.getReportId())
         .fileName(file.getOriginalFilename())
-        .processingStatus(savedReport.getProcessingStatus()) // 엔티티 생성 시 업로드 상태로 생성
+        .reportStatus(savedReport.) // 신고 상태
         .build();
 
   }

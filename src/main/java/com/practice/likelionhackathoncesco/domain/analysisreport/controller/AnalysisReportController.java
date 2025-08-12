@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,7 +39,7 @@ public class AnalysisReportController {
   @Operation(summary = "등기부등본 분석 결과 API", description = "분석리포트 페이지에 결과 반환")
   @PostMapping(value = "/reports/{reportId}")
   public ResponseEntity<BaseResponse<AnalysisReportResponse>> getAnalysisReport(
-      @Parameter(description = "gpt-4o 분석 요청 내용") @PathVariable GptAnalysisRequest gptAnalysisRequest,
+      @Parameter(description = "gpt-4o 분석 요청 내용") @RequestBody GptAnalysisRequest gptAnalysisRequest,
       @Parameter(description = "조회할 분석리포트 ID") @PathVariable Long reportId){
     AnalysisReportResponse analysisReportResponse = analysisFlowService.processAnalysisReport(reportId, gptAnalysisRequest);
     return ResponseEntity.ok(BaseResponse.success("분석리포트 결과 반환 완료",analysisReportResponse));

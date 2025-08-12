@@ -13,6 +13,7 @@ import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.naverocr.dto.ImageDto;
 import com.practice.likelionhackathoncesco.naverocr.dto.request.OcrRequest;
 import com.practice.likelionhackathoncesco.naverocr.dto.response.OcrResponse;
+import com.practice.likelionhackathoncesco.naverocr.dto.response.RoadAddress;
 import com.practice.likelionhackathoncesco.naverocr.global.config.NaverOcrConfig;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,7 +25,6 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -70,17 +70,11 @@ public class NaverOcrService {
 
         log.info("OCR 처리 완료: reportId={}", reportId);
 
-      /*// 추출된 텍스트 DB에 저장
-      analysisReport.updateOcrText(ocrResult.getSections().toString()); // toString()으로 저장*/
-
         // DB에 진행 상태 필드 업데이트
         analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);
         analysisReportRepository.save(analysisReport);
 
-        return OcrResponse.builder()
-            .sections(ocrResult.getSections())
-            .processingStatus(ProcessingStatus.OCR_COMPLETED)
-            .build();
+        return ocrResult;
 
       } catch (CustomException e) {
         throw new CustomException(S3ErrorCode.FILE_DOWNLOAD_FAIL);
@@ -184,6 +178,7 @@ public class NaverOcrService {
 
     Map<String, List<String>> result = new LinkedHashMap<>(); // 표제부, 갑구, 을구 순서 보장
     List<String> fallbackNames = List.of("표제부", "갑구", "을구");
+    RoadAddress roadAddress = null; // 도로명주소 객체
 
     // 응답 바디의 image 배열의 첫번째 요소(ocr한 첫 페이지)의 table(표)를 가져옴
     JsonNode tablesNode = root
@@ -224,13 +219,80 @@ public class NaverOcrService {
         }
 
         result.put(sectionName, inferTexts);
+
+        if ("표제부".equals(sectionName)) {
+          roadAddress = extractRoadAddress(inferTexts);
+        }
       }
     }
     return OcrResponse.builder()
         .sections(result)
+        .roadAddress(roadAddress)
         .processingStatus(ProcessingStatus.OCR_COMPLETED)
         .build();
 
+  }
+
+  private RoadAddress extractRoadAddress(List<String> inferTexts) {
+    log.info("도로명주소 추출 시작, 총 텍스트 개수: {}", inferTexts.size());
+
+    int roadAddressIndex = -1;
+    for (int i = 0; i < inferTexts.size(); i++) {
+      String text = inferTexts.get(i).trim();
+      log.info("검사중인 텍스트: '{}'", text);
+
+      // 여러 패턴으로 매칭 시도
+      if (text.contains("도로명주소") ||
+          text.contains("[도로명주소]") ||
+          text.equals("[도로명주소]")) {
+        roadAddressIndex = i;
+        log.info("도로명주소 키워드 발견! 인덱스: {}, 텍스트: '{}'", i, text);
+        break;
+      }
+    }
+
+    if (roadAddressIndex == -1) {
+      log.warn("도로명주소 키워드를 찾을 수 없습니다");
+      return null; // 도로명주소를 찾을 수 없음
+    }
+
+    try {
+      // 인덱스 범위 체크
+      if (roadAddressIndex + 4 >= inferTexts.size()) {
+        log.warn("도로명주소 다음 요소들이 부족합니다. 필요: {}, 실제: {}",
+            roadAddressIndex + 4, inferTexts.size() - 1);
+        return null;
+      }
+
+      // [도로명주소] 다음 4개 요소가 시도, 시군구, 도로명, 건물번호
+      String sido = inferTexts.get(roadAddressIndex + 1).trim();
+      String sigungu = inferTexts.get(roadAddressIndex + 2).trim();
+      String roadName = inferTexts.get(roadAddressIndex + 3).trim();
+      String buildingNumber = inferTexts.get(roadAddressIndex + 4).trim();
+
+      log.info("추출된 도로명주소 정보 - 시도: '{}', 시군구: '{}', 도로명: '{}', 건물번호: '{}'",
+          sido, sigungu, roadName, buildingNumber);
+
+      // 빈 값 체크
+      if (sido.isEmpty() || sigungu.isEmpty() || roadName.isEmpty() || buildingNumber.isEmpty()) {
+        log.warn("도로명주소 정보 중 빈 값이 있습니다");
+        return null;
+      }
+
+      RoadAddress result = RoadAddress.builder()
+          .sido(sido)
+          .sigungu(sigungu)
+          .roadName(roadName)
+          .buildingNumber(buildingNumber)
+          .build();
+
+      log.info("도로명주소 추출 성공: {}", result);
+      return result;
+
+    } catch (IndexOutOfBoundsException e) {
+      // 도로명주소 정보가 불완전한 경우
+      return null;
+    }
   }
 
 }

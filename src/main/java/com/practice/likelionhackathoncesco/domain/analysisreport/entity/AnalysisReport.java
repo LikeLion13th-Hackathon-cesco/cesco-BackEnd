@@ -70,6 +70,11 @@ public class AnalysisReport extends BaseTimeEntity {
   @JoinColumn(name = "userId")
   private User user;
 
+  // 추출된 텍스트 DB에 저장
+/*  public void updateOcrText(String ocrText) {
+    this.ocrText = ocrText;
+  }*/
+
   // 진행 상태 DB 업데이트
   public void updateProcessingStatus(ProcessingStatus processingStatus) {
     this.processingStatus = processingStatus;

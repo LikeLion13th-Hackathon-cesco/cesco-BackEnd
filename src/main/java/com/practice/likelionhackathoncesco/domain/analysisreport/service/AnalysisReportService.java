@@ -158,27 +158,6 @@ public class AnalysisReportService {
     return filename.substring(filename.lastIndexOf("."));
   }
 
-  // 업로드한 파일 목록 전체 조회
-  public List<String> getAllFiles(PathName pathName) {
-    String prefix = switch (pathName) {
-      case PROPERTYREGISTRY -> s3Config.getDocumentsPath(); // 버킷 내 등기부등본 폴더구조 선택
-      case FRAUD -> s3Config.getFraudPath(); // 버킷 내 신고 관련 폴더구조 선택
-    };
-
-    try {
-      return amazonS3
-          .listObjectsV2(
-              new ListObjectsV2Request().withBucketName(s3Config.getBucket()).withPrefix(prefix))
-          .getObjectSummaries()
-          .stream()
-          .map(obj -> amazonS3.getUrl(s3Config.getBucket(), obj.getKey()).toString())
-          .collect(Collectors.toList());
-    } catch (Exception e) {
-      log.error("S3 파일 목록 조회 중 오류 발생", e);
-      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
-    }
-  }
-
   // 파일이 s3에 존재하는지 s3key 값으로 확인
   private void existFile(String keyName) {
     if (!amazonS3.doesObjectExist(s3Config.getBucket(), keyName)) {
@@ -240,7 +219,7 @@ public class AnalysisReportService {
     // 분석 상태 수정 -> 위험도 분석 중
     AnalysisReport analysisReport = analysisReportRepository.findById(reportId)
         .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.REPORT_NOT_FOUND));
-    analysisReport.updateProcessingStatus(ProcessingStatus.ANALYZING); 
+    analysisReport.updateProcessingStatus(ProcessingStatus.ANALYZING);
 
     Integer dangerNum = gptResponse.getDangerNum(); // 위험수치의 합
     Integer dept = gptResponse.getDept();

@@ -3,6 +3,7 @@ package com.practice.likelionhackathoncesco.naverocr.service;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.S3ErrorCode;
@@ -12,12 +13,15 @@ import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.naverocr.dto.ImageDto;
 import com.practice.likelionhackathoncesco.naverocr.dto.request.OcrRequest;
 import com.practice.likelionhackathoncesco.naverocr.dto.response.OcrResponse;
-import com.practice.likelionhackathoncesco.naverocr.exception.OcrErrorCode;
+import com.practice.likelionhackathoncesco.naverocr.dto.response.RoadAddress;
 import com.practice.likelionhackathoncesco.naverocr.global.config.NaverOcrConfig;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -51,34 +55,34 @@ public class NaverOcrService {
       log.info("OCR 처리 시작: s3key={}", analysisReport.getS3Key());
 
       // s3에서 파일 다운로드
-      downloadPdfFromS3(reportId);
+      // S3ObjectInputStream은 네트워크 연결을 유지하는 스트림이기 때문에 사용 후 닫아야 함(try-with-resource구문)
+      try(InputStream pdfStream = downloadPdfFromS3(reportId)) {
 
-      // OCR API 요청 생성
-      OcrRequest requestDto = createOcrRequest(analysisReport.getS3Key(), analysisReport.getFileName());
+        // OCR API 요청 생성
+        OcrRequest requestDto = createOcrRequest(analysisReport.getS3Key(), analysisReport.getFileName());
 
-      // DB에 진행 상태 필드 업데이트
-      analysisReport.updateProcessingStatus(ProcessingStatus.OCR_PROCESSING);
-      analysisReportRepository.save(analysisReport);
+        // DB에 진행 상태 필드 업데이트
+        analysisReport.updateProcessingStatus(ProcessingStatus.OCR_PROCESSING);
+        analysisReportRepository.save(analysisReport);
 
-      // Ocr API 호출
-      String ocrResult = callOcrApi(requestDto);
+        // Ocr API 호출
+        OcrResponse ocrResult = callOcrApi(requestDto);
 
-      log.info("OCR 처리 완료: reportId={}, 텍스트 길이={}", reportId, ocrResult.length());
+        log.info("OCR 처리 완료: reportId={}", reportId);
 
-      // DB에 진행 상태 필드 업데이트
-      analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);
-      analysisReportRepository.save(analysisReport);
+        // DB에 진행 상태 필드 업데이트
+        analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);
+        analysisReportRepository.save(analysisReport);
 
-      return OcrResponse.builder()
-          .s3Key(analysisReport.getS3Key())
-          .ocrText(ocrResult)
-          .processingStatus(ProcessingStatus.OCR_COMPLETED)
-          .build();
+        return ocrResult;
+
+      } catch (CustomException e) {
+        throw new CustomException(S3ErrorCode.FILE_DOWNLOAD_FAIL);
+      }
 
     } catch (CustomException e) { // 추후에 ocrErrorCode 작성 후 예외 던지기
       log.error("OCR 처리 중 예상치 못한 오류: s3key={}", analysisReport.getS3Key(), e);
       return OcrResponse.builder()
-          .s3Key(analysisReport.getS3Key()) // 파일의 s3key 반환
           .processingStatus(ProcessingStatus.FAILED) // ocr 실패
           .build();
     } catch (IOException e) { // callOcrApi()에서 IOException을 던지고 있기 때문에 받아서 다시 던져야 함
@@ -138,33 +142,156 @@ public class NaverOcrService {
         .build();
   }
 
-  // OCR API 호출
-  private String callOcrApi(OcrRequest request) throws IOException {
+  // OCR API 호출하여 파싱된 데이터 반환
+  private OcrResponse callOcrApi(OcrRequest request) throws IOException {
     try {
       // HTTP 헤더 설정 (공식 문서 -> X-OCR-SECRET / Content-Type 2가지 필드 필요
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
       headers.set("X-OCR-SECRET", naverOcrConfig.getSecretKey());
 
-      // API 요청 실행 (OcrRequest DTO를 직접 전송)
+      // API 요청 엔티티 생성 (OcrRequest DTO와 헤더를 함께 포장해서 전송)
       HttpEntity<OcrRequest> requestEntity = new HttpEntity<>(request, headers);
 
       log.info("Naver OCR API 호출 시작: requestId={}", request.getRequestId());
 
-      // 이 요청방식 대로 요청을 보내면 응답을 받을 수 있음
+      // 이 요청방식 대로 요청을 보내면 응답을 받을 수 있음 -> 응답을 생성
       ResponseEntity<String> response = restTemplate.exchange(
-          naverOcrConfig.getInvokeUrl(),
-          HttpMethod.POST,
+          naverOcrConfig.getInvokeUrl(), // api 엔드포인트
+          HttpMethod.POST, // http 메서드
           requestEntity, // 헤더와 생성한 요청
-          String.class
+          String.class // 응답 타입
       );
 
-      // 응답에서 텍스트 파싱 (응답을 정리한다고 생각) -> 추후 확장 !!! 응답 정리할 필요 없음
-      return response.getBody(); // 응답의 바디만 리턴 (공식문서 기준 응답 형태로 제공됨)
+      // 응답에서 텍스트 파싱 (응답을 정리한다고 생각) 하여 반환
+      return parseResponse(response);
 
     } catch (Exception e) {
       log.error("OCR API 호출 실패", e);
       throw new IOException("OCR API 호출 실패", e);
+    }
+  }
+
+  public OcrResponse parseResponse(ResponseEntity<String> response) throws IOException {
+    ObjectMapper objectMapper = new ObjectMapper();
+    JsonNode root = objectMapper.readTree(response.getBody()); // 응답 바디를 트리 구조로 파싱해서 jsonNode 객체로 생성
+
+    Map<String, List<String>> result = new LinkedHashMap<>(); // 표제부, 갑구, 을구 순서 보장
+    List<String> fallbackNames = List.of("표제부", "갑구", "을구");
+    RoadAddress roadAddress = null; // 도로명주소 객체
+
+    // 응답 바디의 image 배열의 첫번째 요소(ocr한 첫 페이지)의 table(표)를 가져옴
+    JsonNode tablesNode = root
+        .path("images")
+        .get(0)
+        .path("tables");
+
+    int index = 0;
+
+    if (tablesNode.isArray()) {
+      for (JsonNode table : tablesNode) {
+        // 테이블 제목 추출: "표제부", "갑구", "을구"
+        String sectionName = table.path("title").path("inferText").asText().trim();
+
+        if (sectionName.isEmpty()) {
+          sectionName = fallbackNames.get(index);
+        }
+
+        index++;
+
+        List<String> inferTexts = new ArrayList<>();
+        JsonNode cells = table.path("cells");
+        if (cells.isArray()) {
+          for (JsonNode cell : cells) {
+            JsonNode cellTextLines = cell.path("cellTextLines");
+            if (cellTextLines.isArray()) {
+              for (JsonNode line : cellTextLines) {
+                JsonNode cellWords = line.path("cellWords");
+                if (cellWords.isArray()) {
+                  for (JsonNode word : cellWords) {
+                    String text = word.path("inferText").asText();
+                    inferTexts.add(text);
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        result.put(sectionName, inferTexts);
+
+        if ("표제부".equals(sectionName)) {
+          roadAddress = extractRoadAddress(inferTexts);
+        }
+      }
+    }
+    return OcrResponse.builder()
+        .sections(result)
+        .roadAddress(roadAddress)
+        .processingStatus(ProcessingStatus.OCR_COMPLETED)
+        .build();
+
+  }
+
+  private RoadAddress extractRoadAddress(List<String> inferTexts) {
+    log.info("도로명주소 추출 시작, 총 텍스트 개수: {}", inferTexts.size());
+
+    int roadAddressIndex = -1;
+    for (int i = 0; i < inferTexts.size(); i++) {
+      String text = inferTexts.get(i).trim();
+      log.info("검사중인 텍스트: '{}'", text);
+
+      // 여러 패턴으로 매칭 시도
+      if (text.contains("도로명주소") ||
+          text.contains("[도로명주소]") ||
+          text.equals("[도로명주소]")) {
+        roadAddressIndex = i;
+        log.info("도로명주소 키워드 발견! 인덱스: {}, 텍스트: '{}'", i, text);
+        break;
+      }
+    }
+
+    if (roadAddressIndex == -1) {
+      log.warn("도로명주소 키워드를 찾을 수 없습니다");
+      return null; // 도로명주소를 찾을 수 없음
+    }
+
+    try {
+      // 인덱스 범위 체크
+      if (roadAddressIndex + 4 >= inferTexts.size()) {
+        log.warn("도로명주소 다음 요소들이 부족합니다. 필요: {}, 실제: {}",
+            roadAddressIndex + 4, inferTexts.size() - 1);
+        return null;
+      }
+
+      // [도로명주소] 다음 4개 요소가 시도, 시군구, 도로명, 건물번호
+      String sido = inferTexts.get(roadAddressIndex + 1).trim();
+      String sigungu = inferTexts.get(roadAddressIndex + 2).trim();
+      String roadName = inferTexts.get(roadAddressIndex + 3).trim();
+      String buildingNumber = inferTexts.get(roadAddressIndex + 4).trim();
+
+      log.info("추출된 도로명주소 정보 - 시도: '{}', 시군구: '{}', 도로명: '{}', 건물번호: '{}'",
+          sido, sigungu, roadName, buildingNumber);
+
+      // 빈 값 체크
+      if (sido.isEmpty() || sigungu.isEmpty() || roadName.isEmpty() || buildingNumber.isEmpty()) {
+        log.warn("도로명주소 정보 중 빈 값이 있습니다");
+        return null;
+      }
+
+      RoadAddress result = RoadAddress.builder()
+          .sido(sido)
+          .sigungu(sigungu)
+          .roadName(roadName)
+          .buildingNumber(buildingNumber)
+          .build();
+
+      log.info("도로명주소 추출 성공: {}", result);
+      return result;
+
+    } catch (IndexOutOfBoundsException e) {
+      // 도로명주소 정보가 불완전한 경우
+      return null;
     }
   }
 

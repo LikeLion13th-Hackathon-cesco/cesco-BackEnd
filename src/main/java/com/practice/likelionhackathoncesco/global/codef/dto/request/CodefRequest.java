@@ -11,29 +11,33 @@ import lombok.Setter;
 @Builder
 public class CodefRequest {
 
-  @Schema(description = "기관 코드", example = "0007(고정값)")
+  @Schema(description = "기관 코드", example = "0004(고정값)")
   @JsonProperty("organization")
   private String organization;
 
   @Schema(description = "주소 검색 구분", example = "'0':지번검색 / '1':도로명검색")
-  @JsonProperty("addrSearchType")
-  private String addrSearchType; //
+  @JsonProperty("inquiryType")
+  private String inquiryType;
+
+  @Schema(description = "주소_도로명", example = "서초대로")
+  @JsonProperty("addrRoadName")
+  private String addrRoadName;
+
+  @Schema(description = "주소_건물번호(도로명)", example = "56")
+  @JsonProperty("addrBuildingNumber")
+  private String addrBuildingNumber;
 
   @Schema(description = "주소_시/도", example = "11(서울특별시)")
   @JsonProperty("addrSido")
   private String addrSido;
 
   @Schema(description = "주소_시군구", example = "11650(서초구)")
-  @JsonProperty("addrSiGunGu")
-  private String addrSiGunGu;
+  @JsonProperty("addrSigungu")
+  private String addrSigungu;
 
-  @Schema(description = "주소_도로명", example = "서초대로")
-  @JsonProperty("addrRoadName")
-  private String addrRoadName;
-
-  @Schema(description = "주소_건물번호", example = "219")
-  @JsonProperty("addrBuildingNumber")
-  private String addrBuildingNumber;
+  @Schema(description = "층", example = "2층")
+  @JsonProperty("floor")
+  private String floor;
 
   @Schema(description = "동", example = "101동")
   @JsonProperty("dong")

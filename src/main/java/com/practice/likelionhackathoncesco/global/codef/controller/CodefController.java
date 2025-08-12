@@ -1,5 +1,6 @@
 package com.practice.likelionhackathoncesco.global.codef.controller;
 
+import com.practice.likelionhackathoncesco.global.codef.dto.response.CodefOfficeResponse;
 import com.practice.likelionhackathoncesco.global.codef.dto.response.CodefResponse;
 import com.practice.likelionhackathoncesco.global.codef.service.AccessTokenService;
 import com.practice.likelionhackathoncesco.global.codef.service.CallCodefApi;
@@ -29,8 +30,8 @@ public class CodefController {
 
   @Operation(summary = "공동주택 공기가격 반환 API", description = "도로명 주소에 따른 공동주택 공기가격을 반환하는 API")
   @PostMapping("/house-price/{reportId}")
-  public ResponseEntity<CodefResponse> textCodef(@PathVariable Long reportId) {
-    CodefResponse response = callCodefApi.extractPrice(reportId);
+  public ResponseEntity<CodefOfficeResponse> textCodef(@PathVariable Long reportId) {
+    CodefOfficeResponse response = callCodefApi.extractPrice(reportId);
     return ResponseEntity.ok(response);
   }
 

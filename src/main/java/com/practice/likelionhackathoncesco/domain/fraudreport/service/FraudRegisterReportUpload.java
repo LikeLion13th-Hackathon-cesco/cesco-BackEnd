@@ -82,7 +82,7 @@ public class FraudRegisterReportUpload { // 사기 등기부등본 업로드 서
     }
 
     // 등기부 등본 엔티티 생성
-    FraudRegisterReport analysisReport = FraudRegisterReport.builder()
+    FraudRegisterReport fraudRegisterReport = FraudRegisterReport.builder()
         .fileName(originalFilename)
         .s3Key(KeyName)
         .reportStatus(ReportStatus.UPLOADCOMPLETED)
@@ -90,7 +90,7 @@ public class FraudRegisterReportUpload { // 사기 등기부등본 업로드 서
         .build();
 
     // DB 저장
-    FraudRegisterReport savedReport = fraudRegisterReportRepository.save(analysisReport);
+    FraudRegisterReport savedReport = fraudRegisterReportRepository.save(fraudRegisterReport);
     log.info("DB 저장 성공: reportId={}, fileName={}", savedReport.getFraudRegisterReportId(), originalFilename);
 
     return savedReport; // 엔티티 반환

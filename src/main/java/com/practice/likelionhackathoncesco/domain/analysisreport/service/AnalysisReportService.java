@@ -221,8 +221,8 @@ public class AnalysisReportService {
         .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.REPORT_NOT_FOUND));
     analysisReport.updateProcessingStatus(ProcessingStatus.ANALYZING);
 
-    Integer dangerNum = gptResponse.getDangerNum(); // 위험수치의 합
-    Integer dept = gptResponse.getDept();
+    Integer dangerNum = Integer.valueOf(gptResponse.getDangerNum()); // 위험수치의 합
+    Integer dept = Integer.valueOf(gptResponse.getDept().replaceAll(",",""));
     Integer officalPrice = 0;  // 해당 매물의 공시가격 나중에 가져와서 수정해야함!!!!!!!!!!!!!!!!!!!
     Double safetyScore;
 

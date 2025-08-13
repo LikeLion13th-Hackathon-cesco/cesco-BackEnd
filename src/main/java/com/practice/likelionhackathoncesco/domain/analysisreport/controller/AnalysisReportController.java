@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,7 +39,7 @@ public class AnalysisReportController {
 
   // 안전지수, 지피티 분석 설명 반환하는 api -> 단, s3 url 가지고 파일 객체 생성해야함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   @Operation(summary = "등기부등본 분석 결과 API", description = "분석리포트 페이지에 결과 반환")
-  @PostMapping(value = "/reports/{reportId}")
+  @PutMapping(value = "/reports/{reportId}")
   public ResponseEntity<BaseResponse<AnalysisReportResponse>> getAnalysisReport(
       @Parameter(description = "gpt-4o 분석 요청 내용") @RequestBody GptAnalysisRequest gptAnalysisRequest,
       @Parameter(description = "조회할 분석리포트 ID") @PathVariable Long reportId){

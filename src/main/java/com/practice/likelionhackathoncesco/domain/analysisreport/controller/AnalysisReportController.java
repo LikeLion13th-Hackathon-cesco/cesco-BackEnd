@@ -31,7 +31,7 @@ public class AnalysisReportController {
 
   @Operation(summary = "등기부등본 업로드 API", description = "등기부등본 문서를 업로드하고 문서 원본이름과 상태를 리턴하는 API")
   @PostMapping(value = "/file-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ResponseEntity<BaseResponse<FileUploadResponse>> uploadImage(
+  public ResponseEntity<BaseResponse<FileUploadResponse>> uploadFile (
       @RequestParam MultipartFile file) {
     // 이 api에서는 등기부등본만 업로드 할 수 있음 (s3 PathName 고정)
     FileUploadResponse uploadResponse = analysisReportService.uploadDocuments(PathName.PROPERTYREGISTRY, file);

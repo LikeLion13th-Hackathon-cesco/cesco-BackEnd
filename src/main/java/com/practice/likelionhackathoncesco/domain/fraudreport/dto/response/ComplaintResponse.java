@@ -11,7 +11,7 @@ import lombok.Getter;
 public class ComplaintResponse { // 이미지 url 반환 필요 없음
 
   @Schema(description = "업로드한 고소장 Id")
-  private Long complaintId; // 고소장 고유 번호
+  private Long complaintReportId; // 고소장 고유 번호
 
   @Schema(description = "업로드한 사용자 id")
   private Long userId;

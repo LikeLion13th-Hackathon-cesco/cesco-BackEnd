@@ -53,6 +53,9 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-core'
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
 
+    // codef
+    implementation 'io.codef.api:easycodef-java:+'
+
 
 }
 

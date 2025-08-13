@@ -48,6 +48,7 @@ public class User extends BaseTimeEntity {
 
   // analysisReport 테이블의 user 필드와 연관 -> user는 analysisReport를 여러개 가짐
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @Builder.Default
   private List<AnalysisReport> reports = new ArrayList<>();
 
   // 결제 상태를 PAID로 바꾸고 결제 만료일을 한달 뒤로 저장

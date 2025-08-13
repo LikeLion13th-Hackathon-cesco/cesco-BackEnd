@@ -31,7 +31,7 @@ public class ComplaintReport extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long complaintId; // 고소장 고유 번호
+  private Long complaintReportId; // 고소장 고유 번호
 
   @Column(name = "file_name", nullable = false)
   private String fileName; // 업로드한 파일 이름

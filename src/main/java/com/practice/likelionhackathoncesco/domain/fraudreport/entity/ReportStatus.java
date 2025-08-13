@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 public enum ReportStatus {
 
+  @Schema(description = "신고 관련 문서 업로드 성공")
+  UPLOADCOMPLETED,
+
   @Schema(description = "신고 완료")
   REPORTCOMPLETED,
 

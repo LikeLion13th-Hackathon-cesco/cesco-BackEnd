@@ -5,12 +5,15 @@ import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
-import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
-import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
-import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.RegisterResponse;
+import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.FraudRegisterResponse;
+import com.practice.likelionhackathoncesco.domain.fraudreport.entity.FraudRegisterReport;
+import com.practice.likelionhackathoncesco.domain.fraudreport.entity.ReportStatus;
+import com.practice.likelionhackathoncesco.domain.fraudreport.repository.FraudRegisterReportRepository;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
+import com.practice.likelionhackathoncesco.domain.user.exception.UserErrorCode;
+import com.practice.likelionhackathoncesco.domain.user.repository.UserRepository;
 import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import java.util.UUID;
@@ -23,30 +26,34 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class FraudRegisterReportService { // 사기 신고 서비스 로직
+public class FraudRegisterReportUpload { // 사기 등기부등본 업로드 서비스 로직
 
   private final AmazonS3 amazonS3; // AWS SDK에서 제공하는 S3 클라이언트 객체
   private final S3Config s3Config; // 버킷 이름과 경로 등 설정 정보
+  private final UserRepository userRepository;
+  private final FraudRegisterReportRepository fraudRegisterReportRepository;
 
   // 문서 업로드
-  public RegisterResponse uploadDocuments(PathName pathName, MultipartFile file)
+  public FraudRegisterResponse uploadDocuments(PathName pathName, MultipartFile file)
   {
-    AnalysisReport savedReport = uploadFile(pathName, file);
+    FraudRegisterReport savedReport = uploadFile(pathName, file);
 
-    return RegisterResponse.builder()
-        .fraudRegisterReportId(savedReport.getReportId())
+    return FraudRegisterResponse.builder()
+        .fraudRegisterReportId(savedReport.getFraudRegisterReportId())
+        .userId(savedReport.getUser().getUserId())
+        //.correlationId(savedReport.getComplaintReport().getComplaintId())
         .fileName(file.getOriginalFilename())
-        .reportStatus(savedReport.) // 신고 상태
+        .reportStatus(savedReport.getReportStatus()) // 신고 상태
         .build();
 
   }
 
   // 파일을 S3에 업로드 하고 DB에 관련 정보 저장 후 엔티티 반환
   @Transactional
-  public AnalysisReport uploadFile(PathName pathName, MultipartFile file) {
+  public FraudRegisterReport uploadFile(PathName pathName, MultipartFile file) {
 
     User user = userRepository.findByUsername("cesco")
-        .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.USER_NOT_FOUND));
+        .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
     validateFile(file); // 파일 유효성 검사
 
@@ -75,16 +82,16 @@ public class FraudRegisterReportService { // 사기 신고 서비스 로직
     }
 
     // 등기부 등본 엔티티 생성
-    AnalysisReport analysisReport = AnalysisReport.builder()
+    FraudRegisterReport analysisReport = FraudRegisterReport.builder()
         .fileName(originalFilename)
         .s3Key(KeyName)
-        .processingStatus(ProcessingStatus.UPLOADED)
+        .reportStatus(ReportStatus.UPLOADCOMPLETED)
         .user(user)
         .build();
 
     // DB 저장
-    AnalysisReport savedReport = analysisReportRepository.save(analysisReport);
-    log.info("DB 저장 성공: reportId={}, fileName={}", savedReport.getReportId(), originalFilename);
+    FraudRegisterReport savedReport = fraudRegisterReportRepository.save(analysisReport);
+    log.info("DB 저장 성공: reportId={}, fileName={}", savedReport.getFraudRegisterReportId(), originalFilename);
 
     return savedReport; // 엔티티 반환
   }
@@ -138,7 +145,7 @@ public class FraudRegisterReportService { // 사기 신고 서비스 로직
   public Boolean deleteReport(Long reportId) {
 
     // DB에서 등기부등본 조회
-    AnalysisReport report = analysisReportRepository.findById(reportId)
+    FraudRegisterReport report = fraudRegisterReportRepository.findById(reportId)
         .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND));
 
     // S3에 파일이 존재하는지 s3key 값으로 확인
@@ -150,7 +157,7 @@ public class FraudRegisterReportService { // 사기 신고 서비스 로직
       log.info("S3 파일 삭제 성공: {}", report.getFileName());
 
       // DB에서 레코드 삭제
-      analysisReportRepository.delete(report);
+      fraudRegisterReportRepository.delete(report);
       log.info("DB 레코드 삭제 성공: reportId={}, fileName={}", reportId, report.getFileName());
 
       return true;

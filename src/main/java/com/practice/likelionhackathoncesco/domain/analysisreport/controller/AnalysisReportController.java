@@ -39,7 +39,7 @@ public class AnalysisReportController {
     return ResponseEntity.ok(BaseResponse.success("등기부등본 업로드에 성공했습니다.", uploadResponse));
   }
 
-  @Operation(summary = "등기부등본 파일 삭제 API", description = "X버튼을 눌러 업로드한 등기부등본 문서를 삭제")
+  @Operation(summary = "등기부등본 파일 삭제 API", description = "X버튼을 눌러 업로드한 등기부등본 문서를 삭제하는 API")
   @DeleteMapping("/reports/{reportId}")
   public ResponseEntity<BaseResponse<Boolean>> deleteReport(@PathVariable Long reportId) {
 

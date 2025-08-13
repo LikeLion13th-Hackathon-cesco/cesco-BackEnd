@@ -2,8 +2,11 @@ package com.practice.likelionhackathoncesco.domain.fraudreport.entity;
 
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.global.common.BaseTimeEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -35,6 +38,10 @@ public class ComplaintReport extends BaseTimeEntity {
 
   @Column(name = "s3_key", nullable = false)
   private String s3Key; // s3 객체 식별 키
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "report_status")
+  private ReportStatus reportStatus; // 신고 상태
 
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "fraud_register_report_id", unique = true) // unique 제약조건으로 1:1 보장

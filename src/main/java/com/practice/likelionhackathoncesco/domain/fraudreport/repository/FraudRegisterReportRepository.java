@@ -1,4 +1,8 @@
 package com.practice.likelionhackathoncesco.domain.fraudreport.repository;
 
-public interface FraudRegisterReportRepository {
+import com.practice.likelionhackathoncesco.domain.fraudreport.entity.FraudRegisterReport;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface FraudRegisterReportRepository extends JpaRepository<FraudRegisterReport, Long> {
+
 }

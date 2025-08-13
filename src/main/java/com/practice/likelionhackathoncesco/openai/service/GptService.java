@@ -44,13 +44,15 @@ public class GptService {
   // 보증보험 심사에서 긍정적/부정적으로 심사될 수 있다는 느낌으로 + 주소 반환하게
 
   // 프롬프트 생성 메소드
-  public List<Map<String, String>> createPrompt(GptAnalysisRequest gptAnalysisRequest, Long reportId) {
+  public List<Map<String, String>> createPrompt(GptAnalysisRequest gptAnalysisRequest, Long reportId) throws JsonProcessingException {
 
     Integer officalPrice = 0;  // 이거 나중에 공시가격 api로 가져와야함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     // ocr로 추출한 택스트 바로 가져오기
     OcrResponse ocrResponse = naverOcrService.extractText(reportId);
-    String text = ocrResponse.getOcrText();
+    Map<String, List<String>> text = ocrResponse.getSections();
+    ObjectMapper objectMapper = new ObjectMapper();
+    String jsonText = objectMapper.writeValueAsString(text);
 
     List<Map<String, String>> prompts = new ArrayList<>();
 
@@ -138,7 +140,7 @@ public class GptService {
         """,Math.round(officalPrice*1.3), gptAnalysisRequest.getMonthlyRent()*12*100/6+gptAnalysisRequest.getDeposit())));
     }
     // gpt에게 추출된 택스트 입력
-    prompts.add(Map.of("role", "user", "content", text));
+    prompts.add(Map.of("role", "user", "content", jsonText));
 
 
     return prompts;
@@ -149,6 +151,7 @@ public class GptService {
   public String callGptAPI(List<Map<String, String>> prompts, String reportId) {
 
     RestTemplate restTemplate = new RestTemplate();
+    ObjectMapper objectMapper = new ObjectMapper();
 
     // requestBody
     Map<String, Object> requestBody = new HashMap<>();
@@ -176,7 +179,12 @@ public class GptService {
 
       Map<String,Object> responseBody = response.getBody();   // requestBody 꺼내기
       // gpt 응답은 항상 choices 라는 배열 갖고 있음 -> choices 변수에 따로 저장 필요
-      List<Map<String, Object>> choices = (List<Map<String, Object>>) responseBody.get("choices");
+
+      // 이부분 경고가 계속 띀!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      List<Map<String, Object>> choices;
+      choices = objectMapper.convertValue(responseBody.get("choices"),
+          new TypeReference<List<Map<String, Object>>>() {}
+      );
 
       if(choices == null || choices.isEmpty()){
         log.warn("[GptService] GPT API 응답 성공했으나 choices 변수 null : reportId={}",reportId);
@@ -185,7 +193,8 @@ public class GptService {
 
       // message 변수에 gpt 응답이 담김
       Map<String,Object> message = objectMapper.convertValue(choices.get(0).get("message"), new TypeReference<Map<String,Object>>(){});
-      String content = (String) message.get("content"); // message안에는 role과 content가 있는데 이중 content가 진짜 답변!
+      String content = ((String) message.get("content")).replaceAll("```json", "").replaceAll("```", "").trim(); // message안에는 role과 content가 있는데 이중 content가 진짜 답변!
+
       log.info("[GptService] 응답 성공 : reportId={}, content={}", reportId, content);
       return content; // 이게 찐 gpt 응답 텍스트!
 

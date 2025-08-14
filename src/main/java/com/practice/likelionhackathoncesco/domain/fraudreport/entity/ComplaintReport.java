@@ -41,9 +41,4 @@ public class ComplaintReport extends BaseFileEntity {
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "fraud_register_report_id", unique = true) // unique 제약조건으로 1:1 보장
   private FraudRegisterReport fraudRegisterReport;
-
-  // 고정된 사용자 매핑
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id")
-  private User user;
 }

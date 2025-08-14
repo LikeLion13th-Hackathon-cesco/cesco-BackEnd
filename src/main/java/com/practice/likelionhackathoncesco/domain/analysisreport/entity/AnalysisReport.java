@@ -52,11 +52,6 @@ public class AnalysisReport extends BaseFileEntity {
   @Column(name = "processing_status", nullable = false)
   private ProcessingStatus processingStatus;
 
-  // 고정된 사용자 매핑
-  @ManyToOne
-  @JoinColumn(name = "userId")
-  private User user;
-
   // 추출된 텍스트 DB에 저장
 /*  public void updateOcrText(String ocrText) {
     this.ocrText = ocrText;

@@ -45,10 +45,4 @@ public class FraudRegisterReport extends BaseFileEntity {
   @OneToOne(mappedBy = "fraudRegisterReport", cascade = CascadeType.ALL, orphanRemoval = true)
   private ComplaintReport complaintReport;
 
-  // 고정된 사용자 매핑
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id")
-  private User user;
-
-
 }

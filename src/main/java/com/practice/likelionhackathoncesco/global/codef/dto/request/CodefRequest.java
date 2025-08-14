@@ -16,8 +16,8 @@ public class CodefRequest {
   private String organization;
 
   @Schema(description = "주소 검색 구분", example = "'0':지번검색 / '1':도로명검색")
-  @JsonProperty("inquiryType")
-  private String inquiryType;
+  @JsonProperty("addrSearchType")
+  private String addrSearchType;
 
   @Schema(description = "주소_도로명", example = "서초대로")
   @JsonProperty("addrRoadName")
@@ -32,8 +32,8 @@ public class CodefRequest {
   private String addrSido;
 
   @Schema(description = "주소_시군구", example = "11650(서초구)")
-  @JsonProperty("addrSigungu")
-  private String addrSigungu;
+  @JsonProperty("addrSiGunGu")
+  private String addrSiGunGu;
 
   @Schema(description = "층", example = "2층")
   @JsonProperty("floor")

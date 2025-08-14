@@ -98,15 +98,15 @@ public class CallCodefApi {
   // 요청 생성
   public CodefRequest createCodefRequest() {
     return CodefRequest.builder()
-        .organization("0004") // 기관 코드
-        .inquiryType("1")
-        .addrSido("서울특별시") // 서울 특별시
-        .addrSigungu("성북구") // 서초구
+        .organization("0001") // 기관 코드
+        .addrSearchType("1")
         .addrRoadName("동소문로5가") // 도로명 주소 파싱해서 넣어야 함(우선 더미 정보대로 고정값으로 넣어봄)
+        .addrSido("서울특별시") // 서울 특별시
+        .addrSiGunGu("성북구") // 서초구
         .addrBuildingNumber("30")
         .floor("2")
         .dong("")
-        .ho("201")
+        .ho("1")
         .build();
   }
 

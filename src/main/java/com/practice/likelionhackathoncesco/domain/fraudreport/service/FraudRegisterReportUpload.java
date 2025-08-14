@@ -7,9 +7,13 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
+import com.practice.likelionhackathoncesco.domain.commonfile.service.FileService;
+import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.ComplaintResponse;
 import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.FraudRegisterResponse;
+import com.practice.likelionhackathoncesco.domain.fraudreport.entity.ComplaintReport;
 import com.practice.likelionhackathoncesco.domain.fraudreport.entity.FraudRegisterReport;
 import com.practice.likelionhackathoncesco.domain.fraudreport.entity.ReportStatus;
+import com.practice.likelionhackathoncesco.domain.fraudreport.repository.ComplaintReportRepository;
 import com.practice.likelionhackathoncesco.domain.fraudreport.repository.FraudRegisterReportRepository;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.domain.user.exception.UserErrorCode;
@@ -28,141 +32,43 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class FraudRegisterReportUpload { // 사기 등기부등본 업로드 서비스 로직
 
-  private final AmazonS3 amazonS3; // AWS SDK에서 제공하는 S3 클라이언트 객체
-  private final S3Config s3Config; // 버킷 이름과 경로 등 설정 정보
-  private final UserRepository userRepository;
+  private final FileService fileService;
   private final FraudRegisterReportRepository fraudRegisterReportRepository;
 
-  // 문서 업로드
+  // 분석 리포트를 위한 등기부등본 업로드
+  @Transactional
   public FraudRegisterResponse uploadDocuments(PathName pathName, MultipartFile file)
   {
-    FraudRegisterReport savedReport = uploadFile(pathName, file);
+    FraudRegisterReport savedReport = fileService.uploadFile(
+        pathName,
+        file,
+        () -> FraudRegisterReport.builder()
+            .reportStatus(ReportStatus.UPLOADCOMPLETED)
+            .build(),
+        fraudRegisterReportRepository,
+        null);
 
     return FraudRegisterResponse.builder()
         .fraudRegisterReportId(savedReport.getFraudRegisterReportId())
-        .userId(savedReport.getUser().getUserId())
-        //.correlationId(savedReport.getComplaintReport().getComplaintId())
-        .fileName(file.getOriginalFilename())
-        .reportStatus(savedReport.getReportStatus()) // 신고 상태
+        .fileName(savedReport.getFileName())
+        .reportStatus(savedReport.getReportStatus()) // 엔티티 생성 시 업로드 상태로 생성
         .build();
 
   }
 
-  // 파일을 S3에 업로드 하고 DB에 관련 정보 저장 후 엔티티 반환
-  @Transactional
-  public FraudRegisterReport uploadFile(PathName pathName, MultipartFile file) {
-
-    User user = userRepository.findByUsername("cesco")
-        .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
-
-    validateFile(file); // 파일 유효성 검사
-
-    String originalFilename = file.getOriginalFilename(); // 기존 파일 이름
-    if(originalFilename == null || originalFilename.isBlank()) {
-      throw new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND);
-    }
-
-    String KeyName = createS3Key(pathName, originalFilename); // S3 파일 경로 생성 (경로+이름) -> 객체 key
-
-    // 메타 데이터 설정
-    ObjectMetadata metadata = new ObjectMetadata();
-    metadata.setContentLength(file.getSize()); // 파일 크기
-    metadata.setContentType(file.getContentType()); // 파일 타입 (application/pdf)
-
-    // S3에 파일 업로드
-    try {
-      amazonS3.putObject(
-          new PutObjectRequest(s3Config.getBucket(), KeyName, file.getInputStream(), metadata));
-
-      log.info("업로드 성공");
-
-    } catch (Exception e) {
-      log.error("S3 upload 중 오류 발생", e);
-      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
-    }
-
-    // 등기부 등본 엔티티 생성
-    FraudRegisterReport fraudRegisterReport = FraudRegisterReport.builder()
-        .fileName(originalFilename)
-        .s3Key(KeyName)
-        .reportStatus(ReportStatus.UPLOADCOMPLETED)
-        .user(user)
-        .build();
-
-    // DB 저장
-    FraudRegisterReport savedReport = fraudRegisterReportRepository.save(fraudRegisterReport);
-    log.info("DB 저장 성공: reportId={}, fileName={}", savedReport.getFraudRegisterReportId(), originalFilename);
-
-    return savedReport; // 엔티티 반환
-  }
-
-  // 업로드 파일 유효성 검사
-  public void validateFile(MultipartFile file) {
-    if (file.getSize() > 50 * 1024 * 1024) { // 파일 크기 50MB 이하 업로드 가능
-      throw new CustomException(AnalysisReportErrorCode.FILE_SIZE_INVALID);
-    }
-
-    String contentType = file.getContentType(); // 파일의 mime타입 반환
-    // getcontentType()은 보안상 좋지 않다는 의견 -> 파일 확장자 검사 로직 변경해야할까요?
-
-    if(contentType == null || !contentType.equals("application/pdf")) { // pdf 형식만 허용
-      throw new CustomException(AnalysisReportErrorCode.FILE_TYPE_INVALID);
-    }
-  }
-
-  // S3 파일 경로 생성 (여기서 keyName은 {PathName/원본파일 이름})
-  public String createS3Key(PathName pathName, String originalFilename) {
-    String basePath = switch (pathName) {
-      case PROPERTYREGISTRY ->s3Config.getPropertyRegistryPath(); // 버킷 내 등기부등본 폴더구조 선택
-      case COMPLAINT -> s3Config.getComplaintPath(); // 버킷 내 고소증 관련 폴더구조 선택
-      case FRAUDREPORT -> s3Config.getFraudReportPath(); // 버킷 내 신고 등기부등본 관련 폴더구조 선택
-    };
-
-    String uuid = UUID.randomUUID().toString(); // key 값을 식별 할 uuid 문자열 생성
-    String fileExtension = getFileExtension(originalFilename); // 파일 확장자 추출
-
-    return basePath + "/" + uuid + fileExtension; // 고유성은 보장하지만 원본파일 이름 추척이 힘들거 같음
-
-  }
-
-  // 파일 확장자 추출(".pdf"로 추출)
-  private String getFileExtension(String filename) {
-    if (filename == null || !filename.contains(".")) {
-      return "";
-    }
-    return filename.substring(filename.lastIndexOf("."));
-  }
-
-  // 파일이 s3에 존재하는지 s3key 값으로 확인
-  private void existFile(String keyName) {
-    if (!amazonS3.doesObjectExist(s3Config.getBucket(), keyName)) {
-      throw new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND);
-    }
-  }
-
-  // 업로드 한 파일 삭제
   @Transactional
   public Boolean deleteReport(Long reportId) {
-
-    // DB에서 등기부등본 조회
-    FraudRegisterReport report = fraudRegisterReportRepository.findById(reportId)
-        .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND));
-
-    // S3에 파일이 존재하는지 s3key 값으로 확인
-    existFile(report.getS3Key());
+    log.info("분석 리포트 삭제 요청: reportId={}", reportId);
 
     try {
-      // S3에서 삭제
-      amazonS3.deleteObject(new DeleteObjectRequest(s3Config.getBucket(), report.getS3Key()));
-      log.info("S3 파일 삭제 성공: {}", report.getFileName());
+      // FileService의 공통 삭제 메서드 활용
+      Boolean result = fileService.deleteFile(reportId, fraudRegisterReportRepository);
 
-      // DB에서 레코드 삭제
-      fraudRegisterReportRepository.delete(report);
-      log.info("DB 레코드 삭제 성공: reportId={}, fileName={}", reportId, report.getFileName());
+      log.info("등기부등본 삭제 완료: reportId={}, result={}", reportId, result);
+      return result;
 
-      return true;
     } catch (Exception e) {
-      log.error("파일 삭제 중 오류 발생: reportId={}, fileName={}", reportId, report.getFileName(), e);
+      log.error("등기부등본 삭제 실패: reportId={}", reportId, e);
       throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
     }
   }

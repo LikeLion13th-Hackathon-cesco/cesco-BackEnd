@@ -1,5 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.fraudreport.entity;
 
+import com.practice.likelionhackathoncesco.domain.commonfile.BaseFileEntity;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.global.common.BaseTimeEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,24 +21,18 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
-@Builder
+@SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // 외부 객체 생성 방지하기 위한 접근제어자 설정
-@AllArgsConstructor
 @Table(name = "complaint_reports")
-public class ComplaintReport extends BaseTimeEntity {
+public class ComplaintReport extends BaseFileEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long complaintReportId; // 고소장 고유 번호
-
-  @Column(name = "file_name", nullable = false)
-  private String fileName; // 업로드한 파일 이름
-
-  @Column(name = "s3_key", nullable = false)
-  private String s3Key; // s3 객체 식별 키
 
   @Enumerated(EnumType.STRING)
   @Column(name = "report_status")

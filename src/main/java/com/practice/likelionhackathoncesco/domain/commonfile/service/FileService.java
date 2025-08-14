@@ -1,9 +1,11 @@
 package com.practice.likelionhackathoncesco.domain.commonfile.service;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
 import com.practice.likelionhackathoncesco.domain.commonfile.BaseFileEntity;
@@ -164,6 +166,33 @@ public class FileService {
   private void existFile(String keyName) {
     if (!amazonS3.doesObjectExist(s3Config.getBucket(), keyName)) {
       throw new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND);
+    }
+  }
+
+  // 업로드 한 파일 삭제
+  @Transactional
+  public <T extends BaseFileEntity, R extends JpaRepository<T, Long>> Boolean deleteFile(Long reportId, R repository) {
+
+    // DB에서 등기부등본 조회
+    T report = repository.findById(reportId)
+        .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND));
+
+    // S3에 파일이 존재하는지 s3key 값으로 확인
+    existFile(report.getS3Key());
+
+    try {
+      // S3에서 삭제
+      amazonS3.deleteObject(new DeleteObjectRequest(s3Config.getBucket(), report.getS3Key()));
+      log.info("S3 파일 삭제 성공: {}", report. getFileName());
+
+      // DB에서 레코드 삭제
+      repository.delete(report);
+      log.info("DB 레코드 삭제 성공: reportId={}, fileName={}", reportId, report.getFileName());
+
+      return true;
+    } catch (Exception e) {
+      log.error("파일 삭제 중 오류 발생: reportId={}, fileName={}", reportId, report.getFileName(), e);
+      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
     }
   }
 

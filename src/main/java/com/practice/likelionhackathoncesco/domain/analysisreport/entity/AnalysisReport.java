@@ -42,22 +42,23 @@ public class AnalysisReport extends BaseTimeEntity {
   @Column(name = "address")
   private String address;   // 해당 등기부등본 부동산의 주소
 
+  @Column(name = "official_price")
+  private Double officialPrice;    // 공시가격
+
   // 분석 결과 관련
   @Column(name = "safety_score")
   private Double safetyScore; // 안전 점수
 
-  //@Column(name = "insurance_percent")
-  //private Integer insurancePercent; // 보험 가입 여부 가능성
-
-  @Column(name = "short_description")
+  @Column(name = "short_description", columnDefinition = "TEXT")
   private String summary;  // 한줄 요약
 
   @Lob // gpt 응답이 들어가기 때문에 긴 문자열로 저장
-  @Column(name = "safety_description")
+  @Column(name = "safety_description", columnDefinition = "TEXT")
+
   private String safetyDescription; // 안전 점수 설명
 
   @Lob // gpt 응답이 들어가기 때문에 긴 문자열로 저장
-  @Column(name = "insurance_description")
+  @Column(name = "insurance_description", columnDefinition = "TEXT")
   private String insuranceDescription; // 보증보험가입 가능 여부 설명
 
   // 처리 상태 관리
@@ -69,11 +70,6 @@ public class AnalysisReport extends BaseTimeEntity {
   @ManyToOne
   @JoinColumn(name = "userId")
   private User user;
-
-  // 추출된 텍스트 DB에 저장
-/*  public void updateOcrText(String ocrText) {
-    this.ocrText = ocrText;
-  }*/
 
   // 진행 상태 DB 업데이트
   public void updateProcessingStatus(ProcessingStatus processingStatus) {

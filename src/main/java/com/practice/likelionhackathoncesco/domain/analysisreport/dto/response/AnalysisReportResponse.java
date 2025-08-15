@@ -12,11 +12,7 @@ import lombok.Getter;
 @Schema(title = "AnalysisReportResponse DTO", description = "분석리포트 응답")
 public class AnalysisReportResponse {
 
-  //@Schema(description = "분석 레포트 고유 번호", example = "1")
-  //private Long reportId;
 
-  //@Schema(description = "s3 url", example = "...")
-  //private String s3Key;   // s3 객체 생성해서 등기부등본 파일 불러와야 함!!!!!!!!!
 
   @Schema(description = "등기부등본 파일 url", example = "...")
   private String analysisReportUrl;

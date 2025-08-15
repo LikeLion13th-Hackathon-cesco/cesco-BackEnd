@@ -1,5 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.fraudreport.entity;
 
+import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.global.common.BaseTimeEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -8,6 +9,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -34,7 +37,8 @@ public class Faker extends BaseTimeEntity {
   @Column(name = "resident_num", nullable = false)
   private String residentNum; // 사기꾼 주민번호 앞자리
 
-  @OneToOne(mappedBy = "faker", cascade = CascadeType.ALL)
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "fraudRegisterReportId", nullable = false) // user_id로 통일 (userId → user_id)
   private FraudRegisterReport fraudRegisterReport;
 
 }

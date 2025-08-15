@@ -44,7 +44,7 @@ public class AnalysisReport extends BaseFileEntity {
   private Integer insurancePercent; // 보험 가입 여부 가능성
 
   @Lob // gpt 응답이 들어가기 때문에 긴 문자열로 저장
-  @Column(name = "description")
+  @Column(name = "description", columnDefinition = "TEXT")
   private String description; // 안전 점수 설명
 
   // 처리 상태 관리

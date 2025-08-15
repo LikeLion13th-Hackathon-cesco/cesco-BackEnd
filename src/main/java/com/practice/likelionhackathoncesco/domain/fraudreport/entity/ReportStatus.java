@@ -7,6 +7,12 @@ public enum ReportStatus {
   @Schema(description = "신고 관련 문서 업로드 성공")
   UPLOADCOMPLETED,
 
+  @Schema(description = "OCR 처리 중")
+  OCR_PROCESSING,
+
+  @Schema(description = "OCR 완료")
+  OCR_COMPLETED,
+
   @Schema(description = "신고 완료")
   REPORTCOMPLETED,
 

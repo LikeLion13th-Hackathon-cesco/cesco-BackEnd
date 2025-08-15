@@ -8,13 +8,13 @@ import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Analysis
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.S3ErrorCode;
 import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
+import com.practice.likelionhackathoncesco.global.config.NaverOcrConfig;
 import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.naverocr.dto.ImageDto;
 import com.practice.likelionhackathoncesco.naverocr.dto.request.OcrRequest;
 import com.practice.likelionhackathoncesco.naverocr.dto.response.OcrResponse;
 import com.practice.likelionhackathoncesco.naverocr.dto.response.RoadAddress;
-import com.practice.likelionhackathoncesco.naverocr.global.config.NaverOcrConfig;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -45,7 +45,7 @@ public class NaverOcrService {
   private final AnalysisReportRepository analysisReportRepository;
   private final NaverOcrConfig naverOcrConfig; // API InvokeUrl, seceretKey
 
-  // ocr로 텍스트 추출
+  // ocr로 텍스트 추출 -> 분석 리포트 등기부등본!!!!!!!!!!
   public OcrResponse extractText(Long reportId) {
 
     AnalysisReport analysisReport = analysisReportRepository.findById(reportId)
@@ -56,7 +56,7 @@ public class NaverOcrService {
 
       // s3에서 파일 다운로드
       // S3ObjectInputStream은 네트워크 연결을 유지하는 스트림이기 때문에 사용 후 닫아야 함(try-with-resource구문)
-      try(InputStream pdfStream = downloadPdfFromS3(reportId)) {
+      try {
 
         // OCR API 요청 생성
         OcrRequest requestDto = createOcrRequest(analysisReport.getS3Key(), analysisReport.getFileName());
@@ -69,6 +69,9 @@ public class NaverOcrService {
         OcrResponse ocrResult = callOcrApi(requestDto);
 
         log.info("OCR 처리 완료: reportId={}", reportId);
+
+      /*// 추출된 텍스트 DB에 저장
+      analysisReport.updateOcrText(ocrResult.getSections().toString()); // toString()으로 저장*/
 
         // DB에 진행 상태 필드 업데이트
         analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);
@@ -90,9 +93,9 @@ public class NaverOcrService {
     }
   }
 
-  // S3에서 사용자가 업로드한 등기부등본 pdf파일 다운로드
+  /*// S3에서 사용자가 업로드한 등기부등본 pdf파일 다운로드
   // 인코딩 진행 X -> image를 url로 ocr api한테 보내면 인코딩 필요 없음 (s3 객체 url로 전송 -> 누구나 접근 가능함)
-  private InputStream downloadPdfFromS3(Long reportId) {
+  protected InputStream downloadPdfFromS3(Long reportId) {
     log.info("S3에서 PDF 다운로드 시작: reportId={}", reportId);
 
     AnalysisReport analysisReport = analysisReportRepository.findById(reportId)
@@ -113,10 +116,10 @@ public class NaverOcrService {
       log.error("S3 파일 다운로드 실패: {}", s3Key, e);
       throw new CustomException(S3ErrorCode.FILE_DOWNLOAD_FAIL);
     }
-  }
+  }*/
 
   // pdf 전용 ocr 요청 생성
-  private OcrRequest createOcrRequest(String s3key, String fileName) {
+  protected OcrRequest createOcrRequest(String s3key, String fileName) {
 
     // s3 객체 url로 요청을 보냄
     String s3Url = amazonS3.getUrl(s3Config.getBucket(), s3key).toString();
@@ -143,7 +146,7 @@ public class NaverOcrService {
   }
 
   // OCR API 호출하여 파싱된 데이터 반환
-  private OcrResponse callOcrApi(OcrRequest request) throws IOException {
+  protected OcrResponse callOcrApi(OcrRequest request) throws IOException {
     try {
       // HTTP 헤더 설정 (공식 문서 -> X-OCR-SECRET / Content-Type 2가지 필드 필요
       HttpHeaders headers = new HttpHeaders();
@@ -172,7 +175,7 @@ public class NaverOcrService {
     }
   }
 
-  public OcrResponse parseResponse(ResponseEntity<String> response) throws IOException {
+  protected OcrResponse parseResponse(ResponseEntity<String> response) throws IOException {
     ObjectMapper objectMapper = new ObjectMapper();
     JsonNode root = objectMapper.readTree(response.getBody()); // 응답 바디를 트리 구조로 파싱해서 jsonNode 객체로 생성
 
@@ -220,19 +223,20 @@ public class NaverOcrService {
 
         result.put(sectionName, inferTexts);
 
-        if ("표제부".equals(sectionName)) {
+        /*if ("표제부".equals(sectionName)) {
           roadAddress = extractRoadAddress(inferTexts);
-        }
+        }*/
       }
     }
     return OcrResponse.builder()
         .sections(result)
-        .roadAddress(roadAddress)
+        //.roadAddress(roadAddress)
         .processingStatus(ProcessingStatus.OCR_COMPLETED)
         .build();
 
   }
 
+  // 도로명 주소만 파싱 (codef api 호출용) -> codef api 사용 안하기로 결정
   private RoadAddress extractRoadAddress(List<String> inferTexts) {
     log.info("도로명주소 추출 시작, 총 텍스트 개수: {}", inferTexts.size());
 

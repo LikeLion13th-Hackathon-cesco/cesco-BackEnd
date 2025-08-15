@@ -1,6 +1,8 @@
 package com.practice.likelionhackathoncesco.domain.user.entity;
 
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
+import com.practice.likelionhackathoncesco.domain.fraudreport.entity.ComplaintReport;
+import com.practice.likelionhackathoncesco.domain.fraudreport.entity.FraudRegisterReport;
 import com.practice.likelionhackathoncesco.global.common.BaseTimeEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -50,6 +52,14 @@ public class User extends BaseTimeEntity {
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   private List<AnalysisReport> reports = new ArrayList<>();
+
+  // FraudReport 테이블의 user 필드와 연관 -> user는 FraudReport를 여러개 가짐
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<FraudRegisterReport> fraudRegisterReports = new ArrayList<>();
+
+  // ComplaintReport 테이블의 user 필드와 연관 -> user는 ComplaintReport를 여러개 가짐
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<ComplaintReport> complaintReport = new ArrayList<>();
 
   // 결제 상태를 PAID로 바꾸고 결제 만료일을 한달 뒤로 저장
   public void processPayment() {

@@ -18,14 +18,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
-@Builder
+@SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // 외부 객체 생성 방지하기 위한 접근제어자 설정
-@AllArgsConstructor
 @Table(name = "analysis_reports")
-public class AnalysisReport extends BaseTimeEntity {
+public class AnalysisReport extends BaseFileEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -65,11 +65,6 @@ public class AnalysisReport extends BaseTimeEntity {
   @Enumerated(EnumType.STRING)
   @Column(name = "processing_status", nullable = false)
   private ProcessingStatus processingStatus;
-
-  // 고정된 사용자 매핑
-  @ManyToOne
-  @JoinColumn(name = "userId")
-  private User user;
 
   // 진행 상태 DB 업데이트
   public void updateProcessingStatus(ProcessingStatus processingStatus) {

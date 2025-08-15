@@ -139,8 +139,6 @@ public class AnalysisReportService {
 
   public AnalysisReportResponse toAnalysisReportResponse(AnalysisReport analysisReport) {
 
-
-
     return AnalysisReportResponse.builder()
         .analysisReportUrl(fileService.amazonS3.getUrl(s3Config.getBucket(), analysisReport.getS3Key()).toString())
         .address(analysisReport.getAddress())

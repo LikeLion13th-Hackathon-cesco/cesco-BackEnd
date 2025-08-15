@@ -8,13 +8,13 @@ import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Analysis
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.S3ErrorCode;
 import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
+import com.practice.likelionhackathoncesco.global.config.NaverOcrConfig;
 import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.naverocr.dto.ImageDto;
 import com.practice.likelionhackathoncesco.naverocr.dto.request.OcrRequest;
 import com.practice.likelionhackathoncesco.naverocr.dto.response.OcrResponse;
 import com.practice.likelionhackathoncesco.naverocr.dto.response.RoadAddress;
-import com.practice.likelionhackathoncesco.naverocr.global.config.NaverOcrConfig;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -25,6 +25,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -69,6 +70,9 @@ public class NaverOcrService {
         OcrResponse ocrResult = callOcrApi(requestDto);
 
         log.info("OCR 처리 완료: reportId={}", reportId);
+
+      /*// 추출된 텍스트 DB에 저장
+      analysisReport.updateOcrText(ocrResult.getSections().toString()); // toString()으로 저장*/
 
         // DB에 진행 상태 필드 업데이트
         analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);

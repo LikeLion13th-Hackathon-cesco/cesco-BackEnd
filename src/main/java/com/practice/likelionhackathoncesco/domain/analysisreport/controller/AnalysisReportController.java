@@ -3,6 +3,7 @@ package com.practice.likelionhackathoncesco.domain.analysisreport.controller;
 import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.FileUploadResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
 import com.practice.likelionhackathoncesco.domain.analysisreport.service.AnalysisReportService;
+import com.practice.likelionhackathoncesco.domain.commonfile.service.FileService;
 import com.practice.likelionhackathoncesco.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,10 +29,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class AnalysisReportController {
 
   private final AnalysisReportService analysisReportService;
+  private final FileService fileService;
 
   @Operation(summary = "등기부등본 업로드 API", description = "등기부등본 문서를 업로드하고 문서 원본이름과 상태를 리턴하는 API")
   @PostMapping(value = "/file-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ResponseEntity<BaseResponse<FileUploadResponse>> uploadImage(
+  public ResponseEntity<BaseResponse<FileUploadResponse>> uploadFile (
       @RequestParam MultipartFile file) {
     // 이 api에서는 등기부등본만 업로드 할 수 있음 (s3 PathName 고정)
     FileUploadResponse uploadResponse = analysisReportService.uploadDocuments(PathName.PROPERTYREGISTRY, file);
@@ -39,7 +41,7 @@ public class AnalysisReportController {
     return ResponseEntity.ok(BaseResponse.success("등기부등본 업로드에 성공했습니다.", uploadResponse));
   }
 
-  @Operation(summary = "등기부등본 파일 삭제 API", description = "X버튼을 눌러 업로드한 등기부등본 문서를 삭제")
+  @Operation(summary = "등기부등본 파일 삭제 API", description = "X버튼을 눌러 업로드한 등기부등본 문서를 삭제하는 API")
   @DeleteMapping("/reports/{reportId}")
   public ResponseEntity<BaseResponse<Boolean>> deleteReport(@PathVariable Long reportId) {
 
@@ -56,7 +58,7 @@ public class AnalysisReportController {
 
     log.info("S3에 업로드한 모든 등기부등본 파일 조회");
 
-    List<String> s3files = analysisReportService.getAllS3Files(PathName.PROPERTYREGISTRY);
+    List<String> s3files = fileService.getAllS3Files(PathName.PROPERTYREGISTRY);
 
     return ResponseEntity.ok(BaseResponse.success("조회 성공", s3files));
   }

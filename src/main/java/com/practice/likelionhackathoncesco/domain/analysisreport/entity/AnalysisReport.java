@@ -1,5 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.analysisreport.entity;
 
+import com.practice.likelionhackathoncesco.domain.commonfile.BaseFileEntity;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.global.common.BaseTimeEntity;
 import jakarta.persistence.Column;
@@ -18,26 +19,23 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Getter
-@Builder
+@SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // 외부 객체 생성 방지하기 위한 접근제어자 설정
-@AllArgsConstructor
 @Table(name = "analysis_reports")
-public class AnalysisReport extends BaseTimeEntity {
+public class AnalysisReport extends BaseFileEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long reportId; // 분석 레포트 고유 번호
 
-  // 등기부등본 관련
-  @Column(name = "file_name", nullable = false)
-  private String fileName; // 업로드한 파일 이름
-
-  @Column(name = "s3_key", nullable = false)
-  private String s3Key; // s3 객체 식별 키
-  // s3 경로 -> 추후에 s3key로 객체 url(웹 형태) 생성 (동적 생성 가능)
+  // 분석 결과 관련
+/*  @Lob
+  @Column(name = "ocr_text")
+  private String ocrText; // 추출된 텍스트 저장*/
 
   @Column(name = "safety_score")
   private Double safetyScore; // 안전 점수
@@ -53,11 +51,6 @@ public class AnalysisReport extends BaseTimeEntity {
   @Enumerated(EnumType.STRING)
   @Column(name = "processing_status", nullable = false)
   private ProcessingStatus processingStatus;
-
-  // 고정된 사용자 매핑
-  @ManyToOne
-  @JoinColumn(name = "userId")
-  private User user;
 
   // 추출된 텍스트 DB에 저장
 /*  public void updateOcrText(String ocrText) {

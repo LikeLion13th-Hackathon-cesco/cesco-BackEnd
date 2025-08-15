@@ -10,6 +10,6 @@ import lombok.Getter;
 public class PayResponse {
 
   @Schema(description = "Plus 요금제 결제 상태", example = "PAID")
-  private PayStatus status;
+  private PayStatus payStatus;
 
 }

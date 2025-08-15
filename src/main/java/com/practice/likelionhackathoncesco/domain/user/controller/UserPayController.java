@@ -1,9 +1,10 @@
 package com.practice.likelionhackathoncesco.domain.user.controller;
 
+import com.practice.likelionhackathoncesco.domain.user.dto.response.PayResponse;
 import com.practice.likelionhackathoncesco.domain.user.service.UserPayService;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
+import com.practice.likelionhackathoncesco.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,17 +25,9 @@ public class UserPayController {
 
   @Operation(summary = "Plus 요금제 결제 API", description = "Plus 요금제의 결제 버튼을 누르면 결제 처리 되는 API")
   @PostMapping("/{userId}")
-  public ResponseEntity<String> processPayment(@PathVariable Long userId) {
-    try {
-      userPayService.completePayment(userId);
-      return ResponseEntity.ok("결제가 성공적으로 처리되었습니다.");
-    } catch (CustomException e) {
-      return ResponseEntity.status(e.getErrorCode().getStatus()).body(e.getMessage());
-    } catch (IllegalArgumentException e) {
-      return ResponseEntity.badRequest().body(e.getMessage());
-    } catch (Exception e) {
-      return ResponseEntity.internalServerError().body("결제 처리 중 오류가 발생했습니다.");
-    }
+  public ResponseEntity<BaseResponse<PayResponse>> processPayment(@PathVariable Long userId) {
+    PayResponse result = userPayService.completePayment(userId);
+    return ResponseEntity.ok(BaseResponse.success("결제 완료", result));
   }
 
 }

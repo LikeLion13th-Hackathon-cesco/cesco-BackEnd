@@ -1,5 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.user.service;
 
+import com.practice.likelionhackathoncesco.domain.user.dto.response.PayResponse;
 import com.practice.likelionhackathoncesco.domain.user.entity.PayStatus;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.domain.user.exception.UserErrorCode;
@@ -21,7 +22,7 @@ public class UserPayService {
   private final UserRepository userRepository;
 
   @Transactional
-  public void completePayment(Long userId) { // 결제 진행 메서드
+  public PayResponse completePayment(Long userId) { // 결제 진행 메서드
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
@@ -35,6 +36,9 @@ public class UserPayService {
 
     log.info("사용자 {}의 결제가 완료되었습니다. 만료일: {}", user.getUsername(), user.getExpirationDate());
 
+    return PayResponse.builder()
+        .payStatus(PayStatus.PAID)
+        .build();
   }
 
   // 결제 만료일이 지난 사용자를 조회하고 결제 상태를 다시 미결제 상태로 바꿔주고 DB저장

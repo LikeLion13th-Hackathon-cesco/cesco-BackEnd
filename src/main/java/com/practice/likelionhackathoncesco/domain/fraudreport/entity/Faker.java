@@ -38,7 +38,7 @@ public class Faker extends BaseTimeEntity {
   private String residentNum; // 사기꾼 주민번호 앞자리
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "fraud_register_report_id", nullable = false) // user_id로 통일 (userId → user_id)
+  @JoinColumn(name = "fraudRegisterReportId", nullable = false) // user_id로 통일 (userId → user_id)
   private FraudRegisterReport fraudRegisterReport;
 
 }

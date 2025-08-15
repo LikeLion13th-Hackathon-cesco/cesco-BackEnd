@@ -42,7 +42,12 @@ public class FraudRegisterReport extends BaseFileEntity {
   private ReportStatus reportStatus; // 신고 상태
 
   // 신고 등기부등본은 여려명의 사기꾼을 포함할 수 있음
-  @OneToMany(mappedBy = "fraud_register_report", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "fraudRegisterReport", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Faker> fakers = new ArrayList<>();
+
+  // 진행 상태 업데이트
+  public void updateReportStatus(ReportStatus reportStatus) {
+    this.reportStatus = reportStatus;
+  }
 
 }

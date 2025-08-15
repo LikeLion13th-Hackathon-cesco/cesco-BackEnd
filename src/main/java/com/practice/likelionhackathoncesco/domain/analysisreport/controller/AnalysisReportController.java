@@ -32,7 +32,7 @@ public class AnalysisReportController {
   private final FileService fileService;
 
   @Operation(summary = "등기부등본 업로드 API", description = "등기부등본 문서를 업로드하고 문서 원본이름과 상태를 리턴하는 API")
-  @PostMapping(value = "/file-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<BaseResponse<FileUploadResponse>> uploadFile (
       @RequestParam MultipartFile file) {
     // 이 api에서는 등기부등본만 업로드 할 수 있음 (s3 PathName 고정)
@@ -42,7 +42,7 @@ public class AnalysisReportController {
   }
 
   @Operation(summary = "등기부등본 파일 삭제 API", description = "X버튼을 눌러 업로드한 등기부등본 문서를 삭제하는 API")
-  @DeleteMapping("/reports/{reportId}")
+  @DeleteMapping("/{reportId}")
   public ResponseEntity<BaseResponse<Boolean>> deleteReport(@PathVariable Long reportId) {
 
     log.info("파일 삭제 요청: reportId={}", reportId);
@@ -53,7 +53,7 @@ public class AnalysisReportController {
   }
 
   @Operation(summary = "업로드한 등기부등본 전체 조회 API", description = "마이페이지에서 사용자가 업로드한 등기부등본을 모두 조회하는 API")
-  @GetMapping("/get-file")
+  @GetMapping("")
   public ResponseEntity<BaseResponse<List<String>>> getAllFile() {
 
     log.info("S3에 업로드한 모든 등기부등본 파일 조회");

@@ -38,7 +38,4 @@ public class ComplaintReport extends BaseFileEntity {
   @Column(name = "report_status")
   private ReportStatus reportStatus; // 신고 상태
 
-  @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "fraud_register_report_id", unique = true) // unique 제약조건으로 1:1 보장
-  private FraudRegisterReport fraudRegisterReport;
 }

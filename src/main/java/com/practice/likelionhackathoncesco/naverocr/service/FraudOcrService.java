@@ -47,7 +47,7 @@ public class FraudOcrService {
   private final NaverOcrService naverOcrService;
 
   // ocr로 텍스트 추출 -> 신고할 등기부등본!!!!!!!!!! (텍스트로 반환)
-  public List<String> extractText(Long reportId) {
+  public List<String> gapguExtractText(Long reportId) {
 
     FraudRegisterReport fraudRegisterReport = fraudRegisterReportRepository.findById(reportId)
         .orElseThrow(() -> new CustomException(S3ErrorCode.FILE_NOT_FOUND));

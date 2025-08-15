@@ -71,5 +71,9 @@ public class User extends BaseTimeEntity {
     return LocalDateTime.now().isAfter(expirationDate); // 현재 시간을 기준으로 결제 만료일 이후 인지
   }
 
+  // 크레딧 추가하는 메서드
+  public void addCredits(int credit) {
+    this.credit += credit;
+  }
 
 }

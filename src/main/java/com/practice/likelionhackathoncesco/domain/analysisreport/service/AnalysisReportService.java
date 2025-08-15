@@ -1,29 +1,18 @@
 package com.practice.likelionhackathoncesco.domain.analysisreport.service;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.DeleteObjectRequest;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.AnalysisReportResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.FileUploadResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
-import com.practice.likelionhackathoncesco.domain.analysisreport.exception.S3ErrorCode;
 import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
 import com.practice.likelionhackathoncesco.domain.commonfile.service.FileService;
-import com.practice.likelionhackathoncesco.domain.user.entity.User;
-import com.practice.likelionhackathoncesco.domain.user.exception.UserErrorCode;
-import com.practice.likelionhackathoncesco.domain.user.repository.UserRepository;
 import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.openai.dto.request.GptAnalysisRequest;
 import com.practice.likelionhackathoncesco.openai.dto.response.GptResponse;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,7 +23,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 @Slf4j
 public class AnalysisReportService {
-
+  private final AmazonS3 amazonS3; // AWS SDK에서 제공하는 S3 클라이언트 객체
+  private final S3Config s3Config; // 버킷 이름과 경로 등 설정 정보
   private final FileService fileService;
   private final AnalysisReportRepository analysisReportRepository;
 
@@ -138,11 +128,8 @@ public class AnalysisReportService {
   }
 
   public AnalysisReportResponse toAnalysisReportResponse(AnalysisReport analysisReport) {
-
-
-
     return AnalysisReportResponse.builder()
-        .analysisReportUrl(fileService.amazonS3.getUrl(s3Config.getBucket(), analysisReport.getS3Key()).toString())
+        .analysisReportUrl(amazonS3.getUrl(s3Config.getBucket(), analysisReport.getS3Key()).toString())
         .address(analysisReport.getAddress())
         .safetyScore(analysisReport.getSafetyScore())
         .summary(analysisReport.getSummary())

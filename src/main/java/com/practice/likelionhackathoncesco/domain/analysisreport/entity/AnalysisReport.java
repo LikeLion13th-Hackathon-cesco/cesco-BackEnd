@@ -1,5 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.analysisreport.entity;
 
+import com.practice.likelionhackathoncesco.domain.commonfile.BaseFileEntity;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.global.common.BaseTimeEntity;
 import jakarta.persistence.Column;

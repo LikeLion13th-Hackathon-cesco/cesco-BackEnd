@@ -56,6 +56,8 @@ dependencies {
     // OpenAI
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.1'
+
+    implementation 'io.codef.api:easycodef-java:+'
 }
 
 tasks.named('test') {

@@ -1,8 +1,10 @@
 services:
   app:
-    build: .  # 현재 디렉토리(Dockerfile이 있는 위치) 기준으로 Docker 이미지 빌드
+    image: imjuyongp/setbangsari:latest
     ports:
       - "8080:8080"  # 호스트의 8080 포트를 컨테이너의 8080 포트와 매핑
+    env_file:
+      - .env  # 이 줄 추가!
     environment:
       - SPRING_PROFILES_ACTIVE=dev  # Spring Boot에서 사용할 profile을 dev로 설정
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/setbangsari  # MySQL 컨테이너를 데이터베이스로 사용하도록 설정

@@ -2,14 +2,19 @@ package com.practice.likelionhackathoncesco.domain.fraudreport.controller;
 
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
 import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.ComplaintResponse;
+import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.FakerResponse;
 import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.FraudRegisterResponse;
 import com.practice.likelionhackathoncesco.domain.fraudreport.service.ComplaintReportUpload;
+import com.practice.likelionhackathoncesco.domain.fraudreport.service.FakerSaveFlow;
 import com.practice.likelionhackathoncesco.domain.fraudreport.service.FraudRegisterReportUpload;
 import com.practice.likelionhackathoncesco.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,6 +34,16 @@ public class FraudController {
 
   private final FraudRegisterReportUpload fraudRegisterReportUpload;
   private final ComplaintReportUpload complaintReportUpload;
+  private final FakerSaveFlow fakerSaveFlow;
+
+  // 신고 등기부등본 업로드 후 해당 임대인 정보 저장 API
+  @Operation(summary = "신고 등기부등본 업로드 후 해당 임대인 정보 저장 API", description = "신고할 등기부등본 업로드 된 후 바로 신고 임대인 정보 저장")
+  @PostMapping(value = "/save/{reportId}")
+  public ResponseEntity<BaseResponse<List<FakerResponse>>> saveFakerInfo(
+      @Parameter(description = "신고 등기부등본 고유번호") @PathVariable Long reportId){
+    List<FakerResponse> fakerResponseList = fakerSaveFlow.processSaveFakerInfo(reportId);
+    return ResponseEntity.ok(BaseResponse.success("신고당한 임대인 정보 저장 완료",fakerResponseList));
+  }
 
   @Operation(summary = "신고 등기부등본 업로드 API", description = "신고할 등기부등본 문서를 업로드하고 문서 원본이름과 상태를 리턴하는 API")
   @PostMapping(value = "/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

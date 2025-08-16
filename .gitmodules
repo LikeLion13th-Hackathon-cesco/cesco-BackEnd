@@ -1,3 +1,3 @@
-[submodule "cesco-BackEnd-config"]
-    path = src/main/resources/cesco-BackEnd-config
-    url = git@github.com:LikeLion13th-Hackathon-cesco/cesco-BackEnd-config.git
+[submodule "src/main/resources/cesco-BackEnd-config"]
+	path = src/main/resources/cesco-BackEnd-config
+	url = https://github.com/LikeLion13th-Hackathon-cesco/cesco-BackEnd-config.git

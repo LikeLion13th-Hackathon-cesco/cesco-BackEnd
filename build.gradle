@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.4'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.diffplug.spotless' version '6.25.0'
 }
 
 group = 'com.practice'
@@ -23,17 +24,48 @@ repositories {
     mavenCentral()
 }
 
+// 서브모듈 설정 파일을 메인 리소스로 복사
 processResources {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    // 또는 INCLUDE, WARN, FAIL 중 선택
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE  // EXCLUDE → INCLUDE로 변경
+
+    // 서브모듈의 설정 파일들을 메인 리소스로 복사
+    from('src/main/resources/cesco-BackEnd-config') {
+        include '**/*.properties'
+        include '**/*.yml'
+        include '**/*.yaml'
+        into '/'  // 루트 리소스 디렉토리로
+    }
 }
 
-sourceSets {
-    main {
-        resources {
-            srcDir 'src/main/resources'
-            srcDir 'src/main/resources/cesco-BackEnd-config'
-        }
+// sourceSets 중복 제거 (processResources로 대체)
+// sourceSets {
+//     main {
+//         resources {
+//             srcDir 'src/main/resources'
+//             srcDir 'src/main/resources/cesco-BackEnd-config'
+//         }
+//     }
+// }
+
+spotless {
+    java {
+        target '**/*.java'
+        googleJavaFormat('1.17.0')
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+
+    format 'properties', {
+        target '**/*.properties'
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+
+    format 'misc', {
+        target '**/*.md', '**/*.gitignore'
+        trimTrailingWhitespace()
+        endWithNewline()
     }
 }
 

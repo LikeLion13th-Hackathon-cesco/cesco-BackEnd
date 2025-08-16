@@ -183,7 +183,7 @@ public class GptService {
       // 이부분 경고가 계속 띀!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       List<Map<String, Object>> choices;
       choices = objectMapper.convertValue(responseBody.get("choices"),
-          new TypeReference<List<Map<String, Object>>>() {}
+          new TypeReference<>() {}
       );
 
       if(choices == null || choices.isEmpty()){
@@ -214,7 +214,7 @@ public class GptService {
 
 
 
-  // gpt-4o API 응답 파싱해서 데이터 가공하는 메소드
+  // gpt-4o API 응답 파싱해서 데이터 가공하고 반환하는 메소드
   public GptResponse parseGptResponse(String content){
     try{
       return objectMapper.readValue(content, GptResponse.class);    // GptResponse 에서 지정한 응답 형식대로 자동 파싱해서 반환

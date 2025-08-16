@@ -3,6 +3,8 @@ services:
     image: imjuyongp/setbangsari:latest
     ports:
       - "8080:8080"  # 호스트의 8080 포트를 컨테이너의 8080 포트와 매핑
+    env_file:
+      - .env
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/setbangsari?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
@@ -12,17 +14,6 @@ services:
       - DB_PASSWORD=cesco07
       - SPRING_CONFIG_USERNAME=cesco
       - SPRING_CONFIG_PASSWORD=1234
-      - AWS_ACESS_KEY=dummy_aws_key
-      - AWS_SECRET_KEY=dummy_aws_secret
-      - NAVER_OCR_INVOKE_URL=http://dummy.url
-      - NAVER_OCR_SECRET_KEY=dummy_key
-      - OPENAI_SECRET_KEY=dummy_openai_key
-      - OPENAI_URL=https://api.openai.com/v1/chat/completions
-      - OPENAI_MODEL=gpt-4o
-      - CODE_CLIENT_ID=dummy_id
-      - CODEF_CLIENT_SECRET=dummy_secret
-      - CODEF_PUBLIC_KEY=dummy_key
-      - CODEF_ENDPOINT=http://dummy.url
     command:
       - java -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} -jar app.jar
       # 실행 명령어: jar 파일을 실행하면서 Spring 프로필 활성화

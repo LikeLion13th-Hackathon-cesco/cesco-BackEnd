@@ -21,7 +21,7 @@ public class AnalysisFlowService {
   private final GptService gptService;
   private final AnalysisReportService analysisReportService;
 
-  @Transactional
+
   public AnalysisReportResponse processAnalysisReport(Long reportId, GptAnalysisRequest gptAnalysisRequest) {
 
     // 프롬프트 제작

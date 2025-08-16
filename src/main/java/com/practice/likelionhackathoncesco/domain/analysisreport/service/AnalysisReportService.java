@@ -28,6 +28,8 @@ public class AnalysisReportService {
   private final FileService fileService;
   private final AnalysisReportRepository analysisReportRepository;
 
+
+
   // 분석 리포트를 위한 등기부등본 업로드
   @Transactional
   public FileUploadResponse uploadDocuments(PathName pathName, MultipartFile file)
@@ -49,6 +51,7 @@ public class AnalysisReportService {
 
   }
 
+
   @Transactional
   public Boolean deleteReport(Long reportId) {
     log.info("분석 리포트 삭제 요청: reportId={}", reportId);
@@ -65,6 +68,7 @@ public class AnalysisReportService {
       throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
     }
   }
+
 
 
   // 전월세 안전지수 로직 + 완전한 분석 리포트 반환 메소드 -> gptResponse 응답을 파싱해서 DB에 집어넣어야 함
@@ -126,6 +130,8 @@ public class AnalysisReportService {
 
     return toAnalysisReportResponse(analysisReport);
   }
+
+
 
   public AnalysisReportResponse toAnalysisReportResponse(AnalysisReport analysisReport) {
 

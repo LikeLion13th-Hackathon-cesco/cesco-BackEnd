@@ -1,6 +1,7 @@
 package com.practice.likelionhackathoncesco.domain.quiz.controller;
 
 import com.practice.likelionhackathoncesco.domain.quiz.dto.request.QuizSubmitRequest;
+import com.practice.likelionhackathoncesco.domain.quiz.dto.response.QuizAnswerResponse;
 import com.practice.likelionhackathoncesco.domain.quiz.dto.response.QuizResponse;
 import com.practice.likelionhackathoncesco.domain.quiz.service.QuizService;
 import com.practice.likelionhackathoncesco.global.response.BaseResponse;
@@ -34,10 +35,10 @@ public class QuizController {
   // 고정 사용자가 퀴즈를 푼 후, 결과 응답 API
   @Operation(summary = "퀴즈 풀이 후 결과 응답", description = "퀴즈 풀이 후 확인하기 버튼 누르면 호출되는 API")
   @PutMapping("/quiz/result")
-  public ResponseEntity<BaseResponse<QuizResponse>> getResultBySummitAnswer(
+  public ResponseEntity<BaseResponse<QuizAnswerResponse>> getResultBySummitAnswer(
       @Parameter(description = "퀴즈 풀이 제출 내용") @RequestBody QuizSubmitRequest quizSubmitRequest) {
-    QuizResponse quizResponse = quizService.submitAnswer(quizSubmitRequest);
-    return ResponseEntity.ok(BaseResponse.success("퀴즈 풀이 후 결과 응답 성공",quizResponse));
+    QuizAnswerResponse quizAnswerResponse = quizService.submitAnswer(quizSubmitRequest);
+    return ResponseEntity.ok(BaseResponse.success("퀴즈 풀이 후 결과 응답 성공",quizAnswerResponse));
   }
 
 

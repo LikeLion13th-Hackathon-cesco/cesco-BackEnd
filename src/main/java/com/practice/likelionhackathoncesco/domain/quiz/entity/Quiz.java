@@ -27,8 +27,7 @@ import lombok.Setter;
 public class Quiz {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "quiz_id")
+  @Column(name = "quiz_id",nullable = false)
   private Long quizId;
 
   @Column(nullable = false)

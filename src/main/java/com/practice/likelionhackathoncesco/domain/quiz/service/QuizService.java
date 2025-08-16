@@ -1,6 +1,7 @@
 package com.practice.likelionhackathoncesco.domain.quiz.service;
 
 import com.practice.likelionhackathoncesco.domain.quiz.dto.request.QuizSubmitRequest;
+import com.practice.likelionhackathoncesco.domain.quiz.dto.response.QuizAnswerResponse;
 import com.practice.likelionhackathoncesco.domain.quiz.dto.response.QuizResponse;
 import com.practice.likelionhackathoncesco.domain.quiz.entity.Quiz;
 import com.practice.likelionhackathoncesco.domain.quiz.entity.QuizAnswer;
@@ -29,9 +30,15 @@ public class QuizService {
 
   // 고정 사용자가 퀴즈를 푼 후 결과 응답 및 크레딧 추가하는 메소드
   @Transactional
-  public QuizResponse submitAnswer(QuizSubmitRequest quizSubmitRequest) {
+  public QuizAnswerResponse submitAnswer(QuizSubmitRequest quizSubmitRequest) {
+    
+    log.info("[QuizService] 퀴즈 풀이 후 응답 생성 및 크레딧 지급 시도 : quizId={}", quizSubmitRequest.getQuizId());
+    
     User user = userRepository.findById(quizSubmitRequest.getUserId()).orElseThrow(()->new CustomException(UserErrorCode.USER_NOT_FOUND));
     Quiz quiz = quizRepository.findById(quizSubmitRequest.getQuizId()).orElseThrow(()->new CustomException(QuizErrorCode.QUIZ_NOT_FOUND));
+
+    quiz.setIsSolved(1);  // 풀이하고 나면 isSolved 변수값을 1로 변경
+    quizRepository.save(quiz);  // 변경한 값대로 다시 저장
 
     boolean isCorrect = quiz.getCorrectAnswer().equals(quizSubmitRequest.getSelectedOption());
 
@@ -49,7 +56,9 @@ public class QuizService {
     }
     userRepository.save(user);
 
-    return toQuizResponse(quiz);
+    log.info("[QuizService] 퀴즈 풀이 후 응답 생성 및 크레딧 지급 완료 : quizId={}, isCorrect={}, userCredit={}", answer.getQuiz().getQuizId(), answer.getIsCorrect(), user.getCredit());
+
+    return toQuizAnswerResponse(quiz, answer);
   }
 
 
@@ -63,6 +72,8 @@ public class QuizService {
   // 고정 사용자가 아직 풀지 않은 퀴즈에 대해 랜덤으로 퀴즈 단일 조회
   @Transactional
   public QuizResponse getRandomQuiz() {
+
+    log.info("[QuizService] 풀이되지 않은 퀴즈 랜덤 단일 조회 시도");
     List<Quiz>quizList = getAllQuizIsSolvedIsZero();
 
     if(quizList == null || quizList.isEmpty()) {
@@ -72,20 +83,33 @@ public class QuizService {
     Random random = new Random();
     Quiz quiz = quizList.get(random.nextInt(quizList.size()));  // 퀴즈 하나 랜덤으로 조회
 
-    quiz.setIsSolved(1);  // 조회하고 나면 isSolved 변수값을 1로 변경
-    quizRepository.save(quiz);  // 변경한 값대로 다시 저장
+
+    log.info("[QuizService] 풀이되지 않은 퀴즈 단일 조회 성공 : quizId={}, quizTitle={}", quiz.getQuizId(), quiz.getTitle());
 
     return toQuizResponse(quiz);
   }
 
   public QuizResponse toQuizResponse(Quiz quiz) {
     return QuizResponse.builder()
+        .quizId(quiz.getQuizId())
+        .title(quiz.getTitle())
+        .optionOne(quiz.getOptionOne())
+        .optionTwo(quiz.getOptionTwo())
+        .optionThree(quiz.getOptionThree())
+        .optionFour(quiz.getOptionFour())
+        .build();
+  }
+
+  public QuizAnswerResponse toQuizAnswerResponse(Quiz quiz, QuizAnswer quizAnswer) {
+    return QuizAnswerResponse.builder()
+        .quizId(quiz.getQuizId())
         .title(quiz.getTitle())
         .optionOne(quiz.getOptionOne())
         .optionTwo(quiz.getOptionTwo())
         .optionThree(quiz.getOptionThree())
         .optionFour(quiz.getOptionFour())
         .correctAnswer(quiz.getCorrectAnswer())
+        .isCorrect(quizAnswer.getIsCorrect())
         .explanation(quiz.getExplanation())
         .build();
   }

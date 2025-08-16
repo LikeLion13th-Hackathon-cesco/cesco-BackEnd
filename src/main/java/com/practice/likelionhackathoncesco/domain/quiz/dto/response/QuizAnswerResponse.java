@@ -6,8 +6,8 @@ import lombok.Getter;
 
 @Getter
 @Builder
-@Schema(title = "QuizResponse DTO", description = "퀴즈 조회 응답")
-public class QuizResponse {
+@Schema(title = "QuizAnswerResponse DTO", description = "퀴즈 풀이 후 응답")
+public class QuizAnswerResponse {
 
   @Schema(description = "퀴즈 고유 번호", example = "1")
   private Long quizId;
@@ -26,5 +26,14 @@ public class QuizResponse {
 
   @Schema(description = "선택지 4", example = "전입신고를 하면 주민등록 주소가 해당 주소로 변경된다.")
   private String optionFour;
+
+  @Schema(description = "정답", example = "3")
+  private Integer correctAnswer;
+
+  @Schema(description = "사용자가 고른 선택지의 정답 여부", example = "1")
+  private Boolean isCorrect;
+
+  @Schema(description = "정답에 대한 해설", example = "전입신고가 되었더라도 확정일자는 별도로 받아야 합니다.")
+  private String explanation;
 
 }

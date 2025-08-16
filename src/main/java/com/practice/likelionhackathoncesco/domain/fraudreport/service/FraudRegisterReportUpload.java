@@ -1,0 +1,59 @@
+package com.practice.likelionhackathoncesco.domain.fraudreport.service;
+
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
+import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
+import com.practice.likelionhackathoncesco.domain.commonfile.service.FileService;
+import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.FraudRegisterResponse;
+import com.practice.likelionhackathoncesco.domain.fraudreport.entity.FraudRegisterReport;
+import com.practice.likelionhackathoncesco.domain.fraudreport.entity.ReportStatus;
+import com.practice.likelionhackathoncesco.domain.fraudreport.repository.FraudRegisterReportRepository;
+import com.practice.likelionhackathoncesco.global.exception.CustomException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class FraudRegisterReportUpload { // 사기 등기부등본 업로드 서비스 로직
+
+  private final FileService fileService;
+  private final FraudRegisterReportRepository fraudRegisterReportRepository;
+
+  // 분석 리포트를 위한 등기부등본 업로드
+  @Transactional
+  public FraudRegisterResponse uploadDocuments(PathName pathName, MultipartFile file) {
+    FraudRegisterReport savedReport =
+        fileService.uploadFile(
+            pathName,
+            file,
+            () -> FraudRegisterReport.builder().reportStatus(ReportStatus.UPLOADCOMPLETED).build(),
+            fraudRegisterReportRepository,
+            null);
+
+    return FraudRegisterResponse.builder()
+        .fraudRegisterReportId(savedReport.getFraudRegisterReportId())
+        .fileName(savedReport.getFileName())
+        .reportStatus(savedReport.getReportStatus()) // 엔티티 생성 시 업로드 상태로 생성
+        .build();
+  }
+
+  @Transactional
+  public Boolean deleteReport(Long reportId) {
+    log.info("분석 리포트 삭제 요청: reportId={}", reportId);
+
+    try {
+      // FileService의 공통 삭제 메서드 활용
+      Boolean result = fileService.deleteFile(reportId, fraudRegisterReportRepository);
+
+      log.info("등기부등본 삭제 완료: reportId={}, result={}", reportId, result);
+      return result;
+
+    } catch (Exception e) {
+      log.error("등기부등본 삭제 실패: reportId={}", reportId, e);
+      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
+    }
+  }
+}

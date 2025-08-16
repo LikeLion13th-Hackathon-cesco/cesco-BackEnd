@@ -22,18 +22,11 @@ public class SwaggerConfig {
 
     return new OpenAPI()
         .addServersItem(localServer)
-        .info(
-            new Info()
-                .title("Swagger API 명세서")
-                .version("1.0")
-                .description("전세사기 예방 웹 : 셋방살이"));
+        .info(new Info().title("Swagger API 명세서").version("1.0").description("전세사기 예방 웹 : 셋방살이"));
   }
 
   @Bean
   public GroupedOpenApi customGroupedOpenApi() {
-    return GroupedOpenApi.builder()
-        .group("api")
-        .pathsToMatch("/**")
-        .build();
+    return GroupedOpenApi.builder().group("api").pathsToMatch("/**").build();
   }
 }

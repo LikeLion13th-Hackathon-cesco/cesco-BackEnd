@@ -1,6 +1,5 @@
 package com.practice.likelionhackathoncesco.global.exception;
 
-
 import com.practice.likelionhackathoncesco.global.exception.model.BaseErrorCode;
 import lombok.Getter;
 

@@ -23,6 +23,20 @@ repositories {
     mavenCentral()
 }
 
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    // 또는 INCLUDE, WARN, FAIL 중 선택
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir 'src/main/resources'
+            srcDir 'src/main/resources/cesco-BackEnd-config'
+        }
+    }
+}
+
 dependencies {
     // Web
     implementation 'org.springframework.boot:spring-boot-starter-web'

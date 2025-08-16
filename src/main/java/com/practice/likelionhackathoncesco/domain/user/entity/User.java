@@ -50,6 +50,7 @@ public class User extends BaseTimeEntity {
 
   // analysisReport 테이블의 user 필드와 연관 -> user는 analysisReport를 여러개 가짐
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @Builder.Default
   private List<AnalysisReport> reports = new ArrayList<>();
 
   // FraudReport 테이블의 user 필드와 연관 -> user는 FraudReport를 여러개 가짐
@@ -80,5 +81,9 @@ public class User extends BaseTimeEntity {
     return LocalDateTime.now().isAfter(expirationDate); // 현재 시간을 기준으로 결제 만료일 이후 인지
   }
 
+  // 크레딧 추가하는 메서드
+  public void addCredits(int credit) {
+    this.credit += credit;
+  }
 
 }

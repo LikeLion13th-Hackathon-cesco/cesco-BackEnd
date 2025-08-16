@@ -32,33 +32,51 @@ public class AnalysisReport extends BaseFileEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long reportId; // 분석 레포트 고유 번호
 
-  // 분석 결과 관련
-/*  @Lob
-  @Column(name = "ocr_text")
-  private String ocrText; // 추출된 텍스트 저장*/
+  // 등기부등본 관련
+  @Column(name = "file_name", nullable = false)
+  private String fileName; // 업로드한 파일 이름
 
+  @Column(name = "s3_key", nullable = false)
+  private String s3Key; // s3 객체 식별 키
+  // s3 경로 -> 추후에 s3key로 객체 url(웹 형태) 생성 (동적 생성 가능)
+
+  @Column(name = "address")
+  private String address;   // 해당 등기부등본 부동산의 주소
+
+  @Column(name = "official_price")
+  private Double officialPrice;    // 공시가격
+
+  // 분석 결과 관련
   @Column(name = "safety_score")
   private Double safetyScore; // 안전 점수
 
-  @Column(name = "insurance_percent")
-  private Integer insurancePercent; // 보험 가입 여부 가능성
+  @Column(name = "short_description", columnDefinition = "TEXT")
+  private String summary;  // 한줄 요약
 
   @Lob // gpt 응답이 들어가기 때문에 긴 문자열로 저장
-  @Column(name = "description", columnDefinition = "TEXT")
-  private String description; // 안전 점수 설명
+  @Column(name = "safety_description", columnDefinition = "TEXT")
+
+  private String safetyDescription; // 안전 점수 설명
+
+  @Lob // gpt 응답이 들어가기 때문에 긴 문자열로 저장
+  @Column(name = "insurance_description", columnDefinition = "TEXT")
+  private String insuranceDescription; // 보증보험가입 가능 여부 설명
 
   // 처리 상태 관리
   @Enumerated(EnumType.STRING)
   @Column(name = "processing_status", nullable = false)
   private ProcessingStatus processingStatus;
 
-  // 추출된 텍스트 DB에 저장
-/*  public void updateOcrText(String ocrText) {
-    this.ocrText = ocrText;
-  }*/
-
   // 진행 상태 DB 업데이트
   public void updateProcessingStatus(ProcessingStatus processingStatus) {
     this.processingStatus = processingStatus;
+  }
+  // 분석 후 DB 업데이트
+  public void update(String address, Double safetyScore, String summary, String safetyDescription, String insuranceDescription) {
+    this.address = address;
+    this.safetyScore = safetyScore;
+    this.summary = summary;
+    this.safetyDescription = safetyDescription;
+    this.insuranceDescription = insuranceDescription;
   }
 }

@@ -28,7 +28,7 @@ public class UserPayService {
 
     if(user.getPayStatus() == PayStatus.PAID) {
       log.info("사용자 {}는 이미 결제를 완료했습니다. 만료일: {}", user.getUsername(), user.getExpirationDate());
-      throw new CustomException(UserErrorCode.USER_ALREADT_PAID);
+      throw new CustomException(UserErrorCode.USER_ALREADY_PAID);
     }
 
     user.processPayment(); // 사용자 결제 처리

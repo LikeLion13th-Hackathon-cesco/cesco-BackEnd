@@ -38,7 +38,12 @@ jobs:
         run: |
           ./gradlew clean bootjar -Pprofile=dev
 
-      # 6. Docker 이미지 빌드 및 Docker Hub로 push
+      # 6. Docker Hub 로그인
+      - name: Log in to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      # 7. Docker 이미지 빌드 및 Docker Hub로 push
       - name: Docker build & push
         run: |
           docker buildx build -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }} --push .

@@ -21,31 +21,30 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="post")
+@Table(name = "post")
 public class Post extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private long postId;  // 게시글 고유 번호
+  private long postId; // 게시글 고유 번호
 
   @Column(nullable = false)
-  private String content;   // 게시글 내용
+  private String content; // 게시글 내용
 
   @Column(nullable = false)
-  private String roadCode;    // 도로명 코드
-  
-  @Column(nullable = false)
-  private String buildingNumber;    // 건물 본번
+  private String roadCode; // 도로명 코드
 
   @Column(nullable = false)
-  private int likeCount;  // 좋아요 수
+  private String buildingNumber; // 건물 본번
+
+  @Column(nullable = false)
+  private int likeCount; // 좋아요 수
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id",nullable = false)
-  private User user;  // 사용자 ID(FK)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user; // 사용자 ID(FK)
 
   public void update(String content) {
     this.content = content;
   }
-
 }

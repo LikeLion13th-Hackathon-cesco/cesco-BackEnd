@@ -23,5 +23,4 @@ public class RoadAddress {
 
   @Schema(description = "건물번호", example = "219")
   private String buildingNumber;
-
 }

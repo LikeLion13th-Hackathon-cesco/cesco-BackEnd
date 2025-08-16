@@ -19,5 +19,4 @@ public class CodefResponse {
   @Schema(description = "가격 List", example = "<공동주택공시가격>")
   @JsonProperty("resPriceList")
   private List<Object> resPriceList; // 가격 리스트
-
 }

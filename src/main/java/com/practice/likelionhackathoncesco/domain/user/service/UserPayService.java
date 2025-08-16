@@ -23,10 +23,12 @@ public class UserPayService {
 
   @Transactional
   public PayResponse completePayment(Long userId) { // 결제 진행 메서드
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
-    if(user.getPayStatus() == PayStatus.PAID) {
+    if (user.getPayStatus() == PayStatus.PAID) {
       log.info("사용자 {}는 이미 결제를 완료했습니다. 만료일: {}", user.getUsername(), user.getExpirationDate());
       throw new CustomException(UserErrorCode.USER_ALREADY_PAID);
     }
@@ -36,9 +38,7 @@ public class UserPayService {
 
     log.info("사용자 {}의 결제가 완료되었습니다. 만료일: {}", user.getUsername(), user.getExpirationDate());
 
-    return PayResponse.builder()
-        .payStatus(PayStatus.PAID)
-        .build();
+    return PayResponse.builder().payStatus(PayStatus.PAID).build();
   }
 
   // 결제 만료일이 지난 사용자를 조회하고 결제 상태를 다시 미결제 상태로 바꿔주고 DB저장
@@ -46,8 +46,8 @@ public class UserPayService {
   @Scheduled(cron = "0 1 0 * * *") // 매일 00:01분에 실행
   public void expirePaymentCheck() {
     log.info("=== 결제 만료 체크 시작 ===");
-    List<User> expiredUsers = userRepository.findByPayStatusAndExpirationDateBefore(
-        PayStatus.PAID, LocalDateTime.now());
+    List<User> expiredUsers =
+        userRepository.findByPayStatusAndExpirationDateBefore(PayStatus.PAID, LocalDateTime.now());
 
     for (User user : expiredUsers) {
       user.updateExpire(); // 미결제 상태로 변경과 결제 만료일 필드 null값으로 설정
@@ -64,10 +64,11 @@ public class UserPayService {
   // 결제 만료 여부 확인 (유효 : true / 만료 : false)
   @Transactional(readOnly = true)
   public boolean isUserPaid(Long userId) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
     return !user.isPaymentExpired(); // 결제 만료 사용자 false 반환
   }
-
 }

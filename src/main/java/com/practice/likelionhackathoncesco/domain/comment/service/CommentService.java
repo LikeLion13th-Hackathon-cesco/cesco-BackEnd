@@ -32,24 +32,33 @@ public class CommentService {
   // 댓글 생성
   @Transactional
   public CommentResponse createComment(CreateCommentRequest createCommentRequest) {
-    log.info("[CommentService] 댓글 생성 시도 : userId={}, postId={}, content={}", createCommentRequest.getUserId(), createCommentRequest.getPostId(), createCommentRequest.getContent());
-    if(createCommentRequest.getContent() == null || createCommentRequest.getContent().isBlank()){
+    log.info(
+        "[CommentService] 댓글 생성 시도 : userId={}, postId={}, content={}",
+        createCommentRequest.getUserId(),
+        createCommentRequest.getPostId(),
+        createCommentRequest.getContent());
+    if (createCommentRequest.getContent() == null || createCommentRequest.getContent().isBlank()) {
       throw new CustomException(CommentErrorCode.INVALID_COMMENT_CONTENT);
     }
-    User user = userRepository.findById(createCommentRequest.getUserId()).orElseThrow(()-> new CustomException(
-        UserErrorCode.USER_NOT_FOUND));
-    Post post = postRepository.findById(createCommentRequest.getPostId()).orElseThrow(()-> new CustomException(
-        CommentErrorCode.COMMENT_NOT_FOUND));
+    User user =
+        userRepository
+            .findById(createCommentRequest.getUserId())
+            .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+    Post post =
+        postRepository
+            .findById(createCommentRequest.getPostId())
+            .orElseThrow(() -> new CustomException(CommentErrorCode.COMMENT_NOT_FOUND));
 
-    Comment comment = Comment.builder()
-        .user(user)
-        .post(post)
-        .content(createCommentRequest.getContent())
-        .build();
+    Comment comment =
+        Comment.builder().user(user).post(post).content(createCommentRequest.getContent()).build();
 
     commentRepository.save(comment);
-    
-    log.info("[CommentService] 댓글 생성 왼료 : userId={}, postId={}, content={}", comment.getUser().getUserId(), comment.getPost().getPostId(), comment.getContent());
+
+    log.info(
+        "[CommentService] 댓글 생성 왼료 : userId={}, postId={}, content={}",
+        comment.getUser().getUserId(),
+        comment.getPost().getPostId(),
+        comment.getContent());
     return commentMapper.toCommentResponse(comment);
   }
 
@@ -58,7 +67,10 @@ public class CommentService {
   public Boolean deleteComment(Long commentId) {
     log.info("[CommentService] 댓글 삭제 시도 : commentId={}", commentId);
 
-    Comment comment = commentRepository.findById(commentId).orElseThrow(()-> new CustomException(CommentErrorCode.COMMENT_NOT_FOUND));
+    Comment comment =
+        commentRepository
+            .findById(commentId)
+            .orElseThrow(() -> new CustomException(CommentErrorCode.COMMENT_NOT_FOUND));
 
     log.info("[CommentService] 댓글 삭제 완료 : commentId={}", commentId);
     commentRepository.delete(comment);
@@ -68,19 +80,27 @@ public class CommentService {
   // 댓글 수정
   @Transactional
   public CommentResponse updateComment(UpdateCommentRequest updateCommentRequest, Long commentId) {
-    log.info("[CommentService] 댓글 수정 시도 : commentId={}, newContent={}", commentId, updateCommentRequest.getContent());
-    if(updateCommentRequest.getContent() == null || updateCommentRequest.getContent().isBlank()){
+    log.info(
+        "[CommentService] 댓글 수정 시도 : commentId={}, newContent={}",
+        commentId,
+        updateCommentRequest.getContent());
+    if (updateCommentRequest.getContent() == null || updateCommentRequest.getContent().isBlank()) {
       throw new CustomException(CommentErrorCode.INVALID_COMMENT_CONTENT);
     }
 
-    Comment comment = commentRepository.findById(commentId).orElseThrow(()-> new CustomException(CommentErrorCode.COMMENT_NOT_FOUND));
+    Comment comment =
+        commentRepository
+            .findById(commentId)
+            .orElseThrow(() -> new CustomException(CommentErrorCode.COMMENT_NOT_FOUND));
     comment.update(updateCommentRequest.getContent());
 
-    log.info("[CommentService] 댓글 수정 완료 : commentId={}, newContent={}", comment.getCommentId(), comment.getContent());
+    log.info(
+        "[CommentService] 댓글 수정 완료 : commentId={}, newContent={}",
+        comment.getCommentId(),
+        comment.getContent());
 
     return commentMapper.toCommentResponse(comment);
   }
-
 
   // 게시글 별 댓글 전체 조회
   @Transactional
@@ -90,5 +110,4 @@ public class CommentService {
 
     return commentList.stream().map(comment -> commentMapper.toCommentResponse(comment)).toList();
   }
-
 }

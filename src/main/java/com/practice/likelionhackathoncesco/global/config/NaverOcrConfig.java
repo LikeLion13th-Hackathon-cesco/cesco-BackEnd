@@ -12,6 +12,7 @@ public class NaverOcrConfig {
 
   @Value("${naver.ocr.invoke-url}")
   private String invokeUrl;
+
   @Value("${naver.ocr.secret-key}")
   private String secretKey;
 
@@ -20,5 +21,4 @@ public class NaverOcrConfig {
   public RestTemplate restTemplate() {
     return new RestTemplate();
   }
-
 }

@@ -17,5 +17,4 @@ public class ComplaintResponse { // 이미지 url 반환 필요 없음
 
   @Schema(description = "신고 상태")
   private ReportStatus reportStatus;
-
 }

@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-@Schema(title="CreatePostRequest DTO", description="게시글 생성 요청")
+@Schema(title = "CreatePostRequest DTO", description = "게시글 생성 요청")
 public class CreatePostRequest {
 
   @Schema(description = "게시글 내용", example = "보안이 별로 안좋은듯")
@@ -20,5 +20,4 @@ public class CreatePostRequest {
 
   @Schema(description = "게시글 작성 사용자 ID", example = "1")
   private Long userId;
-
 }

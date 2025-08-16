@@ -1,7 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.fraudreport.dto.response;
 
 import com.practice.likelionhackathoncesco.domain.fraudreport.entity.ReportStatus;
-import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,5 +17,4 @@ public class FraudRegisterResponse { // 이미지 url 반환 필요 없음
 
   @Schema(description = "신고 상태")
   private ReportStatus reportStatus;
-
 }

@@ -19,5 +19,4 @@ public class FileUploadResponse {
 
   @Schema(description = "진행 상태(파일 업로드 성공)")
   private ProcessingStatus processingStatus;
-
 }

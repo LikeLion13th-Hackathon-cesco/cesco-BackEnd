@@ -1,15 +1,8 @@
 package com.practice.likelionhackathoncesco.domain.quiz.entity;
 
-import com.practice.likelionhackathoncesco.domain.user.entity.User;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,11 +16,11 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="quiz")
+@Table(name = "quiz")
 public class Quiz {
 
   @Id
-  @Column(name = "quiz_id",nullable = false)
+  @Column(name = "quiz_id", nullable = false)
   private Long quizId;
 
   @Column(nullable = false)
@@ -49,9 +42,8 @@ public class Quiz {
   private Integer correctAnswer;
 
   @Column(nullable = false)
-  private String explanation;   // 정답해설(옳지 않은 선택지에 한해서만)
-  
-  @Column(nullable = false)
-  private Integer isSolved;   // 고정 사용자가 이미 풀었는지 아닌지 여부
+  private String explanation; // 정답해설(옳지 않은 선택지에 한해서만)
 
+  @Column(nullable = false)
+  private Integer isSolved; // 고정 사용자가 이미 풀었는지 아닌지 여부
 }

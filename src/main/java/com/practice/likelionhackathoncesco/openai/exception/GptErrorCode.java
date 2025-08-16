@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum GptErrorCode implements BaseErrorCode {
-
   GPT_API_CALL_FAILED("GPT_5001", "GPT API 호출에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
   GPT_RESPONSE_PARSING_FAILED("GPT_5002", "GPT 응답 파싱에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
   GPT_TIMEOUT("GPT_5003", "GPT 응답 시간이 초과되었습니다.", HttpStatus.GATEWAY_TIMEOUT),
@@ -18,5 +17,4 @@ public enum GptErrorCode implements BaseErrorCode {
   private final String code;
   private final String message;
   private final HttpStatus status;
-
 }

@@ -35,5 +35,4 @@ public class QuizAnswerResponse {
 
   @Schema(description = "정답에 대한 해설", example = "전입신고가 되었더라도 확정일자는 별도로 받아야 합니다.")
   private String explanation;
-
 }

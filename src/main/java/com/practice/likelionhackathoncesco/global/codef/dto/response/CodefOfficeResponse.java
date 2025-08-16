@@ -22,5 +22,4 @@ public class CodefOfficeResponse {
   @Schema(description = "일자", example = "20200101")
   @JsonProperty("resReportingDate")
   private String resReportingDate;
-
 }

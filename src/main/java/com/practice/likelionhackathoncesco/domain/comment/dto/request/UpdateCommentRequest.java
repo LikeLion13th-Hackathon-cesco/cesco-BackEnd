@@ -11,5 +11,4 @@ public class UpdateCommentRequest {
 
   @Schema(description = "수정할 댓글 내용", example = "PC방 어디로 가시나요?")
   private String content;
-
 }

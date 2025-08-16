@@ -38,8 +38,6 @@ public class QuizController {
   public ResponseEntity<BaseResponse<QuizAnswerResponse>> getResultBySummitAnswer(
       @Parameter(description = "퀴즈 풀이 제출 내용") @RequestBody QuizSubmitRequest quizSubmitRequest) {
     QuizAnswerResponse quizAnswerResponse = quizService.submitAnswer(quizSubmitRequest);
-    return ResponseEntity.ok(BaseResponse.success("퀴즈 풀이 후 결과 응답 성공",quizAnswerResponse));
+    return ResponseEntity.ok(BaseResponse.success("퀴즈 풀이 후 결과 응답 성공", quizAnswerResponse));
   }
-
-
 }

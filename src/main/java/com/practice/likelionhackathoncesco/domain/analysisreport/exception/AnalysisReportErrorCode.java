@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum AnalysisReportErrorCode implements BaseErrorCode {
-
   FILE_NOT_FOUND("IMG4001", "존재하지 않는 파일입니다.", HttpStatus.NOT_FOUND),
   FILE_SIZE_INVALID("IMG4002", "파일 크기는 5MB를 초과할 수 없습니다.", HttpStatus.BAD_REQUEST),
   FILE_TYPE_INVALID("IMG4003", "PDF 파일만 업로드 가능합니다.", HttpStatus.BAD_REQUEST),
@@ -18,14 +17,13 @@ public enum AnalysisReportErrorCode implements BaseErrorCode {
 
   REPORT_NOT_FOUND("REPORT_4001", "존재하지 않는 분석레포트입니다.", HttpStatus.NOT_FOUND),
   INVALID_REPORT_ADDRESS("ADDRESS_4002", "주소는 필수입니다.", HttpStatus.BAD_REQUEST),
-  INVALID_REPORT_STATUS("REPORT_4002","유효하지 않은 처리상태입니다.", HttpStatus.BAD_REQUEST),
-  INVALID_REPORT_SUMMARY("SUMMARY_4002","한줄 요약은 필수입니다.", HttpStatus.BAD_REQUEST),
+  INVALID_REPORT_STATUS("REPORT_4002", "유효하지 않은 처리상태입니다.", HttpStatus.BAD_REQUEST),
+  INVALID_REPORT_SUMMARY("SUMMARY_4002", "한줄 요약은 필수입니다.", HttpStatus.BAD_REQUEST),
   INVALID_SAFETY_DESCRIPTION("DESCRIPTION_4002", "안전지수 분석 설명은 필수입니다.", HttpStatus.BAD_REQUEST),
-  INVALID_INSURANCE_DESCRIPTION("DESCRIPTION_4003", "보증보험 가입 가능 여부 설명은 필수입니다.", HttpStatus.BAD_REQUEST);
+  INVALID_INSURANCE_DESCRIPTION(
+      "DESCRIPTION_4003", "보증보험 가입 가능 여부 설명은 필수입니다.", HttpStatus.BAD_REQUEST);
 
   private final String code;
   private final String message;
   private final HttpStatus status;
-
-
 }

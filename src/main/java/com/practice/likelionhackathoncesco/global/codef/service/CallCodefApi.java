@@ -39,8 +39,10 @@ public class CallCodefApi {
   // api 호출하여 공시가격 파싱
   public CodefOfficeResponse extractPrice(Long reportId) {
 
-    AnalysisReport analysisReport = analysisReportRepository.findById(reportId)
-        .orElseThrow(() -> new CustomException(S3ErrorCode.FILE_NOT_FOUND));
+    AnalysisReport analysisReport =
+        analysisReportRepository
+            .findById(reportId)
+            .orElseThrow(() -> new CustomException(S3ErrorCode.FILE_NOT_FOUND));
 
     try {
       log.info("공동주택 공시가격 추출 시작");
@@ -53,14 +55,11 @@ public class CallCodefApi {
 
       log.info("공시가격 추출 처리 완료: reportId={}", reportId);
 
-      return CodefOfficeResponse.builder()
-          .resAmount(codefResult.getResAmount())
-          .build();
+      return CodefOfficeResponse.builder().resAmount(codefResult.getResAmount()).build();
 
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-
   }
 
   // CODEF API 호출하여 파싱된 데이터 반환
@@ -69,7 +68,7 @@ public class CallCodefApi {
     // 엑세스 토큰을 생성한 후 헤더에 포함하기 위하여 저장
     String accessToken = accessTokenService.getValidToken();
 
-    try{
+    try {
       // HTTP 헤더 설정(엑세스 토큰 값을 넣어서 요청)
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
@@ -80,12 +79,8 @@ public class CallCodefApi {
 
       log.info("CODEF API 호출 시작");
 
-      ResponseEntity<String> response = restTemplate.exchange(
-          url,
-          HttpMethod.POST,
-          requestEntity,
-          String.class
-      );
+      ResponseEntity<String> response =
+          restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
 
       return parseResponse(response);
 
@@ -139,7 +134,8 @@ public class CallCodefApi {
       }
 
       // JSON 파싱
-      CodefOfficeResponse codefResponse = objectMapper.readValue(decodedResponse, CodefOfficeResponse.class);
+      CodefOfficeResponse codefResponse =
+          objectMapper.readValue(decodedResponse, CodefOfficeResponse.class);
 
       log.info("JSON 파싱 성공");
       return codefResponse;
@@ -152,5 +148,4 @@ public class CallCodefApi {
       throw new RuntimeException("응답 처리 실패", e);
     }
   }
-
 }

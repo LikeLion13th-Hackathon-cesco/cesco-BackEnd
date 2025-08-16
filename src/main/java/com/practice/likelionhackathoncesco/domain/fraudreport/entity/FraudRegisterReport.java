@@ -1,27 +1,19 @@
 package com.practice.likelionhackathoncesco.domain.fraudreport.entity;
 
 import com.practice.likelionhackathoncesco.domain.commonfile.BaseFileEntity;
-import com.practice.likelionhackathoncesco.domain.user.entity.User;
-import com.practice.likelionhackathoncesco.global.common.BaseTimeEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -49,5 +41,4 @@ public class FraudRegisterReport extends BaseFileEntity {
   public void updateReportStatus(ReportStatus reportStatus) {
     this.reportStatus = reportStatus;
   }
-
 }

@@ -31,7 +31,6 @@ public enum OcrErrorCode implements BaseErrorCode {
   OCR_INTERNAL_ERROR("OCR5500", "OCR 서비스 내부 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
   OCR_SERVICE_UNAVAILABLE("OCR5503", "OCR 서비스를 사용할 수 없습니다.", HttpStatus.SERVICE_UNAVAILABLE);
 
-
   private final String code;
   private final String message;
   private final HttpStatus status;

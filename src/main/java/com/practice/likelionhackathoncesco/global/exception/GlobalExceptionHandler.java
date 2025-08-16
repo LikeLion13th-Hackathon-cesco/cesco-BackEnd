@@ -1,6 +1,5 @@
 package com.practice.likelionhackathoncesco.global.exception;
 
-
 import com.practice.likelionhackathoncesco.global.exception.model.BaseErrorCode;
 import com.practice.likelionhackathoncesco.global.response.BaseResponse;
 import java.util.stream.Collectors;
@@ -20,8 +19,7 @@ public class GlobalExceptionHandler {
   public ResponseEntity<BaseResponse<Object>> handleCustomException(CustomException ex) {
     BaseErrorCode errorCode = ex.getErrorCode();
     log.error("Custom 오류 발생: {}", ex.getMessage());
-    return ResponseEntity
-        .status(errorCode.getStatus())
+    return ResponseEntity.status(errorCode.getStatus())
         .body(BaseResponse.error(errorCode.getStatus().value(), ex.getMessage()));
   }
 

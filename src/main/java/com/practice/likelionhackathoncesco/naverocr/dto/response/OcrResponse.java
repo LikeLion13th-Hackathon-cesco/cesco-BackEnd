@@ -23,5 +23,4 @@ public class OcrResponse {
 
   @Schema(description = "진행 상태", example = "OCR_COMPLETED")
   private ProcessingStatus processingStatus;
-
 }

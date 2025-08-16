@@ -32,8 +32,8 @@ public class SecurityConfig implements WebMvcConfigurer {
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     return http.csrf(AbstractHttpConfigurer::disable)
-        .authorizeHttpRequests((auth) -> auth.anyRequest().authenticated())
-        .httpBasic(Customizer.withDefaults())
+        .authorizeHttpRequests((auth) -> auth.anyRequest().permitAll())  // 모든 요청 허용
+        //.httpBasic(Customizer.withDefaults())
         .build();
   }
 

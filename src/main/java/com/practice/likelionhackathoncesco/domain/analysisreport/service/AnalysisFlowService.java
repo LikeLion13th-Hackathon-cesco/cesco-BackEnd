@@ -11,7 +11,6 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -21,8 +20,8 @@ public class AnalysisFlowService {
   private final GptService gptService;
   private final AnalysisReportService analysisReportService;
 
-
-  public AnalysisReportResponse processAnalysisReport(Long reportId, GptAnalysisRequest gptAnalysisRequest) {
+  public AnalysisReportResponse processAnalysisReport(
+      Long reportId, GptAnalysisRequest gptAnalysisRequest) {
 
     // 프롬프트 제작
     List<Map<String, String>> prompts;

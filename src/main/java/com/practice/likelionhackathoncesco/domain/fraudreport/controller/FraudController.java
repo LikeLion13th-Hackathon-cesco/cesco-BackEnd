@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -37,12 +36,14 @@ public class FraudController {
   private final FakerSaveFlow fakerSaveFlow;
 
   // 신고 등기부등본 업로드 후 해당 임대인 정보 저장 API
-  @Operation(summary = "신고 등기부등본 업로드 후 해당 임대인 정보 저장 API", description = "신고할 등기부등본 업로드 된 후 바로 신고 임대인 정보 저장")
+  @Operation(
+      summary = "신고 등기부등본 업로드 후 해당 임대인 정보 저장 API",
+      description = "신고할 등기부등본 업로드 된 후 바로 신고 임대인 정보 저장")
   @PostMapping(value = "/save/{reportId}")
   public ResponseEntity<BaseResponse<List<FakerResponse>>> saveFakerInfo(
-      @Parameter(description = "신고 등기부등본 고유번호") @PathVariable Long reportId){
+      @Parameter(description = "신고 등기부등본 고유번호") @PathVariable Long reportId) {
     List<FakerResponse> fakerResponseList = fakerSaveFlow.processSaveFakerInfo(reportId);
-    return ResponseEntity.ok(BaseResponse.success("신고당한 임대인 정보 저장 완료",fakerResponseList));
+    return ResponseEntity.ok(BaseResponse.success("신고당한 임대인 정보 저장 완료", fakerResponseList));
   }
 
   @Operation(

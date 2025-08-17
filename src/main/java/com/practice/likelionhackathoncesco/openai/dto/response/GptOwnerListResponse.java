@@ -1,6 +1,5 @@
 package com.practice.likelionhackathoncesco.openai.dto.response;
 
-import java.util.Collection;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

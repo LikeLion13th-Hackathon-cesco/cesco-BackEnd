@@ -10,7 +10,6 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -19,12 +18,12 @@ public class FakerSaveFlow {
 
   private final GptComplaintService gptComplaintService;
 
-  public List<FakerResponse> processSaveFakerInfo(Long fraudRegisterReportId){
+  public List<FakerResponse> processSaveFakerInfo(Long fraudRegisterReportId) {
 
     List<Map<String, String>> prompts;
-    try{
+    try {
       prompts = gptComplaintService.createGetFakerPrompt(fraudRegisterReportId);
-    }catch (JsonProcessingException e){
+    } catch (JsonProcessingException e) {
       e.printStackTrace();
       prompts = new ArrayList<>();
     }
@@ -37,6 +36,5 @@ public class FakerSaveFlow {
 
     // DB에 저장
     return gptComplaintService.saveFakerInfo(list, fraudRegisterReportId);
-
   }
 }

@@ -39,6 +39,6 @@ public class Faker extends BaseTimeEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "fraudRegisterReportId", nullable = false) // user_id로 통일 (userId → user_id)
-  private FraudRegisterReport fraudRegisterReport;
+  private FraudRegisterReport fraudRegisterReport;  // 신고용 등기부등본
 
 }

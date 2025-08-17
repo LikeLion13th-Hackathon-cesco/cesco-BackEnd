@@ -19,24 +19,24 @@ public class FakerSaveFlow {
 
   private final GptComplaintService gptComplaintService;
 
-  public List<FakerResponse> processSaveFakerInfo(Long complaintReportId){
+  public List<FakerResponse> processSaveFakerInfo(Long fraudRegisterReportId){
 
     List<Map<String, String>> prompts;
     try{
-      prompts = gptComplaintService.createGetFakerPrompt(complaintReportId);
+      prompts = gptComplaintService.createGetFakerPrompt(fraudRegisterReportId);
     }catch (JsonProcessingException e){
       e.printStackTrace();
       prompts = new ArrayList<>();
     }
 
     // gpt-4o api 호출
-    String content = gptComplaintService.callGptAPI(prompts, String.valueOf(complaintReportId));
+    String content = gptComplaintService.callGptAPI(prompts, String.valueOf(fraudRegisterReportId));
 
     // 응답 파싱
     List<GptComplaintResponse> list = gptComplaintService.parseGptComplaintResponseList(content);
 
     // DB에 저장
-    return gptComplaintService.saveFakerInfo(list);
+    return gptComplaintService.saveFakerInfo(list, fraudRegisterReportId);
 
   }
 }

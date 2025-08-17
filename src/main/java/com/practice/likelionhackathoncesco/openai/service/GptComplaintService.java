@@ -5,7 +5,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.FakerResponse;
 import com.practice.likelionhackathoncesco.domain.fraudreport.entity.Faker;
+import com.practice.likelionhackathoncesco.domain.fraudreport.entity.FraudRegisterReport;
+import com.practice.likelionhackathoncesco.domain.fraudreport.exception.FraudReport_Error_Code;
 import com.practice.likelionhackathoncesco.domain.fraudreport.repository.FakerRepository;
+import com.practice.likelionhackathoncesco.domain.fraudreport.repository.FraudRegisterReportRepository;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.naverocr.service.FraudOcrService;
 import com.practice.likelionhackathoncesco.openai.dto.response.GptComplaintResponse;
@@ -16,7 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -41,16 +43,23 @@ public class GptComplaintService {
   private final FraudOcrService fraudOcrService;
   private final ObjectMapper objectMapper;
   private final FakerRepository fakerRepository;
+  private final FraudRegisterReportRepository fraudRegisterReportRepository;
 
   // 신고 당한 임대인 정보 DB에 저장하는 메소드
   @Transactional
-  public List<FakerResponse> saveFakerInfo(List<GptComplaintResponse> responseList) {
+  public List<FakerResponse> saveFakerInfo(List<GptComplaintResponse> responseList, Long fraudRegisterReportId) {
+
+    FraudRegisterReport fraudRegisterReport = fraudRegisterReportRepository.findById(fraudRegisterReportId).orElseThrow(()-> new CustomException(
+        FraudReport_Error_Code.FRAUD_REPORT_NOT_FOUND));
+
     // 리스트로 반환되는 임대인 정보를 리스트 인덱스 단위로 객체 생성
     List<Faker>fakerList = responseList.stream()
         .map(r->Faker.builder()
             .fakerName(r.getFakerName())
             .residentNum(r.getResidentNum())
+            .fraudRegisterReport(fraudRegisterReport)
             .build()).toList();
+
     // DB 저장
     fakerRepository.saveAll(fakerList);
 
@@ -85,8 +94,8 @@ public class GptComplaintService {
         반환 형식 예시:
         {
           "faker" : [
-            { "name" : "홍길동", "residentNum" : "660101" },
-            { "name" : "신짱구", "residentNum" : "701106" }
+            { "fakerName" : "홍길동", "residentNum" : "660101" },
+            { "fakerName" : "신짱구", "residentNum" : "701106" }
           ]
         }
         """, String.join("\n", jsonText))));
@@ -96,7 +105,7 @@ public class GptComplaintService {
 
 
   // gpt-4o API 불러오는 메소드
-  public String callGptAPI(List<Map<String, String>> prompts, String complaintReportId) {
+  public String callGptAPI(List<Map<String, String>> prompts, String fraudRegisterReportId) {
 
     RestTemplate restTemplate = new RestTemplate();
     ObjectMapper objectMapper = new ObjectMapper();
@@ -116,12 +125,12 @@ public class GptComplaintService {
     HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 
     try{
-      log.info("[GptComplaintService] GPT API 요청 시도 : complaintReportId={}",complaintReportId);
+      log.info("[GptComplaintService] GPT API 요청 시도 : fraudRegisterReportId={}",fraudRegisterReportId);
       // POST 요청
       ResponseEntity<Map> response = restTemplate.postForEntity(gptConfig.getUrl(), requestEntity, Map.class);
 
       if(response.getStatusCode() != HttpStatus.OK){  // 응답코드 200일때만 응답 꺼내기
-        log.error("[GptComplaintService] GPT API 응답 실패 : complaintReportId={}, httpStatus={}", complaintReportId, response.getStatusCode());
+        log.error("[GptComplaintService] GPT API 응답 실패 : fraudRegisterReportId={}, httpStatus={}", fraudRegisterReportId, response.getStatusCode());
         throw new CustomException(GptErrorCode.GPT_API_CALL_FAILED);
       }
 
@@ -135,7 +144,7 @@ public class GptComplaintService {
       );
 
       if(choices == null || choices.isEmpty()){
-        log.warn("[GptComplaintService] GPT API 응답 성공했으나 choices 변수 null : complaintReportId={}",complaintReportId);
+        log.warn("[GptComplaintService] GPT API 응답 성공했으나 choices 변수 null : fraudRegisterReportId={}",fraudRegisterReportId);
         throw new CustomException(GptErrorCode.GPT_EMPTY_RESPONSE);
       }
 
@@ -143,19 +152,19 @@ public class GptComplaintService {
       Map<String,Object> message = objectMapper.convertValue(choices.get(0).get("message"), new TypeReference<Map<String,Object>>(){});
       String content = ((String) message.get("content")).replaceAll("```json", "").replaceAll("```", "").trim(); // message안에는 role과 content가 있는데 이중 content가 진짜 답변!
 
-      log.info("[GptComplaintService] 응답 성공 : complaintReportId={}, content={}", complaintReportId, content);
+      log.info("[GptComplaintService] 응답 성공 : fraudRegisterReportId={}, content={}", fraudRegisterReportId, content);
       return content; // 이게 찐 gpt 응답 텍스트!
 
     }catch (HttpClientErrorException e) {
-      log.error("[GptComplaintService] GPT API 클라이언트 오류: complaintReportId={}, {}", complaintReportId, e.getResponseBodyAsString());
+      log.error("[GptComplaintService] GPT API 클라이언트 오류: fraudRegisterReportId={}, {}", fraudRegisterReportId, e.getResponseBodyAsString());
       throw new CustomException(GptErrorCode.GPT_INVALID_PROMPT);
 
     } catch (ResourceAccessException e) {
-      log.error("[GptComplaintService] GPT API 타임아웃 또는 접근 실패: complaintReportId={}, {}", complaintReportId, e.getMessage());
+      log.error("[GptComplaintService] GPT API 타임아웃 또는 접근 실패: fraudRegisterReportId={}, {}", fraudRegisterReportId, e.getMessage());
       throw new CustomException(GptErrorCode.GPT_TIMEOUT);
 
     } catch (Exception e) {
-      log.error("[GptComplaintService] GPT API 호출 중 예외 발생: complaintReportId={}, {}", complaintReportId, e.getMessage());
+      log.error("[GptComplaintService] GPT API 호출 중 예외 발생: fraudRegisterReportId={}, {}", fraudRegisterReportId, e.getMessage());
       throw new CustomException(GptErrorCode.GPT_API_CALL_FAILED);
     }
   }

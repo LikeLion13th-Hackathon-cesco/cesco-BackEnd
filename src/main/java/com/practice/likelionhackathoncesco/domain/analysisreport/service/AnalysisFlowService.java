@@ -2,7 +2,6 @@ package com.practice.likelionhackathoncesco.domain.analysisreport.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.AnalysisReportResponse;
-import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.FileUploadResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;

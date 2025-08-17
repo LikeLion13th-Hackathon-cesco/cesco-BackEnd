@@ -1,7 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.analysisreport.controller;
 
 import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.AnalysisReportResponse;
-import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.FileUploadResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
 import com.practice.likelionhackathoncesco.domain.analysisreport.service.AnalysisFlowService;
@@ -17,12 +16,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -44,35 +39,25 @@ public class AnalysisReportController {
   @Operation(summary = "등기부등본 분석 결과 API", description = "분석리포트 페이지에 결과 반환")
   @PutMapping(value = "/reports/{reportId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<BaseResponse<AnalysisReportResponse>> getAnalysisReport(
-      @Parameter(description = "업로드할 파일")
-      @RequestParam("file") MultipartFile file,
+      @Parameter(description = "업로드할 파일") @RequestParam("file") MultipartFile file,
+      @Parameter(description = "파일명") @RequestParam("fileName") String fileName,
+      @Parameter(description = "전월세 여부") @RequestParam("isMonthlyRent") Integer isMonthlyRent,
+      @Parameter(description = "전월세 보증금") @RequestParam("deposit") Integer deposit,
+      @Parameter(description = "월세") @RequestParam("monthlyRent") Integer monthlyRent,
+      @Parameter(description = "상세 주소") @RequestParam("detailAddress") String detailAddress) {
 
-      @Parameter(description = "파일명")
-      @RequestParam("fileName") String fileName,
-
-      @Parameter(description = "전월세 여부")
-      @RequestParam("isMonthlyRent") Integer isMonthlyRent,
-
-      @Parameter(description = "전월세 보증금")
-      @RequestParam("deposit") Integer deposit,
-
-      @Parameter(description = "월세")
-      @RequestParam("monthlyRent") Integer monthlyRent,
-      @Parameter(description = "상세 주소")
-      @RequestParam("detailAddress") String detailAddress) {
-
-    AnalysisReport savedReport = analysisFlowService.uploadDocuments(PathName.PROPERTYREGISTRY, file); // S3 업로드 + DB 저장
+    AnalysisReport savedReport =
+        analysisFlowService.uploadDocuments(PathName.PROPERTYREGISTRY, file); // S3 업로드 + DB 저장
 
     // ptAnalysisRequest 생성 (파일 제외하고)
-    GptAnalysisRequest gptAnalysisRequest = new GptAnalysisRequest(
-        null, // file은 이미 처리했으므로 null
-        fileName,
-        isMonthlyRent,
-        deposit,
-        monthlyRent,
-        detailAddress
-    );
-
+    GptAnalysisRequest gptAnalysisRequest =
+        new GptAnalysisRequest(
+            null, // file은 이미 처리했으므로 null
+            fileName,
+            isMonthlyRent,
+            deposit,
+            monthlyRent,
+            detailAddress);
 
     AnalysisReportResponse analysisReportResponse =
         analysisFlowService.processAnalysisReport(savedReport.getReportId(), gptAnalysisRequest);

@@ -2,9 +2,7 @@ package com.practice.likelionhackathoncesco.domain.analysisreport.service;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.AnalysisReportResponse;
-import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.FileUploadResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
-import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
 import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
@@ -17,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -103,8 +100,7 @@ public class AnalysisReportService {
         safetyScore,
         gptResponse.getSummary(),
         gptResponse.getSafetyDescription(),
-        gptResponse.getInsuranceDescription()
-    );
+        gptResponse.getInsuranceDescription());
 
     // 분석 상태 수정 -> 모든 처리 완료
     analysisReport.updateProcessingStatus(ProcessingStatus.COMPLETED);

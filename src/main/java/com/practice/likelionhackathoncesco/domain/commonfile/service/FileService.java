@@ -5,14 +5,23 @@ import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
+import com.practice.likelionhackathoncesco.domain.analysisreport.exception.S3ErrorCode;
+import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
 import com.practice.likelionhackathoncesco.domain.commonfile.BaseFileEntity;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.domain.user.exception.UserErrorCode;
 import com.practice.likelionhackathoncesco.domain.user.repository.UserRepository;
 import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -33,6 +42,7 @@ public class FileService {
   private final AmazonS3 amazonS3; // AWS SDK에서 제공하는 S3 클라이언트 객체
   private final S3Config s3Config; // 버킷 이름과 경로 등 설정 정보
   private final UserRepository userRepository;
+  private final AnalysisReportRepository analysisReportRepository;
 
   // 파일을 S3에 업로드 하고 DB에 관련 정보 저장 후 엔티티 반환
   @Transactional
@@ -85,6 +95,48 @@ public class FileService {
     return savedEntity;
   }
 
+  // uploadFile overloading
+  @Transactional
+  public AnalysisReport uploadFile(PathName pathName, File file) {
+
+    User user =
+        userRepository
+            .findByUsername("cesco")
+            .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+
+    String originalFilename = file.getName(); // 기존 파일 이름 저장
+
+    if (originalFilename == null || originalFilename.isBlank()) {
+      throw new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND);
+    }
+
+    try {
+      String keyName = createS3Key(pathName, originalFilename); // S3 파일 경로 생성 (경로+이름) -> 객체 key
+
+      uploadToS3(file, keyName); // S3에 업로드
+
+      // 엔티티 생성
+      AnalysisReport analysisReport =
+          AnalysisReport.builder()
+              .fileName(originalFilename)
+              .s3Key(keyName)
+              .processingStatus(ProcessingStatus.UPLOADED)
+              .user(user)
+              .build();
+
+      // DB 저장
+      AnalysisReport savedEntity = analysisReportRepository.save(analysisReport);
+
+      log.info("파일 업로드 성공: fileName={}", originalFilename);
+
+      return savedEntity;
+
+    } catch (IOException e) {
+      log.info("파일 업로드 실패: fileName={}", originalFilename);
+      throw new CustomException(S3ErrorCode.FILE_SERVER_ERROR);
+    }
+  }
+
   private void uploadToS3(MultipartFile file, String keyName) {
     // 메타 데이터 설정
     ObjectMetadata metadata = new ObjectMetadata();
@@ -98,6 +150,31 @@ public class FileService {
 
       log.info("업로드 성공");
 
+    } catch (Exception e) {
+      log.error("S3 upload 중 오류 발생", e);
+      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
+    }
+  }
+
+  // uploadToS3 overloading
+  private void uploadToS3(File file, String keyName) throws IOException {
+    try {
+      // 메타데이터 설정
+      ObjectMetadata metadata = new ObjectMetadata();
+      metadata.setContentLength(file.length()); // 파일 크기 설정
+      metadata.setContentType(Files.probeContentType(file.toPath())); // 파일 MIME 타입 추정
+
+      // InputStream 생성
+      try (InputStream inputStream = new FileInputStream(file)) {
+        amazonS3.putObject(
+            new PutObjectRequest(s3Config.getBucket(), keyName, inputStream, metadata));
+      }
+
+      log.info("업로드 성공: {}", keyName);
+
+    } catch (IOException e) {
+      log.error("파일 처리 중 오류 발생", e);
+      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
     } catch (Exception e) {
       log.error("S3 upload 중 오류 발생", e);
       throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);

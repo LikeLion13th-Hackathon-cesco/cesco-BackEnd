@@ -36,6 +36,7 @@ public class AnalysisReportController {
 
   private final AnalysisReportService analysisReportService;
   private final AnalysisFlowService analysisFlowService;
+  private final FileService fileService;
 
   // 안전지수, 지피티 분석 설명 반환하는 api -> 단, s3 url 가지고 파일 객체
   // 생성해야함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -49,8 +50,6 @@ public class AnalysisReportController {
         analysisFlowService.processAnalysisReport(reportId, gptAnalysisRequest);
     return ResponseEntity.ok(BaseResponse.success("분석리포트 결과 반환 완료", analysisReportResponse));
   }
-
-  private final FileService fileService;
 
   @Operation(summary = "등기부등본 업로드 API", description = "등기부등본 문서를 업로드하고 문서 원본이름과 상태를 리턴하는 API")
   @PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

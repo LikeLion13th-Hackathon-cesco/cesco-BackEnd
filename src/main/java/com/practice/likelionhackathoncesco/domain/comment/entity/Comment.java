@@ -22,26 +22,25 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="comments")
+@Table(name = "comments")
 public class Comment extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private long commentId;  // 댓글 고유 번호
+  private long commentId; // 댓글 고유 번호
 
   @Column(nullable = false)
-  private String content;   // 댓글 내용
+  private String content; // 댓글 내용
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id",nullable = false)
-  private User user;  // 사용자 ID(FK)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user; // 사용자 ID(FK)
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "post_id",nullable = false)
-  private Post post;  // 게시글 ID(FK)
+  @JoinColumn(name = "post_id", nullable = false)
+  private Post post; // 게시글 ID(FK)
 
   public void update(String content) {
     this.content = content;
   }
-
 }

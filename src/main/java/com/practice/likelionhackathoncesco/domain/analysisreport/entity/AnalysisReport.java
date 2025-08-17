@@ -1,8 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.analysisreport.entity;
 
 import com.practice.likelionhackathoncesco.domain.commonfile.BaseFileEntity;
-import com.practice.likelionhackathoncesco.domain.user.entity.User;
-import com.practice.likelionhackathoncesco.global.common.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,13 +8,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -32,30 +26,21 @@ public class AnalysisReport extends BaseFileEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long reportId; // 분석 레포트 고유 번호
 
-  // 등기부등본 관련
-  @Column(name = "file_name", nullable = false)
-  private String fileName; // 업로드한 파일 이름
-
-  @Column(name = "s3_key", nullable = false)
-  private String s3Key; // s3 객체 식별 키
-  // s3 경로 -> 추후에 s3key로 객체 url(웹 형태) 생성 (동적 생성 가능)
-
   @Column(name = "address")
-  private String address;   // 해당 등기부등본 부동산의 주소
+  private String address; // 해당 등기부등본 부동산의 주소
 
   @Column(name = "official_price")
-  private Double officialPrice;    // 공시가격
+  private Double officialPrice; // 공시가격
 
   // 분석 결과 관련
   @Column(name = "safety_score")
   private Double safetyScore; // 안전 점수
 
   @Column(name = "short_description", columnDefinition = "TEXT")
-  private String summary;  // 한줄 요약
+  private String summary; // 한줄 요약
 
   @Lob // gpt 응답이 들어가기 때문에 긴 문자열로 저장
   @Column(name = "safety_description", columnDefinition = "TEXT")
-
   private String safetyDescription; // 안전 점수 설명
 
   @Lob // gpt 응답이 들어가기 때문에 긴 문자열로 저장
@@ -71,8 +56,14 @@ public class AnalysisReport extends BaseFileEntity {
   public void updateProcessingStatus(ProcessingStatus processingStatus) {
     this.processingStatus = processingStatus;
   }
+
   // 분석 후 DB 업데이트
-  public void update(String address, Double safetyScore, String summary, String safetyDescription, String insuranceDescription) {
+  public void update(
+      String address,
+      Double safetyScore,
+      String summary,
+      String safetyDescription,
+      String insuranceDescription) {
     this.address = address;
     this.safetyScore = safetyScore;
     this.summary = summary;

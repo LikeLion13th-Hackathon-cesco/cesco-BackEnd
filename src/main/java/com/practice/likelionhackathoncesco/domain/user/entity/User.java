@@ -85,5 +85,4 @@ public class User extends BaseTimeEntity {
   public void addCredits(int credit) {
     this.credit += credit;
   }
-
 }

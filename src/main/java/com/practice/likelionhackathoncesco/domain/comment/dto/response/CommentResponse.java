@@ -27,5 +27,4 @@ public class CommentResponse {
 
   @Schema(description = "수정일시", example = "2025-11-29T01:00:00")
   private LocalDateTime updatedAt;
-
 }

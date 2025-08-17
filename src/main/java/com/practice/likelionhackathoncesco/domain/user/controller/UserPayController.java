@@ -2,7 +2,6 @@ package com.practice.likelionhackathoncesco.domain.user.controller;
 
 import com.practice.likelionhackathoncesco.domain.user.dto.response.PayResponse;
 import com.practice.likelionhackathoncesco.domain.user.service.UserPayService;
-import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,5 +28,4 @@ public class UserPayController {
     PayResponse result = userPayService.completePayment(userId);
     return ResponseEntity.ok(BaseResponse.success("결제 완료", result));
   }
-
 }

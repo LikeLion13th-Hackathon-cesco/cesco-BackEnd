@@ -3,7 +3,6 @@ package com.practice.likelionhackathoncesco.global.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -31,21 +30,21 @@ public class SecurityConfig implements WebMvcConfigurer {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    return http
-        .csrf(AbstractHttpConfigurer::disable)
-        .authorizeHttpRequests((auth) -> auth.anyRequest().authenticated())
-        .httpBasic(Customizer.withDefaults())
+    return http.csrf(AbstractHttpConfigurer::disable)
+        .authorizeHttpRequests((auth) -> auth.anyRequest().permitAll()) // 모든 요청 허용
+        // .httpBasic(Customizer.withDefaults())
         .build();
   }
 
   @Bean
   public UserDetailsService userDetailsService() {
 
-    UserDetails admin = User.builder()
-        .username(username)
-        .password(passwordEncoder().encode(password))
-        .roles("ADMIN")
-        .build();
+    UserDetails admin =
+        User.builder()
+            .username(username)
+            .password(passwordEncoder().encode(password))
+            .roles("ADMIN")
+            .build();
 
     return new InMemoryUserDetailsManager(admin);
   }

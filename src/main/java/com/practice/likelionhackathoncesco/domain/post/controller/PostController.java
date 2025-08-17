@@ -1,6 +1,5 @@
 package com.practice.likelionhackathoncesco.domain.post.controller;
 
-import com.fasterxml.jackson.databind.ser.Serializers.Base;
 import com.practice.likelionhackathoncesco.domain.post.dto.request.CreatePostRequest;
 import com.practice.likelionhackathoncesco.domain.post.dto.request.UpdatePostRequest;
 import com.practice.likelionhackathoncesco.domain.post.dto.response.PostResponse;
@@ -12,7 +11,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,8 +33,8 @@ public class PostController {
   @PostMapping("/posts")
   @Operation(summary = "게시글 생성", description = "게시글 작성 후 완료버튼 눌렀을때 요청되는 API")
   public ResponseEntity<BaseResponse<PostResponse>> createPost(
-      @Parameter(description = "게시글 작성 내용")
-      @RequestBody @Valid CreatePostRequest createPostRequest) {
+      @Parameter(description = "게시글 작성 내용") @RequestBody @Valid
+          CreatePostRequest createPostRequest) {
     PostResponse postResponse = postService.createPost(createPostRequest);
 
     return ResponseEntity.ok(BaseResponse.success("게시글 생성 성공", postResponse));
@@ -72,32 +70,44 @@ public class PostController {
   }
 
   // (도로명코드+건물본번) 별 게시글 전체 조회 API
-  @Operation(summary = "(도로명코드+건물본번) 별 게시글 전체 조회", description = "(도로명코드+건물본번) 페이지에서 특정 주소를 검색완료 했을때 호출되는 API")
+  @Operation(
+      summary = "(도로명코드+건물본번) 별 게시글 전체 조회",
+      description = "(도로명코드+건물본번) 페이지에서 특정 주소를 검색완료 했을때 호출되는 API")
   @GetMapping("/posts/{roadCode}/{buildingNumber}")
   public ResponseEntity<BaseResponse<List<PostResponse>>> getPostByRoadCodeAndBuildingNumber(
       @Parameter(description = "조회할 게시글 목록의 도로명코드") @PathVariable String roadCode,
       @Parameter(description = "조회할 게시글 목록의 건물본번") @PathVariable String buildingNumber) {
-    List<PostResponse> postList = postService.getAllPostsByRoadCodeAndBuildingNumber(roadCode, buildingNumber);
+    List<PostResponse> postList =
+        postService.getAllPostsByRoadCodeAndBuildingNumber(roadCode, buildingNumber);
     return ResponseEntity.ok(BaseResponse.success("(도로명코드+건물본번) 별 게시글 목록 조회 완료", postList));
   }
 
   // (도로명코드+건물본번) 별 게시글 최신순으로 조회 API
-  @Operation(summary = "(도로명코드+건물본번) 별 게시글 최신순 조회", description = "(도로명코드+건물본번) 별 게시글 목록에서 최신순 버튼을 눌렀을때 호출되는 API")
+  @Operation(
+      summary = "(도로명코드+건물본번) 별 게시글 최신순 조회",
+      description = "(도로명코드+건물본번) 별 게시글 목록에서 최신순 버튼을 눌렀을때 호출되는 API")
   @GetMapping("/posts/{roadCode}/{buildingNumber}/latest")
-  public ResponseEntity<BaseResponse<List<PostResponse>>> getPostByRoadCodeAndBuildingNumberAndLatest(
-      @Parameter(description = "최신순으로 조회할 게시글 목록의 도로명코드") @PathVariable String roadCode,
-      @Parameter(description = "최신순으로 조회할 게시글 목록의 건물본번") @PathVariable String buildingNumber) {
-    List<PostResponse> postList = postService.getAllPostsByRoadCodeAndBuildingNumberAndCreatedAtDesc(roadCode, buildingNumber);
+  public ResponseEntity<BaseResponse<List<PostResponse>>>
+      getPostByRoadCodeAndBuildingNumberAndLatest(
+          @Parameter(description = "최신순으로 조회할 게시글 목록의 도로명코드") @PathVariable String roadCode,
+          @Parameter(description = "최신순으로 조회할 게시글 목록의 건물본번") @PathVariable String buildingNumber) {
+    List<PostResponse> postList =
+        postService.getAllPostsByRoadCodeAndBuildingNumberAndCreatedAtDesc(
+            roadCode, buildingNumber);
     return ResponseEntity.ok(BaseResponse.success("(도로명코드+건물본번) 별 게시글 최신순 조회 완료", postList));
   }
 
   // (도로명코드+건물본번) 별 게시글 인기순으로 조회 API
-  @Operation(summary = "(도로명코드+건물본번) 별 게시글 좋아요 많은순 조회", description = "(도로명코드+건물본번) 별 게시글 목록에서 인기순 버튼을 눌렀을때 호출되는 API")
+  @Operation(
+      summary = "(도로명코드+건물본번) 별 게시글 좋아요 많은순 조회",
+      description = "(도로명코드+건물본번) 별 게시글 목록에서 인기순 버튼을 눌렀을때 호출되는 API")
   @GetMapping("/posts/{roadCode}/{buildingNumber}/popular")
-  public ResponseEntity<BaseResponse<List<PostResponse>>> getPostByRoadCodeAndBuildingNumberAndPopular(
-      @Parameter(description = "인기순으로 조회할 게시글 목록의 도로명코드") @PathVariable String roadCode,
-      @Parameter(description = "인기순으로 조회할 게시글 목록의 건물본번") @PathVariable String buildingNumber) {
-    List<PostResponse> postList = postService.getAllPostsByRoadCodeBuildingNumberAndLikeCountDesc(roadCode, buildingNumber);
+  public ResponseEntity<BaseResponse<List<PostResponse>>>
+      getPostByRoadCodeAndBuildingNumberAndPopular(
+          @Parameter(description = "인기순으로 조회할 게시글 목록의 도로명코드") @PathVariable String roadCode,
+          @Parameter(description = "인기순으로 조회할 게시글 목록의 건물본번") @PathVariable String buildingNumber) {
+    List<PostResponse> postList =
+        postService.getAllPostsByRoadCodeBuildingNumberAndLikeCountDesc(roadCode, buildingNumber);
     return ResponseEntity.ok(BaseResponse.success("(도로명코드+건물본번) 별 게시글 인기순 조회 완료", postList));
   }
 }

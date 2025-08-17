@@ -1,28 +1,16 @@
 package com.practice.likelionhackathoncesco.naverocr.service;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.S3Object;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
-import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.S3ErrorCode;
-import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
 import com.practice.likelionhackathoncesco.domain.fraudreport.entity.FraudRegisterReport;
 import com.practice.likelionhackathoncesco.domain.fraudreport.entity.ReportStatus;
 import com.practice.likelionhackathoncesco.domain.fraudreport.repository.FraudRegisterReportRepository;
 import com.practice.likelionhackathoncesco.global.config.NaverOcrConfig;
-import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.naverocr.dto.request.OcrRequest;
 import com.practice.likelionhackathoncesco.naverocr.dto.response.OcrResponse;
-import com.practice.likelionhackathoncesco.naverocr.dto.response.RoadAddress;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -49,36 +37,40 @@ public class FraudOcrService {
   // ocr로 텍스트 추출 -> 신고할 등기부등본!!!!!!!!!! (텍스트로 반환)
   public List<String> gapguExtractText(Long reportId) {
 
-    FraudRegisterReport fraudRegisterReport = fraudRegisterReportRepository.findById(reportId)
-        .orElseThrow(() -> new CustomException(S3ErrorCode.FILE_NOT_FOUND));
+    FraudRegisterReport fraudRegisterReport =
+        fraudRegisterReportRepository
+            .findById(reportId)
+            .orElseThrow(() -> new CustomException(S3ErrorCode.FILE_NOT_FOUND));
 
-      try {
+    try {
 
-        log.info("OCR 처리 시작: s3key={}", fraudRegisterReport.getS3Key());
+      log.info("OCR 처리 시작: s3key={}", fraudRegisterReport.getS3Key());
 
-        // OCR API 요청 생성
-        OcrRequest requestDto = naverOcrService.createOcrRequest(fraudRegisterReport.getS3Key(), fraudRegisterReport.getFileName());
+      // OCR API 요청 생성
+      OcrRequest requestDto =
+          naverOcrService.createOcrRequest(
+              fraudRegisterReport.getS3Key(), fraudRegisterReport.getFileName());
 
-        // DB에 진행 상태 필드 업데이트
-        fraudRegisterReport.updateReportStatus(ReportStatus.OCR_PROCESSING);
-        fraudRegisterReportRepository.save(fraudRegisterReport);
+      // DB에 진행 상태 필드 업데이트
+      fraudRegisterReport.updateReportStatus(ReportStatus.OCR_PROCESSING);
+      fraudRegisterReportRepository.save(fraudRegisterReport);
 
-        // Ocr API 호출
-        List<String> resultGapgu = callOcrApi(requestDto);
+      // Ocr API 호출
+      List<String> resultGapgu = callOcrApi(requestDto);
 
-        log.info("OCR 처리 완료: reportId={}", reportId);
+      log.info("OCR 처리 완료: reportId={}", reportId);
 
-        // DB에 진행 상태 필드 업데이트
-        fraudRegisterReport.updateReportStatus(ReportStatus.OCR_COMPLETED);
-        fraudRegisterReportRepository.save(fraudRegisterReport);
+      // DB에 진행 상태 필드 업데이트
+      fraudRegisterReport.updateReportStatus(ReportStatus.OCR_COMPLETED);
+      fraudRegisterReportRepository.save(fraudRegisterReport);
 
-        return resultGapgu;
+      return resultGapgu;
 
-      } catch (CustomException e) {
-        throw new CustomException(S3ErrorCode.FILE_DOWNLOAD_FAIL);
-      } catch (IOException e) { // callOcrApi()에서 IOException을 던지고 있기 때문에 받아서 다시 던져야 함
-        throw new RuntimeException(e);
-      }
+    } catch (CustomException e) {
+      throw new CustomException(S3ErrorCode.FILE_DOWNLOAD_FAIL);
+    } catch (IOException e) { // callOcrApi()에서 IOException을 던지고 있기 때문에 받아서 다시 던져야 함
+      throw new RuntimeException(e);
+    }
   }
 
   // OCR API 호출하여 파싱된 데이터 반환
@@ -95,12 +87,13 @@ public class FraudOcrService {
       log.info("Naver OCR API 호출 시작: requestId={}", request.getRequestId());
 
       // 이 요청방식 대로 요청을 보내면 응답을 받을 수 있음 -> 응답을 생성
-      ResponseEntity<String> response = restTemplate.exchange(
-          naverOcrConfig.getInvokeUrl(), // api 엔드포인트
-          HttpMethod.POST, // http 메서드
-          requestEntity, // 헤더와 생성한 요청
-          String.class // 응답 타입
-      );
+      ResponseEntity<String> response =
+          restTemplate.exchange(
+              naverOcrConfig.getInvokeUrl(), // api 엔드포인트
+              HttpMethod.POST, // http 메서드
+              requestEntity, // 헤더와 생성한 요청
+              String.class // 응답 타입
+              );
 
       // 응답에서 텍스트 파싱 (응답을 정리한다고 생각) 하여 반환
       return parseGapgu(response);
@@ -118,5 +111,4 @@ public class FraudOcrService {
     // 갑구만 반환
     return ocrResponse.getSections().getOrDefault("갑구", new ArrayList<>());
   }
-
 }

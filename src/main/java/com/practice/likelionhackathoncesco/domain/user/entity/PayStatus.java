@@ -8,5 +8,4 @@ public enum PayStatus {
 
   @Schema(description = "결제 미완료")
   UNPAID;
-
 }

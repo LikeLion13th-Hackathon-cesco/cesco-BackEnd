@@ -1,8 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.fraudreport.entity;
 
-import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.global.common.BaseTimeEntity;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -11,7 +9,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -39,6 +36,5 @@ public class Faker extends BaseTimeEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "fraudRegisterReportId", nullable = false) // user_id로 통일 (userId → user_id)
-  private FraudRegisterReport fraudRegisterReport;  // 신고용 등기부등본
-
+  private FraudRegisterReport fraudRegisterReport;
 }

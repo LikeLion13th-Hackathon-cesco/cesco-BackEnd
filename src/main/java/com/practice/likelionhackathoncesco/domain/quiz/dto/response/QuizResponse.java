@@ -26,5 +26,4 @@ public class QuizResponse {
 
   @Schema(description = "선택지 4", example = "전입신고를 하면 주민등록 주소가 해당 주소로 변경된다.")
   private String optionFour;
-
 }

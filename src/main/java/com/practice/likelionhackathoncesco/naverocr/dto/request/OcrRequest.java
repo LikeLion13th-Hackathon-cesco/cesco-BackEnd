@@ -37,6 +37,4 @@ public class OcrRequest {
   @JsonProperty("enableTableDetection")
   @Builder.Default
   private Boolean enableTableDetection = true; // 테이블 감지 여부 (표 인식 여부 -> 등기부등본 파싱을 위해 ture로 설정)
-
-
 }

@@ -1,7 +1,6 @@
 package com.practice.likelionhackathoncesco.global.codef.controller;
 
 import com.practice.likelionhackathoncesco.global.codef.dto.response.CodefOfficeResponse;
-import com.practice.likelionhackathoncesco.global.codef.dto.response.CodefResponse;
 import com.practice.likelionhackathoncesco.global.codef.service.AccessTokenService;
 import com.practice.likelionhackathoncesco.global.codef.service.CallCodefApi;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +33,4 @@ public class CodefController {
     CodefOfficeResponse response = callCodefApi.extractPrice(reportId);
     return ResponseEntity.ok(response);
   }
-
-
-
 }

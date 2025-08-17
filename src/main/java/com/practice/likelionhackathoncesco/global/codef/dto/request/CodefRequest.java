@@ -46,5 +46,4 @@ public class CodefRequest {
   @Schema(description = "호", example = "201호")
   @JsonProperty("ho")
   private String ho;
-
 }

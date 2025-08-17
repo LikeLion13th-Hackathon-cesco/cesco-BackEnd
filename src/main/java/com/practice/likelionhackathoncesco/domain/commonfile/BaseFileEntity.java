@@ -33,5 +33,4 @@ public abstract class BaseFileEntity extends BaseTimeEntity {
   protected BaseFileEntity() {
     super(); // 부모 기본 생성자 호출
   }
-
 }

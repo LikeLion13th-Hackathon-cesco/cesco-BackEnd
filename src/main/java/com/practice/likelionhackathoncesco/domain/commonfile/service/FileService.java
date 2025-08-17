@@ -7,13 +7,21 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
+import com.practice.likelionhackathoncesco.domain.analysisreport.exception.S3ErrorCode;
+import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
 import com.practice.likelionhackathoncesco.domain.commonfile.BaseFileEntity;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.domain.user.exception.UserErrorCode;
 import com.practice.likelionhackathoncesco.domain.user.repository.UserRepository;
 import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -34,26 +42,29 @@ public class FileService {
   private final AmazonS3 amazonS3; // AWS SDK에서 제공하는 S3 클라이언트 객체
   private final S3Config s3Config; // 버킷 이름과 경로 등 설정 정보
   private final UserRepository userRepository;
+  private final AnalysisReportRepository analysisReportRepository;
 
   // 파일을 S3에 업로드 하고 DB에 관련 정보 저장 후 엔티티 반환
   @Transactional
-  public <T extends BaseFileEntity, R extends JpaRepository<T,Long>> T uploadFile(
+  public <T extends BaseFileEntity, R extends JpaRepository<T, Long>> T uploadFile(
       PathName pathName,
       MultipartFile file,
       // 매개변수는 받지 않고 T타입의 결과만 반환하는 인터페이스 함수(get()메서드 하나만 가짐 -> get()를 호출하여 객체 생성)
-      //각 도메인별로 다른 엔티티 타입을 생성할 수 있도록 하는 팩토리 역할
+      // 각 도메인별로 다른 엔티티 타입을 생성할 수 있도록 하는 팩토리 역할
       Supplier<T> entityCreator,
       R repository,
       // T타입의 객체를 받아서 작업을 수행(여기서는 엔티티 별 필드를 추가로 빌드)
       Consumer<T> additionalSetup) {
 
-    User user = userRepository.findByUsername("cesco")
-        .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+    User user =
+        userRepository
+            .findByUsername("cesco")
+            .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
     validateFile(file); // 파일 유효성 검사
 
     String originalFilename = file.getOriginalFilename(); // 기존 파일 이름 저장
-    if(originalFilename == null || originalFilename.isBlank()) {
+    if (originalFilename == null || originalFilename.isBlank()) {
       throw new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND);
     }
 
@@ -76,9 +87,54 @@ public class FileService {
 
     T savedEntity = repository.save(entity); // T타입 엔티티 DB저장
 
-    log.info("파일 업로드 성공: fileName={}, entityType={}", originalFilename, entity.getClass().getSimpleName());
+    log.info(
+        "파일 업로드 성공: fileName={}, entityType={}",
+        originalFilename,
+        entity.getClass().getSimpleName());
 
     return savedEntity;
+  }
+
+  // uploadFile overloading
+  @Transactional
+  public AnalysisReport uploadFile(PathName pathName, File file) {
+
+    User user =
+        userRepository
+            .findByUsername("cesco")
+            .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+
+    String originalFilename = file.getName(); // 기존 파일 이름 저장
+
+    if (originalFilename == null || originalFilename.isBlank()) {
+      throw new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND);
+    }
+
+    try {
+      String keyName = createS3Key(pathName, originalFilename); // S3 파일 경로 생성 (경로+이름) -> 객체 key
+
+      uploadToS3(file, keyName); // S3에 업로드
+
+      // 엔티티 생성
+      AnalysisReport analysisReport =
+          AnalysisReport.builder()
+              .fileName(originalFilename)
+              .s3Key(keyName)
+              .processingStatus(ProcessingStatus.UPLOADED)
+              .user(user)
+              .build();
+
+      // DB 저장
+      AnalysisReport savedEntity = analysisReportRepository.save(analysisReport);
+
+      log.info("파일 업로드 성공: fileName={}", originalFilename);
+
+      return savedEntity;
+
+    } catch (IOException e) {
+      log.info("파일 업로드 실패: fileName={}", originalFilename);
+      throw new CustomException(S3ErrorCode.FILE_SERVER_ERROR);
+    }
   }
 
   private void uploadToS3(MultipartFile file, String keyName) {
@@ -100,13 +156,39 @@ public class FileService {
     }
   }
 
+  // uploadToS3 overloading
+  private void uploadToS3(File file, String keyName) throws IOException {
+    try {
+      // 메타데이터 설정
+      ObjectMetadata metadata = new ObjectMetadata();
+      metadata.setContentLength(file.length()); // 파일 크기 설정
+      metadata.setContentType(Files.probeContentType(file.toPath())); // 파일 MIME 타입 추정
+
+      // InputStream 생성
+      try (InputStream inputStream = new FileInputStream(file)) {
+        amazonS3.putObject(
+            new PutObjectRequest(s3Config.getBucket(), keyName, inputStream, metadata));
+      }
+
+      log.info("업로드 성공: {}", keyName);
+
+    } catch (IOException e) {
+      log.error("파일 처리 중 오류 발생", e);
+      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
+    } catch (Exception e) {
+      log.error("S3 upload 중 오류 발생", e);
+      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
+    }
+  }
+
   // S3에 업로드된 파일 전체 조회 (S3 Url 반환)
   public List<String> getAllS3Files(PathName pathName) {
-    String prefix = switch (pathName) {
-      case PROPERTYREGISTRY ->s3Config.getPropertyRegistryPath(); // 버킷 내 등기부등본 폴더구조 선택
-      case COMPLAINT -> s3Config.getComplaintPath(); // 버킷 내 고소증 관련 폴더구조 선택
-      case FRAUDREPORT -> s3Config.getFraudReportPath(); // 버킷 내 신고 등기부등본 관련 폴더구조 선택
-    };
+    String prefix =
+        switch (pathName) {
+          case PROPERTYREGISTRY -> s3Config.getPropertyRegistryPath(); // 버킷 내 등기부등본 폴더구조 선택
+          case COMPLAINT -> s3Config.getComplaintPath(); // 버킷 내 고소증 관련 폴더구조 선택
+          case FRAUDREPORT -> s3Config.getFraudReportPath(); // 버킷 내 신고 등기부등본 관련 폴더구조 선택
+        };
 
     log.info(">>>> S3 prefix: {}", prefix);
 
@@ -134,24 +216,24 @@ public class FileService {
     String contentType = file.getContentType(); // 파일의 mime타입 반환
     // getcontentType()은 보안상 좋지 않다는 의견 -> 파일 확장자 검사 로직 변경해야할까요?
 
-    if(contentType == null || !contentType.equals("application/pdf")) { // pdf 형식만 허용
+    if (contentType == null || !contentType.equals("application/pdf")) { // pdf 형식만 허용
       throw new CustomException(AnalysisReportErrorCode.FILE_TYPE_INVALID);
     }
   }
 
   // S3 파일 경로 생성 (여기서 keyName은 {PathName/원본파일 이름})
   public String createS3Key(PathName pathName, String originalFilename) {
-    String basePath = switch (pathName) {
-      case PROPERTYREGISTRY ->s3Config.getPropertyRegistryPath(); // 버킷 내 등기부등본 폴더구조 선택
-      case COMPLAINT -> s3Config.getComplaintPath(); // 버킷 내 고소증 관련 폴더구조 선택
-      case FRAUDREPORT -> s3Config.getFraudReportPath(); // 버킷 내 신고 등기부등본 관련 폴더구조 선택
-    };
+    String basePath =
+        switch (pathName) {
+          case PROPERTYREGISTRY -> s3Config.getPropertyRegistryPath(); // 버킷 내 등기부등본 폴더구조 선택
+          case COMPLAINT -> s3Config.getComplaintPath(); // 버킷 내 고소증 관련 폴더구조 선택
+          case FRAUDREPORT -> s3Config.getFraudReportPath(); // 버킷 내 신고 등기부등본 관련 폴더구조 선택
+        };
 
     String uuid = UUID.randomUUID().toString(); // key 값을 식별 할 uuid 문자열 생성
     String fileExtension = getFileExtension(originalFilename); // 파일 확장자 추출
 
     return basePath + "/" + uuid + fileExtension; // 고유성은 보장하지만 원본파일 이름 추척이 힘들거 같음
-
   }
 
   // 파일 확장자 추출(".pdf"로 추출)
@@ -171,11 +253,14 @@ public class FileService {
 
   // 업로드 한 파일 삭제
   @Transactional
-  public <T extends BaseFileEntity, R extends JpaRepository<T, Long>> Boolean deleteFile(Long reportId, R repository) {
+  public <T extends BaseFileEntity, R extends JpaRepository<T, Long>> Boolean deleteFile(
+      Long reportId, R repository) {
 
     // DB에서 등기부등본 조회
-    T report = repository.findById(reportId)
-        .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND));
+    T report =
+        repository
+            .findById(reportId)
+            .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.FILE_NOT_FOUND));
 
     // S3에 파일이 존재하는지 s3key 값으로 확인
     existFile(report.getS3Key());
@@ -183,7 +268,7 @@ public class FileService {
     try {
       // S3에서 삭제
       amazonS3.deleteObject(new DeleteObjectRequest(s3Config.getBucket(), report.getS3Key()));
-      log.info("S3 파일 삭제 성공: {}", report. getFileName());
+      log.info("S3 파일 삭제 성공: {}", report.getFileName());
 
       // DB에서 레코드 삭제
       repository.delete(report);
@@ -195,5 +280,4 @@ public class FileService {
       throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
     }
   }
-
 }

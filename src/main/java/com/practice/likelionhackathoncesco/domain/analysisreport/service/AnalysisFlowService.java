@@ -27,23 +27,23 @@ public class AnalysisFlowService {
     // 프롬프트 제작
     List<Map<String, String>> prompts;
 
-    try{
+    try {
       prompts = gptService.createPrompt(gptAnalysisRequest, reportId);
-    }catch (JsonProcessingException e){
+    } catch (JsonProcessingException e) {
       e.printStackTrace();
       prompts = new ArrayList<>();
     }
-    
+
     // gpt-4o api 호출
     String content = gptService.callGptAPI(prompts, String.valueOf(reportId));
-    
+
     // 응답 파싱
     GptResponse gptResponse = gptService.parseGptResponse(content);
 
     // 분석 리포트 업데이트
-    AnalysisReportResponse analysisReportResponse = analysisReportService.updateAnalysisReport(gptResponse,gptAnalysisRequest, reportId);
+    AnalysisReportResponse analysisReportResponse =
+        analysisReportService.updateAnalysisReport(gptResponse, gptAnalysisRequest, reportId);
 
     return analysisReportResponse;
   }
-
 }

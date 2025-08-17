@@ -22,7 +22,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="quiz_answer")
+@Table(name = "quiz_answer")
 public class QuizAnswer {
 
   @Id
@@ -36,11 +36,10 @@ public class QuizAnswer {
   private Boolean isCorrect;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "quiz_id",nullable = false)
+  @JoinColumn(name = "quiz_id", nullable = false)
   private Quiz quiz;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id",nullable = false)
-  private User user;  // 사용자 ID(FK)
-
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user; // 사용자 ID(FK)
 }

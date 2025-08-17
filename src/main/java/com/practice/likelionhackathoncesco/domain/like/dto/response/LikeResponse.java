@@ -11,8 +11,7 @@ public class LikeResponse {
 
   @Schema(description = "사용자 고유 번호", example = "1")
   private Long userId;
-  
+
   @Schema(description = "게시글 고유 번호", example = "1")
   private Long postId;
-  
 }

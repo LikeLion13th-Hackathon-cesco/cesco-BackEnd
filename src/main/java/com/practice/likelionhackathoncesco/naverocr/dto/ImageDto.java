@@ -26,5 +26,4 @@ public class ImageDto {
   @JsonProperty("url")
   // 이미지 url (s3에 업로드된 pdf파일의 객체 url로 전송 -> 보안정책기에서 public으로 변경하여 누구나 접근 가능)
   private String url;
-
 }

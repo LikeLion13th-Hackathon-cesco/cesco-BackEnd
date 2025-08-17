@@ -33,56 +33,77 @@ public class LikeService {
   public LikeResponse createLike(Long userId, Long postId) {
     log.info("[LikeService] 좋아요 생성 시도: userId={}, postId={}", userId, postId);
 
-    Post post = postRepository.findById(postId).orElseThrow(()->{
-      log.warn("[LikeService] 해당 게시글이 존재하지 않음 - 좋아요 생성 실패");
-      return new CustomException(PostErrorCode.POST_NOT_FOUND);
-    });
+    Post post =
+        postRepository
+            .findById(postId)
+            .orElseThrow(
+                () -> {
+                  log.warn("[LikeService] 해당 게시글이 존재하지 않음 - 좋아요 생성 실패");
+                  return new CustomException(PostErrorCode.POST_NOT_FOUND);
+                });
 
-    User user = userRepository.findById(userId).orElseThrow(()->{
-      log.warn("[LikeService] 해당 사용자가 존재하지 않음 - 좋아요 생성 실패");
-      return new CustomException(UserErrorCode.USER_NOT_FOUND);
-    });
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(
+                () -> {
+                  log.warn("[LikeService] 해당 사용자가 존재하지 않음 - 좋아요 생성 실패");
+                  return new CustomException(UserErrorCode.USER_NOT_FOUND);
+                });
 
-    Like like = Like.builder()
-        .user(user)
-        .post(post)
-        .build();
+    Like like = Like.builder().user(user).post(post).build();
 
-    try{
+    try {
       likeRepository.save(like);
-    }catch(DataIntegrityViolationException e){
+    } catch (DataIntegrityViolationException e) {
       log.warn("[LikeService] 이미 좋아요 누른 상태 - 생성 실패");
       throw new CustomException(LikeErrorCode.LIKE_IS_EXIST);
     }
 
-    log.info("[LikeService] 좋아요 생성 완료: userId={}, postId={}", like.getUser().getUserId(), like.getPost().getPostId());
+    log.info(
+        "[LikeService] 좋아요 생성 완료: userId={}, postId={}",
+        like.getUser().getUserId(),
+        like.getPost().getPostId());
     return likeMapper.toLikeResponse(like);
   }
-
 
   // 좋아요 삭제
   @Transactional
   public Boolean deleteLike(Long userId, Long postId) {
     log.info("[LikeService] 좋아요 삭제 시도: userId={}, postId={}", userId, postId);
 
-    Post post = postRepository.findById(postId).orElseThrow(()->{
-      log.warn("[LikeService] 해당 게시글이 존재하지 않음 - 좋아요 삭제 실패");
-      return new CustomException(PostErrorCode.POST_NOT_FOUND);
-    });
+    Post post =
+        postRepository
+            .findById(postId)
+            .orElseThrow(
+                () -> {
+                  log.warn("[LikeService] 해당 게시글이 존재하지 않음 - 좋아요 삭제 실패");
+                  return new CustomException(PostErrorCode.POST_NOT_FOUND);
+                });
 
-    User user = userRepository.findById(userId).orElseThrow(()->{
-      log.warn("[LikeService] 해당 사용자가 존재하지 않음 - 좋아요 삭제 실패");
-      return new CustomException(UserErrorCode.USER_NOT_FOUND);
-    });
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(
+                () -> {
+                  log.warn("[LikeService] 해당 사용자가 존재하지 않음 - 좋아요 삭제 실패");
+                  return new CustomException(UserErrorCode.USER_NOT_FOUND);
+                });
 
-    Like like = likeRepository.findByUserAndPost(user, post)
-        .orElseThrow(()->{
-      log.warn("[LikeService] 좋아요가 존재하지 않음 - 삭제 실패");
-      return new CustomException(LikeErrorCode.LIKE_NOT_FOUND);
-    });
+    Like like =
+        likeRepository
+            .findByUserAndPost(user, post)
+            .orElseThrow(
+                () -> {
+                  log.warn("[LikeService] 좋아요가 존재하지 않음 - 삭제 실패");
+                  return new CustomException(LikeErrorCode.LIKE_NOT_FOUND);
+                });
 
     likeRepository.delete(like);
-    log.info("[LikeService] 좋아요 삭제 완료: userId={}, postId={}", like.getUser().getUserId(), like.getPost().getPostId());
+    log.info(
+        "[LikeService] 좋아요 삭제 완료: userId={}, postId={}",
+        like.getUser().getUserId(),
+        like.getPost().getPostId());
 
     return true;
   }

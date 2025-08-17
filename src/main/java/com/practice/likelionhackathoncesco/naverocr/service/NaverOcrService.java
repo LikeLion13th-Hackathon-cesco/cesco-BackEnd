@@ -1,7 +1,6 @@
 package com.practice.likelionhackathoncesco.naverocr.service;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
@@ -16,8 +15,6 @@ import com.practice.likelionhackathoncesco.naverocr.dto.request.OcrRequest;
 import com.practice.likelionhackathoncesco.naverocr.dto.response.OcrResponse;
 import com.practice.likelionhackathoncesco.naverocr.dto.response.RoadAddress;
 import java.io.IOException;
-import java.io.InputStream;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,8 +45,10 @@ public class NaverOcrService {
   // ocr로 텍스트 추출 -> 분석 리포트 등기부등본!!!!!!!!!!
   public OcrResponse extractText(Long reportId) {
 
-    AnalysisReport analysisReport = analysisReportRepository.findById(reportId)
-        .orElseThrow(() -> new CustomException(S3ErrorCode.FILE_NOT_FOUND));
+    AnalysisReport analysisReport =
+        analysisReportRepository
+            .findById(reportId)
+            .orElseThrow(() -> new CustomException(S3ErrorCode.FILE_NOT_FOUND));
 
     try {
       log.info("OCR 처리 시작: s3key={}", analysisReport.getS3Key());
@@ -59,7 +58,8 @@ public class NaverOcrService {
       try {
 
         // OCR API 요청 생성
-        OcrRequest requestDto = createOcrRequest(analysisReport.getS3Key(), analysisReport.getFileName());
+        OcrRequest requestDto =
+            createOcrRequest(analysisReport.getS3Key(), analysisReport.getFileName());
 
         // DB에 진행 상태 필드 업데이트
         analysisReport.updateProcessingStatus(ProcessingStatus.OCR_PROCESSING);
@@ -70,8 +70,8 @@ public class NaverOcrService {
 
         log.info("OCR 처리 완료: reportId={}", reportId);
 
-      /*// 추출된 텍스트 DB에 저장
-      analysisReport.updateOcrText(ocrResult.getSections().toString()); // toString()으로 저장*/
+        /*// 추출된 텍스트 DB에 저장
+        analysisReport.updateOcrText(ocrResult.getSections().toString()); // toString()으로 저장*/
 
         // DB에 진행 상태 필드 업데이트
         analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);
@@ -128,11 +128,7 @@ public class NaverOcrService {
     log.info("버킷명: {}, S3 키: {}", s3Config.getBucket(), s3key);
 
     // 공식 문서 기준 이미지 요청 방식
-    ImageDto pdfImage = ImageDto.builder()
-        .format("pdf")
-        .name(fileName)
-        .url(s3Url)
-        .build();
+    ImageDto pdfImage = ImageDto.builder().format("pdf").name(fileName).url(s3Url).build();
 
     // 공식 문서 기준 요청 방식
     return OcrRequest.builder()
@@ -159,12 +155,13 @@ public class NaverOcrService {
       log.info("Naver OCR API 호출 시작: requestId={}", request.getRequestId());
 
       // 이 요청방식 대로 요청을 보내면 응답을 받을 수 있음 -> 응답을 생성
-      ResponseEntity<String> response = restTemplate.exchange(
-          naverOcrConfig.getInvokeUrl(), // api 엔드포인트
-          HttpMethod.POST, // http 메서드
-          requestEntity, // 헤더와 생성한 요청
-          String.class // 응답 타입
-      );
+      ResponseEntity<String> response =
+          restTemplate.exchange(
+              naverOcrConfig.getInvokeUrl(), // api 엔드포인트
+              HttpMethod.POST, // http 메서드
+              requestEntity, // 헤더와 생성한 요청
+              String.class // 응답 타입
+              );
 
       // 응답에서 텍스트 파싱 (응답을 정리한다고 생각) 하여 반환
       return parseResponse(response);
@@ -184,10 +181,7 @@ public class NaverOcrService {
     RoadAddress roadAddress = null; // 도로명주소 객체
 
     // 응답 바디의 image 배열의 첫번째 요소(ocr한 첫 페이지)의 table(표)를 가져옴
-    JsonNode tablesNode = root
-        .path("images")
-        .get(0)
-        .path("tables");
+    JsonNode tablesNode = root.path("images").get(0).path("tables");
 
     int index = 0;
 
@@ -230,10 +224,9 @@ public class NaverOcrService {
     }
     return OcrResponse.builder()
         .sections(result)
-        //.roadAddress(roadAddress)
+        // .roadAddress(roadAddress)
         .processingStatus(ProcessingStatus.OCR_COMPLETED)
         .build();
-
   }
 
   // 도로명 주소만 파싱 (codef api 호출용) -> codef api 사용 안하기로 결정
@@ -246,9 +239,7 @@ public class NaverOcrService {
       log.info("검사중인 텍스트: '{}'", text);
 
       // 여러 패턴으로 매칭 시도
-      if (text.contains("도로명주소") ||
-          text.contains("[도로명주소]") ||
-          text.equals("[도로명주소]")) {
+      if (text.contains("도로명주소") || text.contains("[도로명주소]") || text.equals("[도로명주소]")) {
         roadAddressIndex = i;
         log.info("도로명주소 키워드 발견! 인덱스: {}, 텍스트: '{}'", i, text);
         break;
@@ -263,8 +254,8 @@ public class NaverOcrService {
     try {
       // 인덱스 범위 체크
       if (roadAddressIndex + 4 >= inferTexts.size()) {
-        log.warn("도로명주소 다음 요소들이 부족합니다. 필요: {}, 실제: {}",
-            roadAddressIndex + 4, inferTexts.size() - 1);
+        log.warn(
+            "도로명주소 다음 요소들이 부족합니다. 필요: {}, 실제: {}", roadAddressIndex + 4, inferTexts.size() - 1);
         return null;
       }
 
@@ -274,8 +265,12 @@ public class NaverOcrService {
       String roadName = inferTexts.get(roadAddressIndex + 3).trim();
       String buildingNumber = inferTexts.get(roadAddressIndex + 4).trim();
 
-      log.info("추출된 도로명주소 정보 - 시도: '{}', 시군구: '{}', 도로명: '{}', 건물번호: '{}'",
-          sido, sigungu, roadName, buildingNumber);
+      log.info(
+          "추출된 도로명주소 정보 - 시도: '{}', 시군구: '{}', 도로명: '{}', 건물번호: '{}'",
+          sido,
+          sigungu,
+          roadName,
+          buildingNumber);
 
       // 빈 값 체크
       if (sido.isEmpty() || sigungu.isEmpty() || roadName.isEmpty() || buildingNumber.isEmpty()) {
@@ -283,12 +278,13 @@ public class NaverOcrService {
         return null;
       }
 
-      RoadAddress result = RoadAddress.builder()
-          .sido(sido)
-          .sigungu(sigungu)
-          .roadName(roadName)
-          .buildingNumber(buildingNumber)
-          .build();
+      RoadAddress result =
+          RoadAddress.builder()
+              .sido(sido)
+              .sigungu(sigungu)
+              .roadName(roadName)
+              .buildingNumber(buildingNumber)
+              .build();
 
       log.info("도로명주소 추출 성공: {}", result);
       return result;
@@ -298,5 +294,4 @@ public class NaverOcrService {
       return null;
     }
   }
-
 }

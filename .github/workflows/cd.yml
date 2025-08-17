@@ -38,11 +38,15 @@ jobs:
         run: |
           ./gradlew clean bootjar -Pprofile=dev
 
-      # 6. Docker 이미지 빌드 및 Docker Hub로 push
+      # 6. Docker Hub 로그인
+      - name: Log in to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      # 7. Docker 이미지 빌드 및 Docker Hub로 push
       - name: Docker build & push
         run: |
           docker buildx build -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPO }} --push .
-
 
   # 2단계: 배포
   deploy:
@@ -53,7 +57,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. 서버에 접속하여 docker compose 재배포
+      # 2. .env 파일 생성
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          DB_HOST=cesco
+          DB_PASSWORD=cesco07
+          SPRING_CONFIG_USERNAME=cesco
+          SPRING_CONFIG_PASSWORD=1234
+          AWS_ACESS_KEY=dummy_aws_key
+          AWS_SECRET_KEY=dummy_aws_secret
+          NAVER_OCR_INVOKE_URL=http://dummy.url
+          NAVER_OCR_SECRET_KEY=dummy_key
+          OPENAI_SECRET_KEY=dummy_openai_key
+          OPENAI_URL=https://api.openai.com/v1/chat/completions
+          OPENAI_MODEL=gpt-4o
+          CODE_CLIENT_ID=dummy_id
+          CODEF_CLIENT_SECRET=dummy_secret
+          CODEF_PUBLIC_KEY=dummy_key
+          CODEF_ENDPOINT=http://dummy.url
+          EOF
+
+      # 3. 서버에 접속하여 docker compose 재배포
       - name: Deploy on server
         uses: appleboy/ssh-action@master
         with:

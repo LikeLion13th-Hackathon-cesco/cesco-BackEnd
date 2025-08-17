@@ -4,9 +4,6 @@ import com.practice.likelionhackathoncesco.domain.comment.dto.request.CreateComm
 import com.practice.likelionhackathoncesco.domain.comment.dto.request.UpdateCommentRequest;
 import com.practice.likelionhackathoncesco.domain.comment.dto.response.CommentResponse;
 import com.practice.likelionhackathoncesco.domain.comment.service.CommentService;
-import com.practice.likelionhackathoncesco.domain.post.dto.request.CreatePostRequest;
-import com.practice.likelionhackathoncesco.domain.post.dto.request.UpdatePostRequest;
-import com.practice.likelionhackathoncesco.domain.post.dto.response.PostResponse;
 import com.practice.likelionhackathoncesco.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,15 +27,14 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "comment", description = "댓글 관련 API")
 public class CommentController {
 
-
   private final CommentService commentService;
 
   // 댓글 생성 API
   @PostMapping("/comments")
   @Operation(summary = "댓글 생성", description = "댓글 작성 후 완료버튼 눌렀을때 요청되는 API")
   public ResponseEntity<BaseResponse<CommentResponse>> createComment(
-      @Parameter(description = "댓글 작성 내용")
-      @RequestBody @Valid CreateCommentRequest createCommentRequest) {
+      @Parameter(description = "댓글 작성 내용") @RequestBody @Valid
+          CreateCommentRequest createCommentRequest) {
     CommentResponse commentResponse = commentService.createComment(createCommentRequest);
 
     return ResponseEntity.ok(BaseResponse.success("댓글 생성 성공", commentResponse));
@@ -68,7 +64,7 @@ public class CommentController {
   @Operation(summary = "게시글 별 게시글 전체 조회", description = "특정 게시글을 눌렀을때 호출되는 API")
   @GetMapping("/comments/{postId}")
   public ResponseEntity<BaseResponse<List<CommentResponse>>> getAllCommentByPostId(
-      @Parameter(description = "조회할 댓글 목록의 게시글 ID") @PathVariable Long postId){
+      @Parameter(description = "조회할 댓글 목록의 게시글 ID") @PathVariable Long postId) {
     List<CommentResponse> commentList = commentService.getAllCommentsByPostId(postId);
     return ResponseEntity.ok(BaseResponse.success("커뮤니티 별 게시글 목록 조회 완료", commentList));
   }

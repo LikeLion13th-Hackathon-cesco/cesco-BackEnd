@@ -34,5 +34,4 @@ public class PriceList {
   @Schema(description = "기준가격", example = "[공동주택가격]")
   @JsonProperty("resBasePrice")
   private String resBasePrice; // 기준가격 (공동주택가격)
-
 }

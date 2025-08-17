@@ -2,6 +2,7 @@ package com.practice.likelionhackathoncesco.domain.analysisreport.controller;
 
 import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.AnalysisReportResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.FileUploadResponse;
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
 import com.practice.likelionhackathoncesco.domain.analysisreport.service.AnalysisFlowService;
 import com.practice.likelionhackathoncesco.domain.analysisreport.service.AnalysisReportService;
@@ -41,17 +42,44 @@ public class AnalysisReportController {
   // 안전지수, 지피티 분석 설명 반환하는 api -> 단, s3 url 가지고 파일 객체
   // 생성해야함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   @Operation(summary = "등기부등본 분석 결과 API", description = "분석리포트 페이지에 결과 반환")
-  @PutMapping(value = "/reports/{reportId}")
+  @PutMapping(value = "/reports/{reportId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<BaseResponse<AnalysisReportResponse>> getAnalysisReport(
-      @Parameter(description = "gpt-4o 분석 요청 내용") @RequestBody
-          GptAnalysisRequest gptAnalysisRequest,
-      @Parameter(description = "조회할 분석리포트 ID") @PathVariable Long reportId) {
+      @Parameter(description = "업로드할 파일")
+      @RequestParam("file") MultipartFile file,
+
+      @Parameter(description = "파일명")
+      @RequestParam("fileName") String fileName,
+
+      @Parameter(description = "전월세 여부")
+      @RequestParam("isMonthlyRent") Integer isMonthlyRent,
+
+      @Parameter(description = "전월세 보증금")
+      @RequestParam("deposit") Integer deposit,
+
+      @Parameter(description = "월세")
+      @RequestParam("monthlyRent") Integer monthlyRent,
+      @Parameter(description = "상세 주소")
+      @RequestParam("detailAddress") String detailAddress) {
+
+    AnalysisReport savedReport = analysisFlowService.uploadDocuments(PathName.PROPERTYREGISTRY, file); // S3 업로드 + DB 저장
+
+    // ptAnalysisRequest 생성 (파일 제외하고)
+    GptAnalysisRequest gptAnalysisRequest = new GptAnalysisRequest(
+        null, // file은 이미 처리했으므로 null
+        fileName,
+        isMonthlyRent,
+        deposit,
+        monthlyRent,
+        detailAddress
+    );
+
+
     AnalysisReportResponse analysisReportResponse =
-        analysisFlowService.processAnalysisReport(reportId, gptAnalysisRequest);
+        analysisFlowService.processAnalysisReport(savedReport.getReportId(), gptAnalysisRequest);
     return ResponseEntity.ok(BaseResponse.success("분석리포트 결과 반환 완료", analysisReportResponse));
   }
 
-  @Operation(summary = "등기부등본 업로드 API", description = "등기부등본 문서를 업로드하고 문서 원본이름과 상태를 리턴하는 API")
+  /*@Operation(summary = "등기부등본 업로드 API", description = "등기부등본 문서를 업로드하고 문서 원본이름과 상태를 리턴하는 API")
   @PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<BaseResponse<FileUploadResponse>> uploadFile(
       @RequestParam MultipartFile file) {
@@ -71,7 +99,7 @@ public class AnalysisReportController {
     Boolean result = analysisReportService.deleteReport(reportId);
 
     return ResponseEntity.ok(BaseResponse.success("파일이 삭제되었습니다.", result));
-  }
+  }*/
 
   @Operation(summary = "업로드한 등기부등본 전체 조회 API", description = "마이페이지에서 사용자가 업로드한 등기부등본을 모두 조회하는 API")
   @GetMapping("")

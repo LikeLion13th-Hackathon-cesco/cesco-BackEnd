@@ -28,26 +28,8 @@ public class AnalysisReportService {
   private final FileService fileService;
   private final AnalysisReportRepository analysisReportRepository;
 
-  // 분석 리포트를 위한 등기부등본 업로드
   @Transactional
-  public FileUploadResponse uploadDocuments(PathName pathName, MultipartFile file) {
-    AnalysisReport savedReport =
-        fileService.uploadFile(
-            pathName,
-            file,
-            () -> AnalysisReport.builder().processingStatus(ProcessingStatus.UPLOADED).build(),
-            analysisReportRepository,
-            null);
-
-    return FileUploadResponse.builder()
-        .reportId(savedReport.getReportId())
-        .fileName(savedReport.getFileName())
-        .processingStatus(savedReport.getProcessingStatus()) // 엔티티 생성 시 업로드 상태로 생성
-        .build();
-  }
-
-  @Transactional
-  public Boolean deleteReport(Long reportId) {
+  public Boolean deleteReport(Long reportId) { // 우선 사용X
     log.info("분석 리포트 삭제 요청: reportId={}", reportId);
 
     try {
@@ -121,7 +103,8 @@ public class AnalysisReportService {
         safetyScore,
         gptResponse.getSummary(),
         gptResponse.getSafetyDescription(),
-        gptResponse.getInsuranceDescription());
+        gptResponse.getInsuranceDescription()
+    );
 
     // 분석 상태 수정 -> 모든 처리 완료
     analysisReport.updateProcessingStatus(ProcessingStatus.COMPLETED);

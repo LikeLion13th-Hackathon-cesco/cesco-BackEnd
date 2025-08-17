@@ -3,6 +3,7 @@ package com.practice.likelionhackathoncesco.openai.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @AllArgsConstructor
@@ -11,6 +12,12 @@ public class GptAnalysisRequest {
 
   // @Schema(description = "분석할 텍스트", example = "...")
   // private String text;   // ocr 분석 후 추출된 텍스트
+
+  @Schema(description = "업로드된 파일")
+  private MultipartFile file; // 사용자가 업로드한 파일
+
+  @Schema(description = "파일명", example = "등기부등본.pdf")
+  private String fileName; // 파일명
 
   @Schema(description = "전월세 여부", example = "0")
   private Integer isMonthlyRent; // 월세일 경우 : 1 , 전세일 경우 : 0

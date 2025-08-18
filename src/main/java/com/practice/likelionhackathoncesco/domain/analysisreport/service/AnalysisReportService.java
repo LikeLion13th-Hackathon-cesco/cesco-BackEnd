@@ -68,6 +68,7 @@ public class AnalysisReportService {
         analysisReportRepository
             .findById(reportId)
             .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.REPORT_NOT_FOUND));
+
     analysisReport.updateProcessingStatus(ProcessingStatus.ANALYZING);
 
     Integer dangerNum = Integer.valueOf(gptResponse.getDangerNum()); // 위험수치의 합
@@ -120,6 +121,7 @@ public class AnalysisReportService {
         .summary(analysisReport.getSummary())
         .safetyDescription(analysisReport.getSafetyDescription())
         .insuranceDescription(analysisReport.getInsuranceDescription())
+        .processingStatus(analysisReport.getProcessingStatus())
         .build();
   }
 }

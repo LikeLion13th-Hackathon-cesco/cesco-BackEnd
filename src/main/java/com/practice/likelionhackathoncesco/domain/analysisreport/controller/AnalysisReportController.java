@@ -16,7 +16,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -64,17 +66,6 @@ public class AnalysisReportController {
     return ResponseEntity.ok(BaseResponse.success("분석리포트 결과 반환 완료", analysisReportResponse));
   }
 
-  /*@Operation(summary = "등기부등본 업로드 API", description = "등기부등본 문서를 업로드하고 문서 원본이름과 상태를 리턴하는 API")
-  @PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ResponseEntity<BaseResponse<FileUploadResponse>> uploadFile(
-      @RequestParam MultipartFile file) {
-    // 이 api에서는 등기부등본만 업로드 할 수 있음 (s3 PathName 고정)
-    FileUploadResponse uploadResponse =
-        analysisReportService.uploadDocuments(PathName.PROPERTYREGISTRY, file);
-
-    return ResponseEntity.ok(BaseResponse.success("등기부등본 업로드에 성공했습니다.", uploadResponse));
-  }
-
   @Operation(summary = "등기부등본 파일 삭제 API", description = "X버튼을 눌러 업로드한 등기부등본 문서를 삭제하는 API")
   @DeleteMapping("/{reportId}")
   public ResponseEntity<BaseResponse<Boolean>> deleteReport(@PathVariable Long reportId) {
@@ -84,7 +75,7 @@ public class AnalysisReportController {
     Boolean result = analysisReportService.deleteReport(reportId);
 
     return ResponseEntity.ok(BaseResponse.success("파일이 삭제되었습니다.", result));
-  }*/
+  }
 
   @Operation(summary = "업로드한 등기부등본 전체 조회 API", description = "마이페이지에서 사용자가 업로드한 등기부등본을 모두 조회하는 API")
   @GetMapping("")

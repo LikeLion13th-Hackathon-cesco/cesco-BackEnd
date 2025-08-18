@@ -77,11 +77,11 @@ public class GptComplaintService {
   }
 
   // 신고용 등기부등본에서 임대인 정보 요청을 위해 gpt-4o용 프롬프트 생성
-  public List<Map<String, String>> createGetFakerPrompt(Long complaintReportId)
+  public List<Map<String, String>> createGetFakerPrompt(Long fraudRegisterReportId)
       throws JsonProcessingException {
 
     // 신고 등기부등본 갑구 파싱 택스트 바로 가져오기
-    List<String> text = fraudOcrService.gapguExtractText(complaintReportId);
+    List<String> text = fraudOcrService.gapguExtractText(fraudRegisterReportId);
     ObjectMapper objectMapper = new ObjectMapper();
     String jsonText = objectMapper.writeValueAsString(text);
 

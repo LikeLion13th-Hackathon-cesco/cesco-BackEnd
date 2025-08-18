@@ -19,8 +19,8 @@ public class GptAnalysisRequest {
       example = "파일을 선택하세요")
   private MultipartFile file; // 사용자가 업로드한 파일
 
-  @Schema(description = "파일명", example = "등기부등본.pdf")
-  private String fileName; // 파일명
+  /*@Schema(description = "파일명", example = "등기부등본.pdf")
+  private String fileName; // 파일명*/
 
   @Schema(description = "전월세 여부", example = "0")
   private Integer isMonthlyRent; // 월세일 경우 : 1 , 전세일 경우 : 0

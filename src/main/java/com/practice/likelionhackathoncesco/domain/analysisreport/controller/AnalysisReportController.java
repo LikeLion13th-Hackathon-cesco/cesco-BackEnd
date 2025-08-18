@@ -39,10 +39,9 @@ public class AnalysisReportController {
   // 안전지수, 지피티 분석 설명 반환하는 api -> 단, s3 url 가지고 파일 객체
   // 생성해야함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   @Operation(summary = "등기부등본 분석 결과 API", description = "분석리포트 페이지에 결과 반환")
-  @PutMapping(value = "/reports/{reportId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PutMapping(value = "/reports", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<BaseResponse<AnalysisReportResponse>> getAnalysisReport(
       @Parameter(description = "업로드할 파일") @RequestParam("file") MultipartFile file,
-      @Parameter(description = "파일명") @RequestParam("fileName") String fileName,
       @Parameter(description = "전월세 여부") @RequestParam("isMonthlyRent") Integer isMonthlyRent,
       @Parameter(description = "전월세 보증금") @RequestParam("deposit") Integer deposit,
       @Parameter(description = "월세") @RequestParam("monthlyRent") Integer monthlyRent,
@@ -55,7 +54,6 @@ public class AnalysisReportController {
     GptAnalysisRequest gptAnalysisRequest =
         new GptAnalysisRequest(
             null, // file은 이미 처리했으므로 null
-            fileName,
             isMonthlyRent,
             deposit,
             monthlyRent,

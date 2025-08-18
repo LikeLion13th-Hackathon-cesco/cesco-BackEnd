@@ -7,10 +7,16 @@ import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Processi
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
 import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
 import com.practice.likelionhackathoncesco.domain.commonfile.service.FileService;
+import com.practice.likelionhackathoncesco.domain.user.dto.response.MyPageAnalysisResponse;
+import com.practice.likelionhackathoncesco.domain.user.dto.response.MyPageResponse;
+import com.practice.likelionhackathoncesco.domain.user.entity.User;
+import com.practice.likelionhackathoncesco.domain.user.exception.UserErrorCode;
+import com.practice.likelionhackathoncesco.domain.user.repository.UserRepository;
 import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.openai.dto.request.GptAnalysisRequest;
 import com.practice.likelionhackathoncesco.openai.dto.response.GptResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +30,7 @@ public class AnalysisReportService {
   private final S3Config s3Config; // 버킷 이름과 경로 등 설정 정보
   private final FileService fileService;
   private final AnalysisReportRepository analysisReportRepository;
+  private final UserRepository userRepository;
 
   @Transactional
   public Boolean deleteReport(Long reportId) { // 우선 사용X
@@ -41,6 +48,29 @@ public class AnalysisReportService {
       throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
     }
   }
+
+  public MyPageResponse getAllMyPageReport(Long userId) { // 응답 추후 필드 수정
+
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+
+    List<AnalysisReport> reports = analysisReportRepository.findAllByUserUserId(userId);
+
+    List<MyPageAnalysisResponse> analysisResponses = reports.stream()
+        .map(report -> MyPageAnalysisResponse.builder()
+            .reportId(report.getReportId())
+            .address(report.getAddress())
+            .safetyScore(report.getSafetyScore())
+            .summary(report.getSummary())
+            .build())
+        .toList();
+
+    return MyPageResponse.builder()
+        .credit(user.getCredit()) // 해당 사용자의 크레딧
+        .reports(analysisResponses)   // 해당 사용자의 분석 리포트 리스트
+        .build();
+  }
+
 
   // 전월세 안전지수 로직 + 완전한 분석 리포트 반환 메소드 -> gptResponse 응답을 파싱해서 DB에 집어넣어야 함
   @Transactional

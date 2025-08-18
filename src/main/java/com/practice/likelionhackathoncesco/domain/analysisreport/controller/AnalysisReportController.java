@@ -35,7 +35,6 @@ public class AnalysisReportController {
 
   private final AnalysisReportService analysisReportService;
   private final AnalysisFlowService analysisFlowService;
-  private final FileService fileService;
 
   // 안전지수, 지피티 분석 설명 반환하는 api -> 단, s3 url 가지고 파일 객체
   // 생성해야함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -74,16 +73,5 @@ public class AnalysisReportController {
     Boolean result = analysisReportService.deleteReport(reportId);
 
     return ResponseEntity.ok(BaseResponse.success("파일이 삭제되었습니다.", result));
-  }
-
-  @Operation(summary = "업로드한 등기부등본 전체 조회 API", description = "마이페이지에서 사용자가 업로드한 등기부등본을 모두 조회하는 API")
-  @GetMapping("")
-  public ResponseEntity<BaseResponse<List<String>>> getAllFile() {
-
-    log.info("S3에 업로드한 모든 등기부등본 파일 조회");
-
-    List<String> s3files = fileService.getAllS3Files(PathName.PROPERTYREGISTRY);
-
-    return ResponseEntity.ok(BaseResponse.success("조회 성공", s3files));
   }
 }

@@ -76,8 +76,12 @@ public class GptComplaintService {
 
     // 저장된 엔티티 DTO로 변환 후 반환
     return fakerList.stream()
-        .map(f -> new FakerResponse(f.getFakerName(), f.getResidentNum(), f.getFraudRegisterReport()
-            .getReportStatus()))
+        .map(
+            f ->
+                new FakerResponse(
+                    f.getFakerName(),
+                    f.getResidentNum(),
+                    f.getFraudRegisterReport().getReportStatus()))
         .toList();
   }
 

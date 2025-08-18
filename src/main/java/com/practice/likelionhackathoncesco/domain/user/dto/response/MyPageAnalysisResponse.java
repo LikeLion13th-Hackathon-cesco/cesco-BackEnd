@@ -19,6 +19,4 @@ public class MyPageAnalysisResponse {
 
   @Schema(description = "분석 한줄 설명", example = "이 부동산은 거래에 주의가 필요합니다.")
   private String summary;
-
-
 }

@@ -51,26 +51,30 @@ public class AnalysisReportService {
 
   public MyPageResponse getAllMyPageReport(Long userId) { // 응답 추후 필드 수정
 
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
     List<AnalysisReport> reports = analysisReportRepository.findAllByUserUserId(userId);
 
-    List<MyPageAnalysisResponse> analysisResponses = reports.stream()
-        .map(report -> MyPageAnalysisResponse.builder()
-            .reportId(report.getReportId())
-            .address(report.getAddress())
-            .safetyScore(report.getSafetyScore())
-            .summary(report.getSummary())
-            .build())
-        .toList();
+    List<MyPageAnalysisResponse> analysisResponses =
+        reports.stream()
+            .map(
+                report ->
+                    MyPageAnalysisResponse.builder()
+                        .reportId(report.getReportId())
+                        .address(report.getAddress())
+                        .safetyScore(report.getSafetyScore())
+                        .summary(report.getSummary())
+                        .build())
+            .toList();
 
     return MyPageResponse.builder()
         .credit(user.getCredit()) // 해당 사용자의 크레딧
-        .reports(analysisResponses)   // 해당 사용자의 분석 리포트 리스트
+        .reports(analysisResponses) // 해당 사용자의 분석 리포트 리스트
         .build();
   }
-
 
   // 전월세 안전지수 로직 + 완전한 분석 리포트 반환 메소드 -> gptResponse 응답을 파싱해서 DB에 집어넣어야 함
   @Transactional

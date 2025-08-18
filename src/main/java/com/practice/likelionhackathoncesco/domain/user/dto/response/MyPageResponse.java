@@ -14,5 +14,4 @@ public class MyPageResponse {
 
   @Schema(description = "사용자 분석 리포트 리스트", example = ".")
   private List<MyPageAnalysisResponse> reports;
-
 }

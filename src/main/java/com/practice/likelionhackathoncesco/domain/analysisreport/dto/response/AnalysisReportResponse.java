@@ -1,6 +1,5 @@
 package com.practice.likelionhackathoncesco.domain.analysisreport.dto.response;
 
-import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Comment;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -25,7 +24,6 @@ public class AnalysisReportResponse {
 
   @Schema(description = "안전 점수에 따른 한줄 평가", example = "해당 부동산은 비교적 안전합니다")
   private String comment; // api 응답은 message로
-
 
   @Schema(description = "안전지수 분석 설명", example = "현재 등기부등본 갑구에는 말소되지 않은 가압류 1건과 압류 1건이 존재합니다.")
   private String safetyDescription;

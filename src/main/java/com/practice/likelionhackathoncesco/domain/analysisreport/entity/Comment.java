@@ -6,11 +6,9 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum Comment {
-
   DANGER("해당 부동산은 거래 시 위험 부담이 있습니다"), //
   CAUTION("해당 부동산은 거래에 주의가 필요합니다"),
   SAFE("해당 부동산은 비교적 안전합니다");
 
   private final String message;
-
 }

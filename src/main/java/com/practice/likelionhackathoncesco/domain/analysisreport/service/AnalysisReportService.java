@@ -130,13 +130,11 @@ public class AnalysisReportService {
                             / (officalPrice - dept));
 
         analysisReport.updateComment(Comment.CAUTION);
-
       }
     } else { // 위험 : 0~3점
       safetyScore = 3.0 - dangerNum;
 
       analysisReport.updateComment(Comment.DANGER);
-
     }
 
     // 분석결과로 분석리포트 수정

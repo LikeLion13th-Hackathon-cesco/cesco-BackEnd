@@ -7,9 +7,9 @@ import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
 import com.practice.likelionhackathoncesco.domain.commonfile.service.FileService;
-import com.practice.likelionhackathoncesco.openai.dto.request.GptAnalysisRequest;
-import com.practice.likelionhackathoncesco.openai.dto.response.GptResponse;
-import com.practice.likelionhackathoncesco.openai.service.GptService;
+import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptAnalysisRequest;
+import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptResponse;
+import com.practice.likelionhackathoncesco.infra.openai.service.GptService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

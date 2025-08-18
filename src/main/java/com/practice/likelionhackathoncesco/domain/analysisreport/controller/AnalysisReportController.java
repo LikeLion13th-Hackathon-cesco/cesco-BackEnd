@@ -7,7 +7,7 @@ import com.practice.likelionhackathoncesco.domain.analysisreport.service.Analysi
 import com.practice.likelionhackathoncesco.domain.analysisreport.service.AnalysisReportService;
 import com.practice.likelionhackathoncesco.domain.commonfile.service.FileService;
 import com.practice.likelionhackathoncesco.global.response.BaseResponse;
-import com.practice.likelionhackathoncesco.openai.dto.request.GptAnalysisRequest;
+import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptAnalysisRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

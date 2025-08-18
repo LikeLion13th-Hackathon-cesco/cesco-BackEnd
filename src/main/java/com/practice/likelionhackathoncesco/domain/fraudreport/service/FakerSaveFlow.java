@@ -2,8 +2,8 @@ package com.practice.likelionhackathoncesco.domain.fraudreport.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.FakerResponse;
-import com.practice.likelionhackathoncesco.openai.dto.response.GptComplaintResponse;
-import com.practice.likelionhackathoncesco.openai.service.GptComplaintService;
+import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptComplaintResponse;
+import com.practice.likelionhackathoncesco.infra.openai.service.GptComplaintService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

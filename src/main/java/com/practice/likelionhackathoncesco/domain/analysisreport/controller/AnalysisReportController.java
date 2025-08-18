@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,7 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/analysis-reports")
-@Tag(name = "Analysis Report Upload", description = "등기부등본 업로드 관련 API")
+@Tag(name = "Analysis Report", description = "안전지수 분석 관련 API")
 public class AnalysisReportController {
 
   private final AnalysisReportService analysisReportService;
@@ -39,7 +40,7 @@ public class AnalysisReportController {
   // 안전지수, 지피티 분석 설명 반환하는 api -> 단, s3 url 가지고 파일 객체
   // 생성해야함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   @Operation(summary = "등기부등본 분석 결과 API", description = "분석리포트 페이지에 결과 반환")
-  @PutMapping(value = "/reports", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PostMapping(value = "/analysis-result", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<BaseResponse<AnalysisReportResponse>> getAnalysisReport(
       @Parameter(description = "업로드할 파일") @RequestParam("file") MultipartFile file,
       @Parameter(description = "전월세 여부") @RequestParam("isMonthlyRent") Integer isMonthlyRent,

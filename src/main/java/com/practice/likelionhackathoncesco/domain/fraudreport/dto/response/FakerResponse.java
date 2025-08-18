@@ -1,5 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.fraudreport.dto.response;
 
+import com.practice.likelionhackathoncesco.domain.fraudreport.entity.ReportStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,4 +15,7 @@ public class FakerResponse {
 
   @Schema(description = "사기 임대인 주민번호 앞자리", example = "630409")
   private String residentNum;
+
+  @Schema(description = "신고 상태 여부", example = "REPORTCOMPLETED")
+  private ReportStatus reportStatus;
 }

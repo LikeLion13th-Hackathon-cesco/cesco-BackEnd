@@ -56,7 +56,7 @@ public class FraudReportUpload { // 사기 등기부등본 업로드 서비스 �
         .complaintReportFileName(savedComplaint.getFileName())
         .fraudReportId(savedFraudReport.getFraudRegisterReportId())
         .fraudReportFileName(savedFraudReport.getFileName())
-        .reportStatus(ReportStatus.REPORTCOMPLETED)
+        .reportStatus(ReportStatus.UPLOADCOMPLETED)
         .build();
   }
 }

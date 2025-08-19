@@ -1,5 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.user.controller;
 
+import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.AnalysisReportResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.service.AnalysisReportService;
 import com.practice.likelionhackathoncesco.domain.user.dto.response.MyPageResponse;
 import com.practice.likelionhackathoncesco.domain.user.dto.response.PayResponse;
@@ -34,14 +35,26 @@ public class UserController {
     return ResponseEntity.ok(BaseResponse.success("결제 완료", result));
   }
 
-  @Operation(summary = "마이페이지 데이터 조회 API", description = "특정 사용자의 크레딧과 분석 리포트 목록을 조회")
-  @GetMapping("/{userId}")
+  @Operation(summary = "마이페이지 모든 데이터 조회 API", description = "사용자의 크레딧과 분석 리포트 목록을 조회")
+  @GetMapping("/{userId}/mypage")
   public ResponseEntity<BaseResponse<MyPageResponse>> getMyPageData(
       @Parameter(description = "사용자 ID") @PathVariable Long userId) {
 
     log.info("마이페이지 데이터 조회 요청: userId={}", userId);
 
     MyPageResponse result = analysisReportService.getAllMyPageReport(userId);
+
+    return ResponseEntity.ok(BaseResponse.success("마이페이지 데이터 조회 성공", result));
+  }
+
+  @Operation(summary = "마이페이지 목록에서 분석레포트 조회 API", description = "사용자가 업로드한 등기부등본에 대한 분석레포트 조회")
+  @GetMapping("/{reportId}/analysis-reports")
+  public ResponseEntity<BaseResponse<AnalysisReportResponse>> getAnalysisReport(
+      @Parameter(description = "분석레포트 ID") @PathVariable Long reportId) {
+
+    log.info("마이페이지의 분석레로프 데이터 조회 요청: reportId={}", reportId);
+
+    AnalysisReportResponse result = analysisReportService.getAnalysisReport(reportId);
 
     return ResponseEntity.ok(BaseResponse.success("마이페이지 데이터 조회 성공", result));
   }

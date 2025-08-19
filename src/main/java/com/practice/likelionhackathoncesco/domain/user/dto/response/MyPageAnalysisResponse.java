@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class MyPageAnalysisResponse {
+public class MyPageAnalysisResponse { // 나중에 AnalysisResponse로 묶어도 될듯!!!!
 
   @Schema(description = "분석레포트 id", example = "1")
   private Long reportId;
@@ -19,4 +19,7 @@ public class MyPageAnalysisResponse {
 
   @Schema(description = "분석 한줄 설명", example = "이 부동산은 거래에 주의가 필요합니다.")
   private String summary;
+
+  @Schema(description = "안전 점수에 따른 한 줄 코멘트", example = "해당 부동산은 거래 시 위험 부담이 있습니다")
+  private String comment;
 }

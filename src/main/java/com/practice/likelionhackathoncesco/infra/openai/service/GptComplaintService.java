@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.FakerResponse;
 import com.practice.likelionhackathoncesco.domain.fraudreport.entity.Faker;
 import com.practice.likelionhackathoncesco.domain.fraudreport.entity.FraudRegisterReport;
+import com.practice.likelionhackathoncesco.domain.fraudreport.entity.ReportStatus;
 import com.practice.likelionhackathoncesco.domain.fraudreport.exception.FraudReport_Error_Code;
 import com.practice.likelionhackathoncesco.domain.fraudreport.repository.FakerRepository;
 import com.practice.likelionhackathoncesco.domain.fraudreport.repository.FraudRegisterReportRepository;
@@ -70,18 +71,26 @@ public class GptComplaintService {
     // DB 저장
     fakerRepository.saveAll(fakerList);
 
+    // 신고 상태 업데이트
+    fraudRegisterReport.updateReportStatus(ReportStatus.REPORTCOMPLETED);
+
     // 저장된 엔티티 DTO로 변환 후 반환
     return fakerList.stream()
-        .map(f -> new FakerResponse(f.getFakerName(), f.getResidentNum()))
+        .map(
+            f ->
+                new FakerResponse(
+                    f.getFakerName(),
+                    f.getResidentNum(),
+                    f.getFraudRegisterReport().getReportStatus()))
         .toList();
   }
 
   // 신고용 등기부등본에서 임대인 정보 요청을 위해 gpt-4o용 프롬프트 생성
-  public List<Map<String, String>> createGetFakerPrompt(Long complaintReportId)
+  public List<Map<String, String>> createGetFakerPrompt(Long fraudRegisterReportId)
       throws JsonProcessingException {
 
     // 신고 등기부등본 갑구 파싱 택스트 바로 가져오기
-    List<String> text = fraudOcrService.gapguExtractText(complaintReportId);
+    List<String> text = fraudOcrService.gapguExtractText(fraudRegisterReportId);
     ObjectMapper objectMapper = new ObjectMapper();
     String jsonText = objectMapper.writeValueAsString(text);
 

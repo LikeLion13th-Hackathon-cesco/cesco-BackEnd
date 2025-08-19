@@ -62,7 +62,7 @@ public class AnalysisFlowService {
     // 응답 파싱
     GptResponse gptResponse = gptService.parseGptResponse(content);
 
-    // 분석 리포트 DB 업데이트
+    // 분석 리포트 분석 후 DB 업데이트
     AnalysisReportResponse analysisReportResponse =
         analysisReportService.updateAnalysisReport(gptResponse, gptAnalysisRequest, reportId);
 

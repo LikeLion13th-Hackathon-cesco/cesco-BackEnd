@@ -56,6 +56,6 @@ public class UserController {
 
     AnalysisReportResponse result = analysisReportService.getAnalysisReport(reportId);
 
-    return ResponseEntity.ok(BaseResponse.success("마이페이지 데이터 조회 성공", result));
+    return ResponseEntity.ok(BaseResponse.success("분석레포트 조회 성공", result));
   }
 }

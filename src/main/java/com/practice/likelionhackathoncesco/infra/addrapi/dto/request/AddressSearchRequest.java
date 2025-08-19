@@ -11,9 +11,7 @@ import lombok.Setter;
 @Schema(title = "addressSearchRequestDTO", description = "검색어에 따른 도로명주소 정보 조회 요청")
 public class AddressSearchRequest {
 
-  @Schema(
-      description = "api 신청 시 발급받은 승인 키",
-      example = "devU01TX0FVVEgyMDI1MDgxODIxMTg1NjExNjA4NDA=")
+  @Schema(description = "api 신청 시 발급받은 승인 키", example = "U01TX0FVVEgyMDI1MDgxOTE3MzQzODExNjA4OTk=")
   private String confmKey; // 발급받은 승인 키
 
   @Schema(description = "현재 페이지 정보", example = "1")

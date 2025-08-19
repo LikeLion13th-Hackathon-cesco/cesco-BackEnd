@@ -37,7 +37,7 @@ public class AddressSearchService {
     // 기본 요청 값 지정
     if (addressSearchRequest.getConfmKey() == null
         || addressSearchRequest.getConfmKey().isEmpty()) {
-      addressSearchRequest.setConfmKey("devU01TX0FVVEgyMDI1MDgxODIxMTg1NjExNjA4NDA=");
+      addressSearchRequest.setConfmKey("U01TX0FVVEgyMDI1MDgxOTE3MzQzODExNjA4OTk=");
     }
     if (addressSearchRequest.getCurrentPage() == null) {
       addressSearchRequest.setCurrentPage(1);

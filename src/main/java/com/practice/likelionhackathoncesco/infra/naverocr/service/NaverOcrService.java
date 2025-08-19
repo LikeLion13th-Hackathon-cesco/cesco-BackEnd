@@ -178,53 +178,107 @@ public class NaverOcrService {
 
     Map<String, List<String>> result = new LinkedHashMap<>(); // 표제부, 갑구, 을구 순서 보장
     List<String> fallbackNames = List.of("표제부", "갑구", "을구");
-    RoadAddress roadAddress = null; // 도로명주소 객체
 
-    // 응답 바디의 image 배열의 첫번째 요소(ocr한 첫 페이지)의 table(표)를 가져옴
-    JsonNode tablesNode = root.path("images").get(0).path("tables");
+    JsonNode imagesNode = root.path("images");
 
-    int index = 0;
+    log.info("총 페이지 수: {}", imagesNode.size());
 
-    if (tablesNode.isArray()) {
-      for (JsonNode table : tablesNode) {
-        // 테이블 제목 추출: "표제부", "갑구", "을구"
-        String sectionName = table.path("title").path("inferText").asText().trim();
+    // ✅ 섹션별로 모든 텍스트를 수집할 맵
+    Map<String, List<String>> sectionTexts = new LinkedHashMap<>();
 
-        if (sectionName.isEmpty()) {
-          sectionName = fallbackNames.get(index);
-        }
+    // 표제부, 갑구, 을구 미리 초기화 (순서 보장)
+    for (String sectionName : fallbackNames) {
+      sectionTexts.put(sectionName, new ArrayList<>());
+    }
 
-        index++;
+    // 모든 페이지를 순회
+    for (int pageIndex = 0; pageIndex < imagesNode.size(); pageIndex++) {
+      JsonNode currentPage = imagesNode.get(pageIndex);
+      JsonNode tablesNode = currentPage.path("tables");
 
-        List<String> inferTexts = new ArrayList<>();
-        JsonNode cells = table.path("cells");
-        if (cells.isArray()) {
-          for (JsonNode cell : cells) {
-            JsonNode cellTextLines = cell.path("cellTextLines");
-            if (cellTextLines.isArray()) {
-              for (JsonNode line : cellTextLines) {
-                JsonNode cellWords = line.path("cellWords");
-                if (cellWords.isArray()) {
-                  for (JsonNode word : cellWords) {
-                    String text = word.path("inferText").asText();
-                    inferTexts.add(text);
+      log.info("페이지 {} 처리 중, 테이블 수: {}", pageIndex + 1, tablesNode.size());
+
+      if (tablesNode.isArray()) {
+        for (JsonNode table : tablesNode) {
+          // 테이블 제목 추출
+          String sectionName = table.path("title").path("inferText").asText().trim();
+
+          // ✅ 섹션명이 표제부, 갑구, 을구 중 하나인지 확인
+          String matchedSection = null;
+          for (String fallbackName : fallbackNames) {
+            if (sectionName.contains(fallbackName) || fallbackName.equals(sectionName)) {
+              matchedSection = fallbackName;
+              break;
+            }
+          }
+
+          // 매칭되는 섹션이 없으면 첫 번째 단어로 판단
+          if (matchedSection == null && !sectionName.isEmpty()) {
+            for (String fallbackName : fallbackNames) {
+              if (sectionName.startsWith(fallbackName.substring(0, 1))) { // 첫 글자로 매칭
+                matchedSection = fallbackName;
+                break;
+              }
+            }
+          }
+
+          // 그래도 없으면 페이지 순서로 추정
+          if (matchedSection == null) {
+            if (pageIndex == 0) matchedSection = "표제부";
+            else if (pageIndex == 1) matchedSection = "갑구";
+            else matchedSection = "을구";
+          }
+
+          log.info("섹션 매칭: '{}' -> '{}' (페이지: {})", sectionName, matchedSection, pageIndex + 1);
+
+          // 텍스트 추출
+          List<String> inferTexts = new ArrayList<>();
+          JsonNode cells = table.path("cells");
+          if (cells.isArray()) {
+            for (JsonNode cell : cells) {
+              JsonNode cellTextLines = cell.path("cellTextLines");
+              if (cellTextLines.isArray()) {
+                for (JsonNode line : cellTextLines) {
+                  JsonNode cellWords = line.path("cellWords");
+                  if (cellWords.isArray()) {
+                    for (JsonNode word : cellWords) {
+                      String text = word.path("inferText").asText().trim();
+                      if (!text.isEmpty()) {
+                        inferTexts.add(text);
+                      }
+                    }
                   }
                 }
               }
             }
           }
+
+          // ✅ 해당 섹션에 텍스트 추가 (중복 제거)
+          List<String> currentSectionTexts = sectionTexts.get(matchedSection);
+          for (String text : inferTexts) {
+            if (!currentSectionTexts.contains(text)) { // 중복 제거
+              currentSectionTexts.add(text);
+            }
+          }
+
+          log.info("'{}' 섹션에 {}개 텍스트 추가", matchedSection, inferTexts.size());
         }
-
-        result.put(sectionName, inferTexts);
-
-        /*if ("표제부".equals(sectionName)) {
-          roadAddress = extractRoadAddress(inferTexts);
-        }*/
       }
     }
+
+    // 최종 결과에 빈 섹션 제외하고 추가
+    for (String sectionName : fallbackNames) {
+      List<String> texts = sectionTexts.get(sectionName);
+      if (!texts.isEmpty()) {
+        result.put(sectionName, texts);
+        log.info("최종 섹션: {}, 텍스트 수: {}", sectionName, texts.size());
+      }
+    }
+
+    log.info("전체 처리 완료 - 총 섹션 수: {}", result.size());
+
     return OcrResponse.builder()
         .sections(result)
-        // .roadAddress(roadAddress)
         .processingStatus(ProcessingStatus.OCR_COMPLETED)
         .build();
   }

@@ -4,9 +4,11 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
 public class GptOwnerListResponse { // Wrapper DTO
   private List<FakerInfo> faker;
 

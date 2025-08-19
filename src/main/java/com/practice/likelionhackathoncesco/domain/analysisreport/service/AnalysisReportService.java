@@ -87,7 +87,7 @@ public class AnalysisReportService {
 
     return AnalysisReportResponse.builder()
         .analysisReportUrl(amazonS3.getUrl(s3Config.getBucket(), report.getS3Key()).toString())
-        .comment(report.getComment().getMessage())
+        .comment(report.getComment())
         .safetyScore(report.getSafetyScore())
         .address(report.getAddress())
         .processingStatus(report.getProcessingStatus())
@@ -126,8 +126,8 @@ public class AnalysisReportService {
 
     analysisReport.updateProcessingStatus(ProcessingStatus.ANALYZING);
 
-    Integer dangerNum = Integer.valueOf(gptResponse.getDangerNum()); // 위험수치의 합
-    Integer dept = Integer.valueOf(gptResponse.getDept().replaceAll(",", ""));
+    Integer dangerNum = parseInteger(gptResponse.getDangerNum()); // 위험수치의 합
+    Integer dept = parseInteger(gptResponse.getDept());
     Integer officalPrice = 0; // 해당 매물의 공시가격 나중에 가져와서 수정해야함!!!!!!!!!!!!!!!!!!!
     Double safetyScore;
 
@@ -178,6 +178,27 @@ public class AnalysisReportService {
     return toAnalysisReportResponse(analysisReport);
   }
 
+  private Integer parseInteger(String value) {
+    if (value == null || value.trim().isEmpty()) {
+      throw new NumberFormatException("빈 값은 파싱할 수 없습니다: " + value);
+    }
+
+    try {
+      // 숫자가 아닌 모든 문자 제거 (원, 쉼표, 공백 등)
+      String numericOnly = value.replaceAll("[^0-9]", "");
+
+      if (numericOnly.isEmpty()) {
+        throw new NumberFormatException("숫자를 찾을 수 없습니다: " + value);
+      }
+
+      return Integer.valueOf(numericOnly);
+
+    } catch (NumberFormatException e) {
+      log.error("숫자 파싱 실패: {}", value, e);
+      throw new NumberFormatException("숫자 파싱 실패: " + value);
+    }
+  }
+
   public AnalysisReportResponse toAnalysisReportResponse(AnalysisReport analysisReport) {
 
     return AnalysisReportResponse.builder()
@@ -186,7 +207,7 @@ public class AnalysisReportService {
         .address(analysisReport.getAddress())
         .safetyScore(analysisReport.getSafetyScore())
         .summary(analysisReport.getSummary())
-        .comment(analysisReport.getComment().getMessage())
+        .comment(analysisReport.getComment())
         .safetyDescription(analysisReport.getSafetyDescription())
         .insuranceDescription(analysisReport.getInsuranceDescription())
         .processingStatus(analysisReport.getProcessingStatus())

@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,7 +23,7 @@ public class UserCreditController {
   private final UserCreditService userCreditService;
 
   @Operation(summary = "크레딧 지급 기준 충족 여부 조회", description = "마이페이지에서 사용자가 충족한 크레딧 지급 기준 조회하는 API")
-  @DeleteMapping("/credit/{userId}")
+  @GetMapping("/credit/{userId}")
   public ResponseEntity<BaseResponse<CreditResponse>> getCreditStep(
       @Parameter(description = "사용자 ID") @PathVariable Long userId) {
     CreditResponse creditResponse = userCreditService.PostCreditStep(userId);

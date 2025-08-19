@@ -23,24 +23,24 @@ public class LikeController { // like처럼 request 가 없는 도메인은 REST
   private final LikeService likeService;
 
   // 좋아요 생성 API
-  @PostMapping("/likes/{userId}/{postId}") // like 도메인에 request DTO를 안만들어서 이럼
+  @PostMapping("/posts/{postId}/likes")
   @Operation(summary = "좋아요 생성", description = "특정 게시글에 좋아요를 눌렀을때 요청되는 API")
   public ResponseEntity<BaseResponse<LikeResponse>> createLike(
-      @Parameter(description = "좋아요를 누르는 사용자 ID") @PathVariable Long userId,
       @Parameter(description = "좋아요를 누르는 게시글 ID") @PathVariable Long postId) {
-    LikeResponse likeResponse = likeService.createLike(userId, postId);
+    Long fixedUserId = 1L;
+    LikeResponse likeResponse = likeService.createLike(fixedUserId, postId);
 
     return ResponseEntity.ok(BaseResponse.success("좋아요 등록 완료", likeResponse));
   }
 
   // 좋아요 삭제 API
-  @DeleteMapping("/likes/{userId}/{postId}") // like 도메인에 request DTO를 안만들어서 이럼
+  @DeleteMapping("/posts/{postId}/likes")
   @Operation(summary = "좋아요 삭제", description = "특정 게시글에 대해 이미 좋아요가 되어있는데 좋아요 버튼을 눌렀을때 요청되는 API")
   public ResponseEntity<BaseResponse<Boolean>> deleteLike(
-      @Parameter(description = "좋아요를 삭제하는 사용자 ID") @PathVariable Long userId,
       @Parameter(description = "좋아요를 삭제하는 게시글 ID") @PathVariable Long postId) {
 
-    likeService.deleteLike(userId, postId);
+    Long fixedUserId = 1L;
+    likeService.deleteLike(fixedUserId, postId);
 
     return ResponseEntity.ok(BaseResponse.success("좋아요 취소 완료", true));
   }

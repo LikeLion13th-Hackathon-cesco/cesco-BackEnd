@@ -102,7 +102,7 @@ public class AnalysisReportService {
   public AnalysisReportResponse updateAnalysisReport(
       GptResponse gptResponse, GptAnalysisRequest gptAnalysisRequest, Long reportId) {
 
-    log.info("[AnalysisReportService] 분석리포트 수정 시도 : reportId={}", reportId);
+    log.info("[AnalysisReportService] 분석리포트 결과 업데이트 시도 : reportId={}", reportId);
     if (gptResponse.getAddress() == null || gptResponse.getAddress().isBlank()) {
       throw new CustomException(AnalysisReportErrorCode.INVALID_REPORT_ADDRESS);
     }
@@ -168,7 +168,8 @@ public class AnalysisReportService {
     // 분석 상태 수정 -> 모든 처리 완료
     analysisReport.updateProcessingStatus(ProcessingStatus.COMPLETED);
 
-    log.info("[AnalysisReportService] 분석리포트 수정 완료 : reportId={}", reportId);
+    // 이거 로그 메세지 바꿀게. 수정한다고 하니까 헷갈림
+    log.info("[AnalysisReportService] 분석리포트 결과 업데이트 완료 : reportId={}", reportId);
 
     return toAnalysisReportResponse(analysisReport);
   }

@@ -3,6 +3,7 @@ package com.practice.likelionhackathoncesco.domain.analysisreport.service;
 import com.amazonaws.services.s3.AmazonS3;
 import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.AnalysisReportResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Comment;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
 import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
@@ -117,6 +118,9 @@ public class AnalysisReportService {
                 + 3
                     * (officalPrice - dept - gptAnalysisRequest.getDeposit())
                     / (officalPrice - dept);
+
+        analysisReport.updateComment(Comment.SAFE);
+
       } else { // 불안 : 3~7점
         safetyScore =
             3.0
@@ -124,9 +128,13 @@ public class AnalysisReportService {
                     * (1
                         - (gptAnalysisRequest.getDeposit() - officalPrice - dept)
                             / (officalPrice - dept));
+
+        analysisReport.updateComment(Comment.CAUTION);
       }
     } else { // 위험 : 0~3점
       safetyScore = 3.0 - dangerNum;
+
+      analysisReport.updateComment(Comment.DANGER);
     }
 
     // 분석결과로 분석리포트 수정
@@ -153,6 +161,7 @@ public class AnalysisReportService {
         .address(analysisReport.getAddress())
         .safetyScore(analysisReport.getSafetyScore())
         .summary(analysisReport.getSummary())
+        .comment(analysisReport.getComment().getMessage())
         .safetyDescription(analysisReport.getSafetyDescription())
         .insuranceDescription(analysisReport.getInsuranceDescription())
         .processingStatus(analysisReport.getProcessingStatus())

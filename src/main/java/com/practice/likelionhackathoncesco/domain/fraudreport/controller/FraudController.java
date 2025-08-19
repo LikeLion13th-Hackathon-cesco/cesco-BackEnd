@@ -2,7 +2,6 @@ package com.practice.likelionhackathoncesco.domain.fraudreport.controller;
 
 import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.FakerResponse;
 import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.FraudResponse;
-import com.practice.likelionhackathoncesco.domain.fraudreport.service.ComplaintReportUpload;
 import com.practice.likelionhackathoncesco.domain.fraudreport.service.FakerSaveFlow;
 import com.practice.likelionhackathoncesco.domain.fraudreport.service.FraudReportUpload;
 import com.practice.likelionhackathoncesco.global.response.BaseResponse;
@@ -28,7 +27,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class FraudController {
 
   private final FraudReportUpload fraudReportUpload;
-  private final ComplaintReportUpload complaintReportUpload;
   private final FakerSaveFlow fakerSaveFlow;
 
   @Operation(

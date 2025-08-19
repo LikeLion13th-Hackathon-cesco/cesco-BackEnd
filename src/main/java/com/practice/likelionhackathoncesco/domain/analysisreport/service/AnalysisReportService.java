@@ -68,12 +68,32 @@ public class AnalysisReportService {
                         .address(report.getAddress())
                         .safetyScore(report.getSafetyScore())
                         .summary(report.getSummary())
+                        .comment(report.getComment().getMessage())
                         .build())
             .toList();
 
     return MyPageResponse.builder()
         .credit(user.getCredit()) // 해당 사용자의 크레딧
         .reports(analysisResponses) // 해당 사용자의 분석 리포트 리스트
+        .build();
+  }
+
+  public AnalysisReportResponse getAnalysisReport(Long reportId) {
+
+    AnalysisReport report =
+        analysisReportRepository
+            .findById(reportId)
+            .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.REPORT_NOT_FOUND));
+
+    return AnalysisReportResponse.builder()
+        .analysisReportUrl(amazonS3.getUrl(s3Config.getBucket(), report.getS3Key()).toString())
+        .comment(report.getComment().getMessage())
+        .safetyScore(report.getSafetyScore())
+        .address(report.getAddress())
+        .processingStatus(report.getProcessingStatus())
+        .summary(report.getSummary())
+        .safetyDescription(report.getSafetyDescription())
+        .insuranceDescription(report.getInsuranceDescription())
         .build();
   }
 

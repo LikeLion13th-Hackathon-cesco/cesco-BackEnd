@@ -1,13 +1,17 @@
 package com.practice.likelionhackathoncesco.domain.analysisreport.service;
 
+import static com.practice.likelionhackathoncesco.domain.user.entity.PayStatus.PAID;
+
 import com.amazonaws.services.s3.AmazonS3;
 import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.AnalysisReportResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Comment;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Warning;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
 import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
 import com.practice.likelionhackathoncesco.domain.commonfile.service.FileService;
+import com.practice.likelionhackathoncesco.domain.fraudreport.repository.FakerRepository;
 import com.practice.likelionhackathoncesco.domain.user.dto.response.MyPageAnalysisResponse;
 import com.practice.likelionhackathoncesco.domain.user.dto.response.MyPageResponse;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
@@ -17,6 +21,7 @@ import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptAnalysisRequest;
 import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptResponse;
+import jakarta.xml.bind.annotation.XmlType.DEFAULT;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +37,7 @@ public class AnalysisReportService {
   private final FileService fileService;
   private final AnalysisReportRepository analysisReportRepository;
   private final UserRepository userRepository;
+  private final FakerRepository fakerRepository;
 
   @Transactional
   public Boolean deleteReport(Long reportId) { // 우선 사용X
@@ -145,7 +151,7 @@ public class AnalysisReportService {
         safetyScore =
             7.0
                 + 3
-                    * (officalPrice - dept - gptAnalysisRequest.getDeposit())
+                    * ((double)(officalPrice - dept - gptAnalysisRequest.getDeposit()))
                     / (officalPrice - dept);
 
 
@@ -154,7 +160,7 @@ public class AnalysisReportService {
             3.0
                 + 4
                     * (1
-                        - (gptAnalysisRequest.getDeposit() - officalPrice - dept)
+                        - ((double)(gptAnalysisRequest.getDeposit() - officalPrice - dept))
                             / (officalPrice - dept));
 
       }
@@ -170,13 +176,24 @@ public class AnalysisReportService {
       analysisReport.updateComment(Comment.DANGER);
     }
 
+    Long fixedUserId = 1L;
+    Warning warning = Warning.DEFAULT;
+    User user = userRepository.findById(fixedUserId).orElseThrow(() -> new CustomException(AnalysisReportErrorCode.USER_NOT_FOUND));
+
+    boolean warn = fakerRepository.existsByFakerNameAndResidentNum(gptResponse.getOwnerName(), gptResponse.getResidentNum());
+    if(user.getPayStatus() == PAID || warn){
+      warning = Warning.WARN;
+    }
+
     // 분석결과로 분석리포트 수정
     analysisReport.update(
         gptResponse.getAddress(),
         safetyScore,
         gptResponse.getSummary(),
         gptResponse.getSafetyDescription(),
-        gptResponse.getInsuranceDescription());
+        gptResponse.getInsuranceDescription(),
+        warning
+    );
 
     // 분석 상태 수정 -> 모든 처리 완료
     analysisReport.updateProcessingStatus(ProcessingStatus.COMPLETED);
@@ -199,6 +216,20 @@ public class AnalysisReportService {
         .safetyDescription(analysisReport.getSafetyDescription())
         .insuranceDescription(analysisReport.getInsuranceDescription())
         .processingStatus(analysisReport.getProcessingStatus())
+        .warning(analysisReport.getWarning())
         .build();
+  }
+
+  // plus 요금제를 사용하는 사용자라면, 신고당한 이력이 있는 임대인인지 확인하는 메소드
+  public Boolean isWarning(GptResponse gptResponse) {
+
+    Long fixedUserId = 1L;
+    User user = userRepository.findById(fixedUserId).orElseThrow(() -> new CustomException(AnalysisReportErrorCode.USER_NOT_FOUND));
+
+    boolean warn = fakerRepository.existsByFakerNameAndResidentNum(gptResponse.getOwnerName(), gptResponse.getResidentNum());
+    if(user.getPayStatus() == PAID || warn){
+      return true;
+    }
+    return false;
   }
 }

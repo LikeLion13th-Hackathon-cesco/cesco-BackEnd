@@ -37,7 +37,8 @@ public class FraudController {
       @Parameter(description = "고소장 업로드") @RequestParam("complaint file")
           MultipartFile complaintFile,
       @Parameter(description = "신고할 등기부등본 업로드") @RequestParam("fraud report file")
-          MultipartFile fraudReportFile) {
+          MultipartFile fraudReportFile,
+      @Parameter(description = "예시 파일 여부") @RequestParam("isExample") Integer isExample) {
 
     // s3 업로드 후 DB 저장
     FraudResponse fraudResponse =

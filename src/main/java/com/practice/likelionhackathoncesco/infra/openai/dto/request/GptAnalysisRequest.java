@@ -33,4 +33,8 @@ public class GptAnalysisRequest {
 
   @Schema(description = "상세 주소", example = "102동 201호")
   private String detailAddress;
+
+  @Schema(description = "예시 파일 여부", example = "0/1/2/3")
+  private Integer isExample;
+
 }

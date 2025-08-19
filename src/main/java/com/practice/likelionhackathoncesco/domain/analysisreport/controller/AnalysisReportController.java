@@ -41,7 +41,8 @@ public class AnalysisReportController {
       @Parameter(description = "전월세 여부") @RequestParam("isMonthlyRent") Integer isMonthlyRent,
       @Parameter(description = "전월세 보증금") @RequestParam("deposit") Integer deposit,
       @Parameter(description = "월세") @RequestParam("monthlyRent") Integer monthlyRent,
-      @Parameter(description = "상세 주소") @RequestParam("detailAddress") String detailAddress) {
+      @Parameter(description = "상세 주소") @RequestParam("detailAddress") String detailAddress,
+      @Parameter(description = "예시 파일 여부") @RequestParam("isExample") Integer isExample) {
 
     AnalysisReport savedReport =
         analysisFlowService.uploadDocuments(PathName.PROPERTYREGISTRY, file); // S3 업로드 + DB 저장
@@ -53,7 +54,8 @@ public class AnalysisReportController {
             isMonthlyRent,
             deposit,
             monthlyRent,
-            detailAddress);
+            detailAddress,
+            isExample);
 
     AnalysisReportResponse analysisReportResponse =
         analysisFlowService.processAnalysisReport(savedReport.getReportId(), gptAnalysisRequest);

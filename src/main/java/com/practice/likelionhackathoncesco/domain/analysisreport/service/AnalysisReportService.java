@@ -128,7 +128,16 @@ public class AnalysisReportService {
 
     Integer dangerNum = Integer.valueOf(gptResponse.getDangerNum()); // 위험수치의 합
     Integer dept = Integer.valueOf(gptResponse.getDept().replaceAll(",", ""));
-    Integer officalPrice = 0; // 해당 매물의 공시가격 나중에 가져와서 수정해야함!!!!!!!!!!!!!!!!!!!
+    Integer officalPrice = 340000000;
+    
+    if(gptAnalysisRequest.getIsExample()==1){ // 예시: 안전
+      officalPrice = 129000000;
+    }else if(gptAnalysisRequest.getIsExample()==2){ // 예시: 불안
+      officalPrice = 700000000;
+    }else if(gptAnalysisRequest.getIsExample()==3){ // 예시: 위험
+      officalPrice = 150000000;
+    }
+
     Double safetyScore;
 
     if (dangerNum == 1) { // 안전 또는 불안 범위

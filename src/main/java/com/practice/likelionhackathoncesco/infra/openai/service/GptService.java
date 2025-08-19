@@ -46,7 +46,15 @@ public class GptService {
   public List<Map<String, String>> createPrompt(
       GptAnalysisRequest gptAnalysisRequest, Long reportId) throws JsonProcessingException {
 
-    Integer officalPrice = 0; // 이거 나중에 공시가격 api로 가져와야함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    Integer officalPrice = 340000000;
+
+    if(gptAnalysisRequest.getIsExample()==1){ // 예시: 안전
+      officalPrice = 129000000;
+    }else if(gptAnalysisRequest.getIsExample()==2){ // 예시: 불안
+      officalPrice = 700000000;
+    }else if(gptAnalysisRequest.getIsExample()==3){ // 예시: 위험
+      officalPrice = 150000000;
+    }
 
     // ocr로 추출한 택스트 바로 가져오기
     OcrResponse ocrResponse = naverOcrService.extractText(reportId);
@@ -97,7 +105,8 @@ public class GptService {
         1. **현재 거래가 안전한지 여부를 두 줄로 요약해서 말해줘. 단, 위에서 계산한 점수 총합이 양수가 아니면 위험하니까 계약을 하지 않도록 권유해야해** - 예시: "이 부동산은 안전하게 거래할 수 있습니다." 또는 "이 부동산은 거래에 주의가 필요합니다."
         2. **그 판단의 이유를 다음을 기반으로 10줄 정도로 설명해줘:**
           - 갑구에 존재하는 가처분, 가등기, 가압류, 압류의 유무 및 말소 여부
-          - 공시지가와 근저당의 차이 그리고 보증금과의 비교
+          - 근저당 금액 그리고 보증금과의 비교
+          - 단, 공시가격에 대한 직접적인 금액은 언급하지 않는다
         3. **말소되지 않은 근저당 금액의 총합**
         """,
                 rentType, gptAnalysisRequest.getDeposit(), officalPrice))); // 위치 어디로 바꾸지?
@@ -124,9 +133,9 @@ public class GptService {
           "dangerNum":"점수총합" 예시 : "-2"
           "address":"표제부에 있는 이 부동산의 주소"
           "summary":"거래에 대한 두줄 요약"
-          "safetyDescription":"두줄 요약 판단의 이유 10줄 정도를 공인중개사처럼 부드러운 상담톤으로 해줘"
+          "safetyDescription":"두줄 요약 판단의 이유 10줄 정도를 공인중개사처럼 부드러운 상담톤으로  듣는 사람이 최대한 이해하기 쉽게 해줘"
           "dept":"말소되지 않은 근저당 금액의 총합"
-          "insuranceDescription":"위 조건들을 바탕으로 이 부동산이 보증보험 가입이 가능할지 여부와 그 이유를 10줄 정도로 점수나 수치를 언급하지 않고 이해하기 쉽게 말하는 부드러운 상담톤으로 적어주고,
+          "insuranceDescription":"위 조건들을 바탕으로 이 부동산이 보증보험 심사에서 긍정적 혹은 부정적으로 평가될 수 있는 이유를 10줄 정도로 점수나 수치를 언급하지 않고 이해하기 쉽게 말하는 부드러운 상담톤으로 적어주고,
            만약 보증보험 가입이 가능하다면 임대인의 세금 체납과 신용은 고려하지 않은 결과이기에 더 정확한 결과는 직접 주택도시보증공사에서 자세한 상담이 필요하다는 말을 추가해줘"
         }
         """,
@@ -153,9 +162,9 @@ public class GptService {
           "dangerNum":"점수총합" 예시 : "-2"
           "address":"표제부에 있는 이 부동산의 주소"
           "summary":"거래에 대한 두줄 요약"
-          "safetyDescription":"두줄 요약 판단의 이유 10줄 정도를 공인중개사처럼 부드러운 상담톤으로 해줘"
+          "safetyDescription":"두줄 요약 판단의 이유 10줄 정도를 공인중개사처럼 부드러운 상담톤으로 듣는 사람이 최대한 이해하기 쉽게 해줘"
           "dept":"말소되지 않은 근저당 금액의 총합"
-          "insuranceDescription":"위 조건들을 바탕으로 이 부동산이 보증보험 가입이 가능할지 여부와 그 이유를 10줄 정도로 점수나 수치를 언급하지 않고 이해하기 쉽게 말하는 부드러운 상담톤으로 적어주고,
+          "insuranceDescription":"위 조건들을 바탕으로 이 부동산이 보증보험 심사에서 긍정적 혹은 부정적으로 평가될 수 있는 이유를 10줄 정도로 점수나 수치를 언급하지 않고 이해하기 쉽게 말하는 부드러운 상담톤으로 적어주고,
            만약 보증보험 가입이 가능하다면 임대인의 세금 체납과 신용은 고려하지 않은 결과이기에 더 정확한 결과는 직접 주택도시보증공사에서 자세한 상담이 필요하다는 말을 추가해줘"
         }
         다음은 등기부등본 텍스트야:

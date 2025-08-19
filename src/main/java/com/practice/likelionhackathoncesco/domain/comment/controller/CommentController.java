@@ -61,8 +61,8 @@ public class CommentController {
   }
 
   // 게시글 별 댓글 전체 조회 API
-  @Operation(summary = "게시글 별 게시글 전체 조회", description = "특정 게시글을 눌렀을때 호출되는 API")
-  @GetMapping("/comments/{postId}")
+  @Operation(summary = "게시글 별 댓글 전체 조회", description = "특정 게시글을 눌렀을때 호출되는 API")
+  @GetMapping("/posts/{postId}/comments")
   public ResponseEntity<BaseResponse<List<CommentResponse>>> getAllCommentByPostId(
       @Parameter(description = "조회할 댓글 목록의 게시글 ID") @PathVariable Long postId) {
     List<CommentResponse> commentList = commentService.getAllCommentsByPostId(postId);

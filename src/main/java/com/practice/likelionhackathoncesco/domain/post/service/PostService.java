@@ -54,6 +54,18 @@ public class PostService {
                             .USER_NOT_FOUND)); // createPostRequest의 userId로 user 찾아서 builder로 post
     // 객체 만들때 씀
 
+    user.addPostCount(); // 게시글 생성 시 필드 값 하나 추가
+
+    // 게시글 개수 별 크레딧 차등 지급
+    long postCount = user.getPostCount();
+    if (postCount == 1) {
+      user.addCredits(500);
+    } else if (postCount == 5) {
+      user.addCredits(700);
+    } else if (postCount == 15) {
+      user.addCredits(1000);
+    }
+
     Post post =
         Post.builder()
             .content(createPostRequest.getContent())

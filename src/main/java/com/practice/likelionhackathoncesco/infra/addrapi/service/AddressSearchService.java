@@ -2,6 +2,7 @@ package com.practice.likelionhackathoncesco.infra.addrapi.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.practice.likelionhackathoncesco.global.config.AddrApiConfig;
 import com.practice.likelionhackathoncesco.infra.addrapi.dto.request.AddressSearchRequest;
 import com.practice.likelionhackathoncesco.infra.addrapi.dto.response.AddressSearchResponse;
 import java.net.URLEncoder;
@@ -22,9 +23,10 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class AddressSearchService {
 
-  private final String API_URL = "https://business.juso.go.kr/addrlink/addrLinkApi.do";
+  private final String API_URL = "{ADDR_URL}";
   private final RestTemplate restTemplate;
   private final ObjectMapper objectMapper;
+  private final AddrApiConfig addrApiConfig;
 
   // API 에게 요청하고 응답받는 메소드
   public List<AddressSearchResponse> searchAddress(AddressSearchRequest addressSearchRequest) {
@@ -35,9 +37,8 @@ public class AddressSearchService {
         URLEncoder.encode(addressSearchRequest.getKeyword(), StandardCharsets.UTF_8);
 
     // 기본 요청 값 지정
-    if (addressSearchRequest.getConfmKey() == null
-        || addressSearchRequest.getConfmKey().isEmpty()) {
-      addressSearchRequest.setConfmKey("U01TX0FVVEgyMDI1MDgxOTE3MzQzODExNjA4OTk=");
+    if (addrApiConfig.getConfmKey() == null || addrApiConfig.getConfmKey().isEmpty()) {
+      addrApiConfig.setConfmKey("{ADDR_KEY}");
     }
     if (addressSearchRequest.getCurrentPage() == null) {
       addressSearchRequest.setCurrentPage(1);
@@ -54,7 +55,7 @@ public class AddressSearchService {
       String params =
           String.format(
               "confmKey=%s&currentPage=%d&countPerPage=%d&keyword=%s&resultType=%s",
-              addressSearchRequest.getConfmKey(),
+              addrApiConfig.getConfmKey(),
               addressSearchRequest.getCurrentPage().intValue(), // Number형 %d 로 하면 오류 날 수 있음
               addressSearchRequest.getCountPerPage().intValue(),
               encodedKeyword,

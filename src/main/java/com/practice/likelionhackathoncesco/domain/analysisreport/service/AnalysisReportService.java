@@ -139,7 +139,6 @@ public class AnalysisReportService {
                     * (officalPrice - dept - gptAnalysisRequest.getDeposit())
                     / (officalPrice - dept);
 
-        analysisReport.updateComment(Comment.SAFE);
 
       } else { // 불안 : 3~7점
         safetyScore =
@@ -149,11 +148,16 @@ public class AnalysisReportService {
                         - (gptAnalysisRequest.getDeposit() - officalPrice - dept)
                             / (officalPrice - dept));
 
-        analysisReport.updateComment(Comment.CAUTION);
       }
     } else { // 위험 : 0~3점
       safetyScore = 3.0 - dangerNum;
+    }
 
+    if (safetyScore >= 7) {
+      analysisReport.updateComment(Comment.SAFE);
+    } else if (safetyScore >= 3) {
+      analysisReport.updateComment(Comment.CAUTION);
+    } else {
       analysisReport.updateComment(Comment.DANGER);
     }
 

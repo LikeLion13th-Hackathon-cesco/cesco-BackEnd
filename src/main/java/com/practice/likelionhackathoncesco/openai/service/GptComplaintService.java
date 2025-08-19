@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.FakerResponse;
 import com.practice.likelionhackathoncesco.domain.fraudreport.entity.Faker;
 import com.practice.likelionhackathoncesco.domain.fraudreport.entity.FraudRegisterReport;
+import com.practice.likelionhackathoncesco.domain.fraudreport.entity.ReportStatus;
 import com.practice.likelionhackathoncesco.domain.fraudreport.exception.FraudReport_Error_Code;
 import com.practice.likelionhackathoncesco.domain.fraudreport.repository.FakerRepository;
 import com.practice.likelionhackathoncesco.domain.fraudreport.repository.FraudRegisterReportRepository;
@@ -70,9 +71,17 @@ public class GptComplaintService {
     // DB 저장
     fakerRepository.saveAll(fakerList);
 
+    // 신고 상태 업데이트
+    fraudRegisterReport.updateReportStatus(ReportStatus.REPORTCOMPLETED);
+
     // 저장된 엔티티 DTO로 변환 후 반환
     return fakerList.stream()
-        .map(f -> new FakerResponse(f.getFakerName(), f.getResidentNum()))
+        .map(
+            f ->
+                new FakerResponse(
+                    f.getFakerName(),
+                    f.getResidentNum(),
+                    f.getFraudRegisterReport().getReportStatus()))
         .toList();
   }
 

@@ -2,7 +2,6 @@ package com.practice.likelionhackathoncesco.domain.fraudreport.controller;
 
 import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.FakerResponse;
 import com.practice.likelionhackathoncesco.domain.fraudreport.dto.response.FraudResponse;
-import com.practice.likelionhackathoncesco.domain.fraudreport.service.ComplaintReportUpload;
 import com.practice.likelionhackathoncesco.domain.fraudreport.service.FakerSaveFlow;
 import com.practice.likelionhackathoncesco.domain.fraudreport.service.FraudReportUpload;
 import com.practice.likelionhackathoncesco.global.response.BaseResponse;
@@ -28,13 +27,12 @@ import org.springframework.web.multipart.MultipartFile;
 public class FraudController {
 
   private final FraudReportUpload fraudReportUpload;
-  private final ComplaintReportUpload complaintReportUpload;
   private final FakerSaveFlow fakerSaveFlow;
 
   @Operation(
       summary = "신고 관련 문서 모두 업로드 후 임대인 정보 저장 API",
       description = "신고 관련 문서 모두 업로드 후 제출하기 버튼을 클릭하면 업로드 상태를 리턴하는 API")
-  @PostMapping(value = "/reports", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PostMapping(value = "/reports-result", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<BaseResponse<List<FakerResponse>>> saveFakerInfo(
       @Parameter(description = "고소장 업로드") @RequestParam("complaint file")
           MultipartFile complaintFile,

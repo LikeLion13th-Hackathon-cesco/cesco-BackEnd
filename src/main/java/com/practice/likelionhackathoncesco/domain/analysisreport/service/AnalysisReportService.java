@@ -165,7 +165,7 @@ public class AnalysisReportService {
 
       }
     } else { // 위험 : 0~3점
-      safetyScore = 3.0 - dangerNum;
+      safetyScore = 3.0 + dangerNum;
     }
 
     if (safetyScore >= 7) {

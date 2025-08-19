@@ -17,8 +17,6 @@ import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptAnalysisRequest;
 import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptResponse;
-import com.practice.likelionhackathoncesco.openai.dto.request.GptAnalysisRequest;
-import com.practice.likelionhackathoncesco.openai.dto.response.GptResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

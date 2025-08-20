@@ -56,6 +56,11 @@ public class AnalysisReport extends BaseFileEntity {
   @Column(name = "processing_status", nullable = false)
   private ProcessingStatus processingStatus;
 
+  // plus 요금제 결제한 사용자에게만 신고당한 이력이 있는 임대인이라는것을 알려줄 문구
+  @Enumerated(EnumType.STRING)
+  @Column(name = "warning")
+  private Warning warning = Warning.DEFAULT; // 일반적인 경우에는 아무것도 안뜨는게 맞는거임
+
   // 진행 상태 DB 업데이트
   public void updateProcessingStatus(ProcessingStatus processingStatus) {
     this.processingStatus = processingStatus;
@@ -71,11 +76,13 @@ public class AnalysisReport extends BaseFileEntity {
       Double safetyScore,
       String summary,
       String safetyDescription,
-      String insuranceDescription) {
+      String insuranceDescription,
+      Warning warning) {
     this.address = address;
     this.safetyScore = safetyScore;
     this.summary = summary;
     this.safetyDescription = safetyDescription;
     this.insuranceDescription = insuranceDescription;
+    this.warning = warning;
   }
 }

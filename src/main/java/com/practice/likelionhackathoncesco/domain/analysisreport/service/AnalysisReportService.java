@@ -1,13 +1,17 @@
 package com.practice.likelionhackathoncesco.domain.analysisreport.service;
 
+import static com.practice.likelionhackathoncesco.domain.user.entity.PayStatus.PAID;
+
 import com.amazonaws.services.s3.AmazonS3;
 import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.AnalysisReportResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Comment;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Warning;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
 import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
 import com.practice.likelionhackathoncesco.domain.commonfile.service.FileService;
+import com.practice.likelionhackathoncesco.domain.fraudreport.repository.FakerRepository;
 import com.practice.likelionhackathoncesco.domain.user.dto.response.MyPageAnalysisResponse;
 import com.practice.likelionhackathoncesco.domain.user.dto.response.MyPageResponse;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
@@ -32,6 +36,7 @@ public class AnalysisReportService {
   private final FileService fileService;
   private final AnalysisReportRepository analysisReportRepository;
   private final UserRepository userRepository;
+  private final FakerRepository fakerRepository;
 
   @Transactional
   public Boolean deleteReport(Long reportId) { // 우선 사용X
@@ -127,38 +132,62 @@ public class AnalysisReportService {
 
     analysisReport.updateProcessingStatus(ProcessingStatus.ANALYZING);
 
-    Integer dangerNum = parseInteger(gptResponse.getDangerNum()); // 위험수치의 합
-    Integer dept = parseInteger(gptResponse.getDept());
-    Integer officalPrice = 0; // 해당 매물의 공시가격 나중에 가져와서 수정해야함!!!!!!!!!!!!!!!!!!!
-    Double safetyScore;
+    Integer dangerNum = Integer.valueOf(gptResponse.getDangerNum()); // 위험수치의 합
+    Integer dept = Integer.valueOf(gptResponse.getDept().replaceAll(",", ""));
+    Integer officalPrice = 340000000;
+
+    if (gptAnalysisRequest.getIsExample() == 1) { // 예시: 안전
+      officalPrice = 129000000;
+    } else if (gptAnalysisRequest.getIsExample() == 2) { // 예시: 불안
+      officalPrice = 700000000;
+    } else if (gptAnalysisRequest.getIsExample() == 3) { // 예시: 위험
+      officalPrice = 150000000;
+    }
+
+    Double realSafetyScore;
 
     if (dangerNum == 1) { // 안전 또는 불안 범위
       if ((officalPrice - dept) >= gptAnalysisRequest.getDeposit()) { // 안전 : 7~10점
-        safetyScore =
+        realSafetyScore =
             7.0
                 + 3
-                    * (officalPrice - dept - gptAnalysisRequest.getDeposit())
+                    * ((double) (officalPrice - dept - gptAnalysisRequest.getDeposit()))
                     / (officalPrice - dept);
 
       } else { // 불안 : 3~7점
-        safetyScore =
+        realSafetyScore =
             3.0
                 + 4
                     * (1
-                        - (gptAnalysisRequest.getDeposit() - officalPrice - dept)
+                        - ((double) (gptAnalysisRequest.getDeposit() - officalPrice - dept))
                             / (officalPrice - dept));
       }
     } else { // 위험 : 0~3점
-      safetyScore = 3.0 - dangerNum;
+      realSafetyScore = 3.0 + dangerNum;
     }
 
-    if (safetyScore >= 7) {
+    if (realSafetyScore >= 7) {
       analysisReport.updateComment(Comment.SAFE);
-    } else if (safetyScore >= 3) {
+    } else if (realSafetyScore >= 3) {
       analysisReport.updateComment(Comment.CAUTION);
     } else {
       analysisReport.updateComment(Comment.DANGER);
     }
+
+    Long fixedUserId = 1L;
+    Warning warning = Warning.DEFAULT;
+    User user =
+        userRepository
+            .findById(fixedUserId)
+            .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.USER_NOT_FOUND));
+
+    boolean warn =
+        fakerRepository.existsByFakerNameAndResidentNum(
+            gptResponse.getOwnerName(), gptResponse.getResidentNum());
+    if (user.getPayStatus() == PAID || warn) {
+      warning = Warning.WARN;
+    }
+    Double safetyScore = Math.round(realSafetyScore * 10) / 10.0;
 
     // 분석결과로 분석리포트 수정
     analysisReport.update(
@@ -166,7 +195,8 @@ public class AnalysisReportService {
         safetyScore,
         gptResponse.getSummary(),
         gptResponse.getSafetyDescription(),
-        gptResponse.getInsuranceDescription());
+        gptResponse.getInsuranceDescription(),
+        warning);
 
     // 분석 상태 수정 -> 모든 처리 완료
     analysisReport.updateProcessingStatus(ProcessingStatus.COMPLETED);
@@ -211,6 +241,25 @@ public class AnalysisReportService {
         .safetyDescription(analysisReport.getSafetyDescription())
         .insuranceDescription(analysisReport.getInsuranceDescription())
         .processingStatus(analysisReport.getProcessingStatus())
+        .warning(analysisReport.getWarning())
         .build();
+  }
+
+  // plus 요금제를 사용하는 사용자라면, 신고당한 이력이 있는 임대인인지 확인하는 메소드
+  public Boolean isWarning(GptResponse gptResponse) {
+
+    Long fixedUserId = 1L;
+    User user =
+        userRepository
+            .findById(fixedUserId)
+            .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.USER_NOT_FOUND));
+
+    boolean warn =
+        fakerRepository.existsByFakerNameAndResidentNum(
+            gptResponse.getOwnerName(), gptResponse.getResidentNum());
+    if (user.getPayStatus() == PAID || warn) {
+      return true;
+    }
+    return false;
   }
 }

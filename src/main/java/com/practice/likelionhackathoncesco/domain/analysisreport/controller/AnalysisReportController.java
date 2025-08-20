@@ -39,7 +39,7 @@ public class AnalysisReportController {
   public ResponseEntity<BaseResponse<AnalysisReportResponse>> getAnalysisReport(
       @Parameter(description = "업로드할 파일") @RequestParam("file") MultipartFile file,
       @Parameter(description = "전월세 여부") @RequestParam("isMonthlyRent") Integer isMonthlyRent,
-      @Parameter(description = "전월세 보증금") @RequestParam("deposit") Integer deposit,
+      @Parameter(description = "전월세 보증금") @RequestParam("deposit") Long deposit,
       @Parameter(description = "월세") @RequestParam("monthlyRent") Integer monthlyRent,
       @Parameter(description = "상세 주소") @RequestParam("detailAddress") String detailAddress,
       @Parameter(description = "예시 파일 여부") @RequestParam("isExample") Integer isExample) {

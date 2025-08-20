@@ -55,6 +55,7 @@ public class LikeService {
 
     try {
       likeRepository.save(like);
+      post.increaseLikeCount();
     } catch (DataIntegrityViolationException e) {
       log.warn("[LikeService] 이미 좋아요 누른 상태 - 생성 실패");
       throw new CustomException(LikeErrorCode.LIKE_IS_EXIST);
@@ -104,6 +105,7 @@ public class LikeService {
         "[LikeService] 좋아요 삭제 완료: userId={}, postId={}",
         like.getUser().getUserId(),
         like.getPost().getPostId());
+    post.decreaseLikeCount();
 
     return true;
   }

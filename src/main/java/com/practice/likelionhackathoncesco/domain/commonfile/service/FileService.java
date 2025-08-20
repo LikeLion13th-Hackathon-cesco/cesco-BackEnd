@@ -6,6 +6,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName;
 import com.practice.likelionhackathoncesco.domain.analysisreport.exception.AnalysisReportErrorCode;
+import com.practice.likelionhackathoncesco.domain.analysisreport.exception.S3ErrorCode;
 import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
 import com.practice.likelionhackathoncesco.domain.commonfile.BaseFileEntity;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
@@ -99,7 +100,7 @@ public class FileService {
 
     } catch (Exception e) {
       log.error("S3 upload 중 오류 발생", e);
-      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
+      throw new CustomException(S3ErrorCode.FILE_SERVER_ERROR);
     }
   }
 

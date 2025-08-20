@@ -196,8 +196,7 @@ public class PostService {
     return postListLikeCount.stream()
         .map(
             post -> {
-              long likeCount = likeRepository.countByPost(post);
-              return postMapper.toPostResponse(post, likeCount);
+              return postMapper.toPostResponse(post, post.getLikeCount());
             })
         .toList();
   }

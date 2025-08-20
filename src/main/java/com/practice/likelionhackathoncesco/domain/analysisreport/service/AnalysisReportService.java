@@ -68,12 +68,13 @@ public class AnalysisReportService {
                         .address(report.getAddress())
                         .safetyScore(report.getSafetyScore())
                         .summary(report.getSummary())
-                        .comment(report.getComment().getMessage())
+                        .comment(report.getComment())
                         .build())
             .toList();
 
     return MyPageResponse.builder()
         .credit(user.getCredit()) // 해당 사용자의 크레딧
+        .postCount(user.getPostCount())
         .reports(analysisResponses) // 해당 사용자의 분석 리포트 리스트
         .build();
   }
@@ -200,6 +201,7 @@ public class AnalysisReportService {
   public AnalysisReportResponse toAnalysisReportResponse(AnalysisReport analysisReport) {
 
     return AnalysisReportResponse.builder()
+        .reportId(analysisReport.getReportId())
         .analysisReportUrl(
             amazonS3.getUrl(s3Config.getBucket(), analysisReport.getS3Key()).toString())
         .address(analysisReport.getAddress())

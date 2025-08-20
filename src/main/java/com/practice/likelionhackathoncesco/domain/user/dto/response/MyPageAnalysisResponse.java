@@ -1,5 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.user.dto.response;
 
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Comment;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,5 +22,5 @@ public class MyPageAnalysisResponse { // 나중에 AnalysisResponse로 묶어도
   private String summary;
 
   @Schema(description = "안전 점수에 따른 한 줄 코멘트", example = "해당 부동산은 거래 시 위험 부담이 있습니다")
-  private String comment;
+  private Comment comment;
 }

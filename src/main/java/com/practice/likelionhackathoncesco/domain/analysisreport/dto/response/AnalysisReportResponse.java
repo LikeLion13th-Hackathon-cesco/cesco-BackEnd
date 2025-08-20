@@ -11,6 +11,9 @@ import lombok.Getter;
 @Schema(title = "AnalysisReportResponse DTO", description = "분석리포트 응답")
 public class AnalysisReportResponse {
 
+  @Schema(description = "분석 레포트 id", example = "1")
+  private Long reportId;
+
   @Schema(description = "등기부등본 파일 url", example = "...")
   private String analysisReportUrl;
 

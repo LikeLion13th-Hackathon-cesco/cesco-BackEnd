@@ -152,7 +152,7 @@ public class NaverOcrService {
     ObjectMapper objectMapper = new ObjectMapper();
     JsonNode root = objectMapper.readTree(response.getBody());
 
-    JsonNode imagesNode = root.path("images");
+    JsonNode imagesNode = root.path("images"); // 이미지 배열로 저장되어 있음
     log.info("총 페이지 수: {}", imagesNode.size());
 
     // 모든 텍스트를 순서대로 수집

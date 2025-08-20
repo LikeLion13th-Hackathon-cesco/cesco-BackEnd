@@ -25,7 +25,7 @@ public class UserCreditService {
         userRepository
             .findById(userId)
             .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
-    Long postCount = user.getPostCount();
+    Integer postCount = user.getPostCount();
 
     log.info("[UserCreditService] 사용자별 생성한 게시글 개수 조회 : postCount={}", postCount);
 

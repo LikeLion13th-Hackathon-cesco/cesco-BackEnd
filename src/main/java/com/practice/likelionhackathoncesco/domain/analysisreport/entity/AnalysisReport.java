@@ -10,7 +10,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
-import jakarta.xml.bind.annotation.XmlType.DEFAULT;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -59,8 +58,8 @@ public class AnalysisReport extends BaseFileEntity {
 
   // plus 요금제 결제한 사용자에게만 신고당한 이력이 있는 임대인이라는것을 알려줄 문구
   @Enumerated(EnumType.STRING)
-  @Column(name="warning")
-  private Warning warning = Warning.DEFAULT;  // 일반적인 경우에는 아무것도 안뜨는게 맞는거임
+  @Column(name = "warning")
+  private Warning warning = Warning.DEFAULT; // 일반적인 경우에는 아무것도 안뜨는게 맞는거임
 
   // 진행 상태 DB 업데이트
   public void updateProcessingStatus(ProcessingStatus processingStatus) {

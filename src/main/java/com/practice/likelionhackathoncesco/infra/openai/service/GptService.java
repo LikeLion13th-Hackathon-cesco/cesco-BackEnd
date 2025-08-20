@@ -48,11 +48,11 @@ public class GptService {
 
     Integer officalPrice = 340000000;
 
-    if(gptAnalysisRequest.getIsExample()==1){ // 예시: 안전
+    if (gptAnalysisRequest.getIsExample() == 1) { // 예시: 안전
       officalPrice = 129000000;
-    }else if(gptAnalysisRequest.getIsExample()==2){ // 예시: 불안
+    } else if (gptAnalysisRequest.getIsExample() == 2) { // 예시: 불안
       officalPrice = 700000000;
-    }else if(gptAnalysisRequest.getIsExample()==3){ // 예시: 위험
+    } else if (gptAnalysisRequest.getIsExample() == 3) { // 예시: 위험
       officalPrice = 150000000;
     }
 
@@ -89,15 +89,20 @@ public class GptService {
         아래는 ocr로 추출한 부동산 등기부 등본 택스트야.
 
         이 택스트를 보고 다음조건을 만족하면 숫자 1만 반환해줘:
-        - 갑구에서 가처분, 가등기, 가압류, 압류 이 네가지 요소가 전혀 없거나 모두 말소되었고
-        - 공시지가가 근저당보다 크거나 같다면
+        - 갑구에서 가처분, 가등기, 가압류, 압류 이 네가지 항목이 전혀 없거나, 존재하더라도 모두 '말소', '말소기입', '해지' 등이 표시되어있는 경우
+        - 을구에서 근저당권 설정 내역을 모두 찾아서, 모든 근저당 채권최고액을 합산한 근저당 총액을 숫자로 정확히 추출하고, 제공된 공시가격 %d 와 비교하였을 때, 공시가격이 근저당 총액보다 크거나 같은 경우
 
         위 조건을 만족하지 않으면 다음과 같은 점수를 매겨서 총합을 계산한 뒤, 그 **합계 값 하나만 정수로 반환**해줘:
         - 공시지가가 근저당보다 작으면 0
-        - 말소되지 않은 가처분이 있으면 0
-        - 말소되지 않은 가등기가 있으면 0
-        - 말소되지 않은 가압류가 있으면 -1
-        - 말소되지 않은 압류가 있으면 -2
+        - '말소되지 않은 가처분'이 있으면 0
+        - '말소되지 않은 가등기'가 있으면 0
+        - '말소되지 않은 가압류'가 있으면 -1
+        - '말소되지 않은 압류'가 있으면 -2
+
+        여기서 "말소되지 않은" 상태란 다음을 의미한다:
+        - OCR 텍스트에 '가처분','가등기','가압류','압류'라는 단어가 반드시 존재하면서
+        - 갑구 영역 내 텍스트 안에 해당 항목에 대해 '말소', '말소기입','해지' 등의 단어가 전혀 없는 경우만 "말소되지 않음으로 간주한다.
+        - 만약 해당 항목이 존재하지만 말소 관련 단어가 함께 기재되어 있다면 반드시 “존재하지 않는 것”으로 처리해야 한다.
 
         말소된 항목은 전혀 포함하지 말고, 최종 결과는 꼭 숫자 하나만 출력해줘. 예: 1, 0, -1, -2, -3
 
@@ -109,7 +114,10 @@ public class GptService {
           - 단, 공시가격에 대한 직접적인 금액은 언급하지 않는다
         3. **말소되지 않은 근저당 금액의 총합**
         """,
-                rentType, gptAnalysisRequest.getDeposit(), officalPrice))); // 위치 어디로 바꾸지?
+                rentType,
+                gptAnalysisRequest.getDeposit(),
+                officalPrice,
+                officalPrice))); // 위치 어디로 바꾸지?
 
     if (gptAnalysisRequest.getIsMonthlyRent() == 0) { // 전세 계약의 경우
 
@@ -140,6 +148,7 @@ public class GptService {
           "ownerName" : "해당 부동산의 소유자 이름 (만약, 공동 소유자라면 더 지분이 높은 소유자의 이름)"
           "residentNum" : "주민등록번호 앞6자리(생년월일 부분)"
         }
+        다음은 등기부등본 텍스트야:
         """,
                   Math.round(officalPrice * 1.3)))); // 형변환 필요
 

@@ -21,7 +21,6 @@ import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptAnalysisRequest;
 import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptResponse;
-import jakarta.xml.bind.annotation.XmlType.DEFAULT;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -135,42 +134,40 @@ public class AnalysisReportService {
     Integer dangerNum = Integer.valueOf(gptResponse.getDangerNum()); // 위험수치의 합
     Integer dept = Integer.valueOf(gptResponse.getDept().replaceAll(",", ""));
     Integer officalPrice = 340000000;
-    
-    if(gptAnalysisRequest.getIsExample()==1){ // 예시: 안전
+
+    if (gptAnalysisRequest.getIsExample() == 1) { // 예시: 안전
       officalPrice = 129000000;
-    }else if(gptAnalysisRequest.getIsExample()==2){ // 예시: 불안
+    } else if (gptAnalysisRequest.getIsExample() == 2) { // 예시: 불안
       officalPrice = 700000000;
-    }else if(gptAnalysisRequest.getIsExample()==3){ // 예시: 위험
+    } else if (gptAnalysisRequest.getIsExample() == 3) { // 예시: 위험
       officalPrice = 150000000;
     }
 
-    Double safetyScore;
+    Double realSafetyScore;
 
     if (dangerNum == 1) { // 안전 또는 불안 범위
       if ((officalPrice - dept) >= gptAnalysisRequest.getDeposit()) { // 안전 : 7~10점
-        safetyScore =
+        realSafetyScore =
             7.0
                 + 3
-                    * ((double)(officalPrice - dept - gptAnalysisRequest.getDeposit()))
+                    * ((double) (officalPrice - dept - gptAnalysisRequest.getDeposit()))
                     / (officalPrice - dept);
 
-
       } else { // 불안 : 3~7점
-        safetyScore =
+        realSafetyScore =
             3.0
                 + 4
                     * (1
-                        - ((double)(gptAnalysisRequest.getDeposit() - officalPrice - dept))
+                        - ((double) (gptAnalysisRequest.getDeposit() - officalPrice - dept))
                             / (officalPrice - dept));
-
       }
     } else { // 위험 : 0~3점
-      safetyScore = 3.0 + dangerNum;
+      realSafetyScore = 3.0 + dangerNum;
     }
 
-    if (safetyScore >= 7) {
+    if (realSafetyScore >= 7) {
       analysisReport.updateComment(Comment.SAFE);
-    } else if (safetyScore >= 3) {
+    } else if (realSafetyScore >= 3) {
       analysisReport.updateComment(Comment.CAUTION);
     } else {
       analysisReport.updateComment(Comment.DANGER);
@@ -178,12 +175,18 @@ public class AnalysisReportService {
 
     Long fixedUserId = 1L;
     Warning warning = Warning.DEFAULT;
-    User user = userRepository.findById(fixedUserId).orElseThrow(() -> new CustomException(AnalysisReportErrorCode.USER_NOT_FOUND));
+    User user =
+        userRepository
+            .findById(fixedUserId)
+            .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.USER_NOT_FOUND));
 
-    boolean warn = fakerRepository.existsByFakerNameAndResidentNum(gptResponse.getOwnerName(), gptResponse.getResidentNum());
-    if(user.getPayStatus() == PAID || warn){
+    boolean warn =
+        fakerRepository.existsByFakerNameAndResidentNum(
+            gptResponse.getOwnerName(), gptResponse.getResidentNum());
+    if (user.getPayStatus() == PAID || warn) {
       warning = Warning.WARN;
     }
+    Double safetyScore = Math.round(realSafetyScore * 10) / 10.0;
 
     // 분석결과로 분석리포트 수정
     analysisReport.update(
@@ -192,8 +195,7 @@ public class AnalysisReportService {
         gptResponse.getSummary(),
         gptResponse.getSafetyDescription(),
         gptResponse.getInsuranceDescription(),
-        warning
-    );
+        warning);
 
     // 분석 상태 수정 -> 모든 처리 완료
     analysisReport.updateProcessingStatus(ProcessingStatus.COMPLETED);
@@ -224,10 +226,15 @@ public class AnalysisReportService {
   public Boolean isWarning(GptResponse gptResponse) {
 
     Long fixedUserId = 1L;
-    User user = userRepository.findById(fixedUserId).orElseThrow(() -> new CustomException(AnalysisReportErrorCode.USER_NOT_FOUND));
+    User user =
+        userRepository
+            .findById(fixedUserId)
+            .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.USER_NOT_FOUND));
 
-    boolean warn = fakerRepository.existsByFakerNameAndResidentNum(gptResponse.getOwnerName(), gptResponse.getResidentNum());
-    if(user.getPayStatus() == PAID || warn){
+    boolean warn =
+        fakerRepository.existsByFakerNameAndResidentNum(
+            gptResponse.getOwnerName(), gptResponse.getResidentNum());
+    if (user.getPayStatus() == PAID || warn) {
       return true;
     }
     return false;

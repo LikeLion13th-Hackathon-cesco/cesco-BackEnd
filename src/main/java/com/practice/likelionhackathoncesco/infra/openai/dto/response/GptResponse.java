@@ -1,6 +1,5 @@
 package com.practice.likelionhackathoncesco.infra.openai.dto.response;
 
-import com.practice.likelionhackathoncesco.domain.user.entity.PayStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -2,6 +2,7 @@ package com.practice.likelionhackathoncesco.domain.analysisreport.dto.response;
 
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Comment;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
+import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Warning;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -37,4 +38,7 @@ public class AnalysisReportResponse {
 
   @Schema(description = "처리 상태", example = "위험도 분석중")
   private ProcessingStatus processingStatus;
+
+  @Schema(description = "신고당한 이력이 있는 임대인인지 여부", example = "WARN")
+  private Warning warning;
 }

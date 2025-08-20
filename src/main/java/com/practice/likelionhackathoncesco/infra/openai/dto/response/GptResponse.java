@@ -26,4 +26,10 @@ public class GptResponse {
 
   @Schema(description = "보증보험 가입 가능 여부 분석 설명", example = "보증보험 심사에서 부정적으로 평가될 수 있어요.")
   private String insuranceDescription; // 보증보험 가입 가능 여부 설명
+
+  @Schema(description = "임대인의 이름", example = "홍길동")
+  private String ownerName;
+
+  @Schema(description = "임대인의 주민번호 앞 6자리", example = "770619")
+  private String residentNum;
 }

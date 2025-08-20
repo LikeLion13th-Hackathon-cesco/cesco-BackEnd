@@ -1,5 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.user.service;
 
+import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
 import com.practice.likelionhackathoncesco.domain.user.dto.response.PayResponse;
 import com.practice.likelionhackathoncesco.domain.user.entity.PayStatus;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserPayService {
 
   private final UserRepository userRepository;
+  private final AnalysisReportRepository analysisReportRepository;
 
   @Transactional
   public PayResponse completePayment(Long userId) { // 결제 진행 메서드
@@ -70,5 +72,19 @@ public class UserPayService {
             .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
     return !user.isPaymentExpired(); // 결제 만료 사용자 false 반환
+  }
+
+  // 미결제 사용자의 분석레포트 생성 가능 여부 체크
+  @Transactional(readOnly = true)
+  public void validateReportCreationForUnpaidUser(Long userId) {
+    // 결제 상태 확인
+    if (!isUserPaid(userId)) {
+      // 미결제 사용자인 경우 분석레포트 개수 체크
+      int reportCount = analysisReportRepository.countAllByUserUserId(userId);
+
+      if (reportCount >= 3) {
+        throw new CustomException(UserErrorCode.UNPAID_USER_REPORT_LIMIT_EXCEEDED);
+      }
+    }
   }
 }

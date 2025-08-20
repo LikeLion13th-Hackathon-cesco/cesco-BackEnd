@@ -48,6 +48,11 @@ public class User extends BaseTimeEntity {
   @Column(name = "pay_status", nullable = false)
   private PayStatus payStatus; // 결제 유무
 
+  // 사용자가 생성한 게시글 개수 (게시글을 삭제하더라도 줄어들지 않음)
+  @Column(name = "post_count", nullable = false)
+  @Builder.Default
+  private Integer postCount = 0; // 기본값 0으로 설정하려고
+
   // analysisReport 테이블의 user 필드와 연관 -> user는 analysisReport를 여러개 가짐
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
@@ -84,5 +89,10 @@ public class User extends BaseTimeEntity {
   // 크레딧 추가하는 메서드
   public void addCredits(int credit) {
     this.credit += credit;
+  }
+
+  // 역대 생성한 게시글 수 증가시키는 메소드
+  public void addPostCount() {
+    this.postCount += 1;
   }
 }

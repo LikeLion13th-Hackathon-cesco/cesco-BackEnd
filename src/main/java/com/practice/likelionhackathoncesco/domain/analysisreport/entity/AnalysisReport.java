@@ -39,6 +39,10 @@ public class AnalysisReport extends BaseFileEntity {
   @Column(name = "short_description", columnDefinition = "TEXT")
   private String summary; // 한줄 요약
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "comment")
+  private Comment comment; // 점수에 따른 코멘트(이번에 추가한거)
+
   @Lob // gpt 응답이 들어가기 때문에 긴 문자열로 저장
   @Column(name = "safety_description", columnDefinition = "TEXT")
   private String safetyDescription; // 안전 점수 설명
@@ -52,9 +56,18 @@ public class AnalysisReport extends BaseFileEntity {
   @Column(name = "processing_status", nullable = false)
   private ProcessingStatus processingStatus;
 
+  // plus 요금제 결제한 사용자에게만 신고당한 이력이 있는 임대인이라는것을 알려줄 문구
+  @Enumerated(EnumType.STRING)
+  @Column(name = "warning")
+  private Warning warning = Warning.DEFAULT; // 일반적인 경우에는 아무것도 안뜨는게 맞는거임
+
   // 진행 상태 DB 업데이트
   public void updateProcessingStatus(ProcessingStatus processingStatus) {
     this.processingStatus = processingStatus;
+  }
+
+  public void updateComment(Comment comment) {
+    this.comment = comment;
   }
 
   // 분석 후 DB 업데이트
@@ -63,11 +76,13 @@ public class AnalysisReport extends BaseFileEntity {
       Double safetyScore,
       String summary,
       String safetyDescription,
-      String insuranceDescription) {
+      String insuranceDescription,
+      Warning warning) {
     this.address = address;
     this.safetyScore = safetyScore;
     this.summary = summary;
     this.safetyDescription = safetyDescription;
     this.insuranceDescription = insuranceDescription;
+    this.warning = warning;
   }
 }

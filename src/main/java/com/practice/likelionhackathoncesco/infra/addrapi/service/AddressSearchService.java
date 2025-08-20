@@ -23,7 +23,6 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class AddressSearchService {
 
-  private final String API_URL = "{ADDR_URL}";
   private final RestTemplate restTemplate;
   private final ObjectMapper objectMapper;
   private final AddrApiConfig addrApiConfig;
@@ -66,7 +65,7 @@ public class AddressSearchService {
 
       log.info("[AddressSearchService] API 응답 수신");
 
-      String jsonResponse = restTemplate.postForObject(API_URL, requestEntity, String.class);
+      String jsonResponse = restTemplate.postForObject(addrApiConfig.getConfmUrl(), requestEntity, String.class);
 
       log.info("API 응답 원본: {}", jsonResponse); // 원본 응답 로그
 

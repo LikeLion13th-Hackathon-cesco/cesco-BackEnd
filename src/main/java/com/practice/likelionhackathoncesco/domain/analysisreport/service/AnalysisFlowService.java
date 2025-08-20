@@ -7,6 +7,7 @@ import com.practice.likelionhackathoncesco.domain.analysisreport.entity.PathName
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
 import com.practice.likelionhackathoncesco.domain.analysisreport.repository.AnalysisReportRepository;
 import com.practice.likelionhackathoncesco.domain.commonfile.service.FileService;
+import com.practice.likelionhackathoncesco.domain.user.service.UserPayService;
 import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptAnalysisRequest;
 import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptResponse;
 import com.practice.likelionhackathoncesco.infra.openai.service.GptService;
@@ -28,10 +29,15 @@ public class AnalysisFlowService {
   private final AnalysisReportService analysisReportService;
   private final FileService fileService;
   private final AnalysisReportRepository analysisReportRepository;
+  private final UserPayService userPayService;
 
   // 분석 리포트를 위한 등기부등본 S3 업로드 + DB 저장
+  // 미결제 사용자 검사 추가
   @Transactional
   public AnalysisReport uploadDocuments(PathName pathName, MultipartFile file) {
+
+    userPayService.validateReportCreationForUnpaidUser(1L); // 사용자 id 고정
+
     AnalysisReport savedReport =
         fileService.uploadFile(
             pathName,

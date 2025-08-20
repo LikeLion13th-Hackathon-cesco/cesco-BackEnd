@@ -33,23 +33,6 @@ public class AnalysisReportService {
   private final AnalysisReportRepository analysisReportRepository;
   private final UserRepository userRepository;
 
-  @Transactional
-  public Boolean deleteReport(Long reportId) { // 우선 사용X
-    log.info("분석 리포트 삭제 요청: reportId={}", reportId);
-
-    try {
-      // FileService의 공통 삭제 메서드 활용
-      Boolean result = fileService.deleteFile(reportId, analysisReportRepository);
-
-      log.info("등기부등본 삭제 완료: reportId={}, result={}", reportId, result);
-      return result;
-
-    } catch (Exception e) {
-      log.error("등기부등본 삭제 실패: reportId={}", reportId, e);
-      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
-    }
-  }
-
   public MyPageResponse getAllMyPageReport(Long userId) { // 응답 추후 필드 수정
 
     User user =
@@ -212,5 +195,22 @@ public class AnalysisReportService {
         .insuranceDescription(analysisReport.getInsuranceDescription())
         .processingStatus(analysisReport.getProcessingStatus())
         .build();
+  }
+
+  @Transactional
+  public Boolean deleteReport(Long reportId) { // 우선 사용X
+    log.info("분석 리포트 삭제 요청: reportId={}", reportId);
+
+    try {
+      // FileService의 공통 삭제 메서드 활용
+      Boolean result = fileService.deleteFile(reportId, analysisReportRepository);
+
+      log.info("등기부등본 삭제 완료: reportId={}, result={}", reportId, result);
+      return result;
+
+    } catch (Exception e) {
+      log.error("등기부등본 삭제 실패: reportId={}", reportId, e);
+      throw new CustomException(AnalysisReportErrorCode.FILE_SERVER_ERROR);
+    }
   }
 }

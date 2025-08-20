@@ -9,5 +9,7 @@ public interface AnalysisReportRepository extends JpaRepository<AnalysisReport, 
 
   List<AnalysisReport> findAllByUserUserId(Long userId); // 사용자 id로 분석레포트 전체 조회
 
+  int countAllByUserUserId(Long userId); // 사용자 id로 분석레포트 개수 조회
+
   AnalysisReport findByUserUserId(Long reportId); // 분석 리포트 id로 분석리포트 조회
 }

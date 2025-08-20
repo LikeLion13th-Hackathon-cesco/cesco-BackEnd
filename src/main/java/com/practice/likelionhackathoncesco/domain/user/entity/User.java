@@ -50,7 +50,8 @@ public class User extends BaseTimeEntity {
 
   // 사용자가 생성한 게시글 개수 (게시글을 삭제하더라도 줄어들지 않음)
   @Column(name = "post_count", nullable = false)
-  private Integer postCount; // 기본값 0으로 설정하려고
+  @Builder.Default
+  private Integer postCount = 0; // 기본값 0으로 설정하려고
 
   // analysisReport 테이블의 user 필드와 연관 -> user는 analysisReport를 여러개 가짐
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -139,7 +139,6 @@ public class AnalysisReportService {
                     * (officalPrice - dept - gptAnalysisRequest.getDeposit())
                     / (officalPrice - dept);
 
-
       } else { // 불안 : 3~7점
         safetyScore =
             3.0
@@ -147,7 +146,6 @@ public class AnalysisReportService {
                     * (1
                         - (gptAnalysisRequest.getDeposit() - officalPrice - dept)
                             / (officalPrice - dept));
-
       }
     } else { // 위험 : 0~3점
       safetyScore = 3.0 - dangerNum;

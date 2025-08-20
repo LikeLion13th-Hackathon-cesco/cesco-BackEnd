@@ -94,31 +94,6 @@ public class NaverOcrService {
     }
   }
 
-  /*// S3에서 사용자가 업로드한 등기부등본 pdf파일 다운로드
-  // 인코딩 진행 X -> image를 url로 ocr api한테 보내면 인코딩 필요 없음 (s3 객체 url로 전송 -> 누구나 접근 가능함)
-  protected InputStream downloadPdfFromS3(Long reportId) {
-    log.info("S3에서 PDF 다운로드 시작: reportId={}", reportId);
-
-    AnalysisReport analysisReport = analysisReportRepository.findById(reportId)
-        .orElseThrow(() -> new CustomException(S3ErrorCode.FILE_NOT_FOUND));
-
-    String s3Key = analysisReport.getS3Key();
-
-    try {
-      if (!amazonS3.doesObjectExist(s3Config.getBucket(), s3Key)) {
-        throw new CustomException(S3ErrorCode.FILE_NOT_FOUND);
-      }
-
-      S3Object s3Object = amazonS3.getObject(s3Config.getBucket(), s3Key); // 파일을 가져올 때 getObject()를 사용함
-
-      return s3Object.getObjectContent();
-
-    } catch (CustomException e) {
-      log.error("S3 파일 다운로드 실패: {}", s3Key, e);
-      throw new CustomException(S3ErrorCode.FILE_DOWNLOAD_FAIL);
-    }
-  }*/
-
   // pdf 전용 ocr 요청 생성
   protected OcrRequest createOcrRequest(String s3key, String fileName) {
 
@@ -177,21 +152,13 @@ public class NaverOcrService {
     ObjectMapper objectMapper = new ObjectMapper();
     JsonNode root = objectMapper.readTree(response.getBody());
 
-    Map<String, List<String>> result = new LinkedHashMap<>();
-    List<String> fallbackNames = List.of("표제부", "갑구", "을구");
-
     JsonNode imagesNode = root.path("images");
     log.info("총 페이지 수: {}", imagesNode.size());
 
-    // 섹션별로 모든 텍스트를 수집할 맵
-    Map<String, List<String>> sectionTexts = new LinkedHashMap<>();
+    // 모든 텍스트를 순서대로 수집
+    List<String> allTexts = new ArrayList<>();
 
-    // 표제부, 갑구, 을구 미리 초기화 (순서 보장)
-    for (String sectionName : fallbackNames) {
-      sectionTexts.put(sectionName, new ArrayList<>());
-    }
-
-    // 모든 페이지를 순회하여 원시 데이터 수집
+    // 모든 페이지를 순회하여 텍스트 수집
     for (int pageIndex = 0; pageIndex < imagesNode.size(); pageIndex++) {
       JsonNode currentPage = imagesNode.get(pageIndex);
       JsonNode tablesNode = currentPage.path("tables");
@@ -200,196 +167,203 @@ public class NaverOcrService {
 
       if (tablesNode.isArray()) {
         for (JsonNode table : tablesNode) {
-          // 테이블 제목 추출
-          String sectionName = table.path("title").path("inferText").asText().trim();
-
-          // ✅ 텍스트를 먼저 추출
-          List<String> inferTexts = extractTextsFromTable(table);
-
-          // ✅ 텍스트 내용을 포함해서 섹션명 매칭
-          String matchedSection = matchSectionName(sectionName, pageIndex, fallbackNames, inferTexts);
-
-          log.info("섹션 매칭: '{}' -> '{}' (페이지: {}, 텍스트 수: {})",
-              sectionName, matchedSection, pageIndex + 1, inferTexts.size());
-
-          // 해당 섹션에 텍스트 추가 (중복 제거)
-          List<String> currentSectionTexts = sectionTexts.get(matchedSection);
-          addTextsWithoutDuplication(currentSectionTexts, inferTexts);
-
-          log.info("'{}' 섹션에 {}개 텍스트 추가", matchedSection, inferTexts.size());
+          List<String> tableTexts = extractTextsFromTable(table);
+          allTexts.addAll(tableTexts);
+          log.info("테이블에서 {}개 텍스트 추출", tableTexts.size());
         }
       }
     }
 
-    // ✅ 섹션별 후처리 및 정리
-    Map<String, List<String>> refinedSections = refineSections(sectionTexts);
+    log.info("전체 텍스트 수집 완료: {}개", allTexts.size());
 
-    // 최종 결과에 빈 섹션 제외하고 추가
-    for (String sectionName : fallbackNames) {
-      List<String> texts = refinedSections.get(sectionName);
-      if (!texts.isEmpty()) {
-        result.put(sectionName, texts);
-        log.info("최종 섹션: {}, 텍스트 수: {}", sectionName, texts.size());
-      }
-    }
+    // 마커 기반으로 섹션 구분 (표제부, 갑구, 을구)
+    Map<String, List<String>> sections = parseByMarkers(allTexts);
 
-    log.info("전체 처리 완료 - 총 섹션 수: {}", result.size());
+    log.info("전체 처리 완료 - 총 섹션 수: {}", sections.size());
 
     return OcrResponse.builder()
-        .sections(result)
+        .sections(sections)
         .processingStatus(ProcessingStatus.OCR_COMPLETED)
         .build();
   }
 
-  // ✅ 섹션명 매칭 로직 개선 - 내용 기반 분석 추가
-  private String matchSectionName(String sectionName, int pageIndex, List<String> fallbackNames, List<String> tableTexts) {
-    String matchedSection = null;
+  // 마커 기반 섹션 파싱
+  private Map<String, List<String>> parseByMarkers(List<String> allTexts) {
+    Map<String, List<String>> sections = new LinkedHashMap<>();
 
-    // 1. 테이블 제목이 있는 경우 기존 로직 사용
-    if (!sectionName.isEmpty()) {
-      // 직접 매칭
-      for (String fallbackName : fallbackNames) {
-        if (sectionName.contains(fallbackName) || fallbackName.equals(sectionName)) {
-          matchedSection = fallbackName;
-          break;
-        }
-      }
+    String currentSection = "표제부"; // 기본적으로 표제부로 시작
+    List<String> currentTexts = new ArrayList<>();
 
-      // 첫 글자로 매칭
-      if (matchedSection == null) {
-        for (String fallbackName : fallbackNames) {
-          if (sectionName.startsWith(fallbackName.substring(0, 1))) {
-            matchedSection = fallbackName;
-            break;
+    for (int i = 0; i < allTexts.size(); i++) {
+      String text = allTexts.get(i).trim();
+
+      // 섹션 마커 감지
+      String detectedMarker = detectSectionMarker(i, allTexts);
+
+      if (detectedMarker != null) {
+        // 이전 섹션 저장
+        if (!currentTexts.isEmpty()) {
+          List<String> cleanedTexts = cleanTexts(currentTexts);
+          if (!cleanedTexts.isEmpty()) {
+            sections.put(currentSection, cleanedTexts);
+            log.info("섹션 완료: {}, 텍스트 수: {}", currentSection, cleanedTexts.size());
           }
         }
+
+        // 새 섹션 시작
+        currentSection = detectedMarker;
+        currentTexts = new ArrayList<>();
+        log.info("새 섹션 시작: {} (인덱스: {})", currentSection, i);
+
+        // 마커 텍스트들 건너뛰기
+        i = skipMarkerTexts(i, allTexts, detectedMarker);
+        continue;
+      }
+
+      // 현재 섹션에 텍스트 추가
+      if (!text.isEmpty()) {
+        currentTexts.add(text);
       }
     }
 
-    // 2. ✅ 테이블 제목이 없는 경우 내용 기반 분석
-    if (matchedSection == null) {
-      matchedSection = detectSectionByContent(tableTexts);
-      log.info("내용 기반 섹션 감지: {}", matchedSection);
+    // 마지막 섹션 저장
+    if (!currentTexts.isEmpty()) {
+      List<String> cleanedTexts = cleanTexts(currentTexts);
+      if (!cleanedTexts.isEmpty()) {
+        sections.put(currentSection, cleanedTexts);
+        log.info("마지막 섹션 완료: {}, 텍스트 수: {}", currentSection, cleanedTexts.size());
+      }
     }
 
-    // 3. 그래도 없으면 페이지 순서로 추정 (마지막 수단)
-    if (matchedSection == null) {
-      if (pageIndex == 0) matchedSection = "표제부";
-      else if (pageIndex == 1) matchedSection = "갑구";
-      else matchedSection = "을구";
-    }
-
-    return matchedSection;
+    return sections;
   }
 
-  // ✅ 테이블 내용을 분석해서 섹션 구분
-  private String detectSectionByContent(List<String> tableTexts) {
-    if (tableTexts == null || tableTexts.isEmpty()) {
+  // 섹션 마커 감지 (【 표 제 부 】, 【 갑 구 】, 【 을 구 】)
+  private String detectSectionMarker(int startIndex, List<String> texts) {
+    // 최소 2개 토큰 필요
+    if (startIndex + 1 >= texts.size()) {
       return null;
     }
 
-    // 텍스트들을 하나의 문자열로 합쳐서 분석
-    String combinedText = String.join(" ", tableTexts).toLowerCase();
-
-    // ✅ 을구 키워드 확인 먼저 (우선순위 높임)
-    if (isEulguContent(combinedText, tableTexts)) {
-      return "을구";
-    }
-
-    // 갑구 키워드 확인
-    if (isGapguContent(combinedText, tableTexts)) {
+    // 갑구 마커 감지: "| 갑" + "구" 또는 "갑" + "구"
+    if (isGapguMarkerPattern(startIndex, texts)) {
+      log.info("갑구 마커 발견 (인덱스: {})", startIndex);
       return "갑구";
     }
 
-    // 표제부 키워드 확인
-    if (isTableBuContent(combinedText, tableTexts)) {
+    // 을구 마커 감지: "을" + "구" + "소유권 이외의" 패턴
+    if (isEulguMarkerPattern(startIndex, texts)) {
+      log.info("을구 마커 발견 (인덱스: {})", startIndex);
+      return "을구";
+    }
+
+    // 표제부 마커 감지: "표제부" 직접 언급
+    String currentText = texts.get(startIndex).trim();
+    if (currentText.equals("표제부")) {
+      log.info("표제부 마커 발견 (인덱스: {})", startIndex);
       return "표제부";
     }
 
     return null;
   }
 
-  // ✅ 갑구 내용 확인
-  private boolean isGapguContent(String combinedText, List<String> tableTexts) {
-    // 갑구 고유 키워드들
-    List<String> gapguKeywords = List.of(
-        "소유권보존", "소유권에 관한 사항", "소유자", "등기목적"
-    );
+  // 갑구 마커 패턴 확인
+  private boolean isGapguMarkerPattern(int startIndex, List<String> texts) {
+    String token1 = texts.get(startIndex).trim();
+    String token2 = startIndex + 1 < texts.size() ? texts.get(startIndex + 1).trim() : "";
 
-    // 갑구 마커 확인
-    boolean hasGapguMarker = tableTexts.stream()
-        .anyMatch(text -> text.contains("갑") && (text.contains("구") || text.contains("】")));
+    // "| 갑" + "구" 패턴
+    if ((token1.equals("|") || token1.contains("갑")) && token2.equals("구")) {
+      log.debug("갑구 패턴: '{}' + '{}'", token1, token2);
+      return true;
+    }
 
-    // 갑구 키워드 확인
-    boolean hasGapguKeyword = gapguKeywords.stream()
-        .anyMatch(keyword -> combinedText.contains(keyword.toLowerCase()));
+    // "갑" + "구" 직접 패턴
+    if (token1.equals("갑") && token2.equals("구")) {
+      log.debug("갑구 직접 패턴: '{}' + '{}'", token1, token2);
+      return true;
+    }
 
-    log.debug("갑구 내용 검사 - 마커: {}, 키워드: {}",
-        hasGapguMarker, hasGapguKeyword);
+    // "갑구" 단일 토큰
+    if (token1.equals("갑구")) {
+      log.debug("갑구 단일 토큰: '{}'", token1);
+      return true;
+    }
 
-    return hasGapguMarker || hasGapguKeyword;
+    return false;
   }
 
-  // ✅ 을구 내용 확인 (키워드 감지 강화)
-  private boolean isEulguContent(String combinedText, List<String> tableTexts) {
-    // 을구 고유 키워드들 (강력한 키워드 추가)
-    List<String> strongEulguKeywords = List.of(
-        "근저당권", "근저당권설정", "저당권", "전세권", "임차권",
-        "채권최고액", "담보", "소유권 이외의", "권리에 관한 사항"
-    );
+  // 을구 마커 패턴 확인
+  private boolean isEulguMarkerPattern(int startIndex, List<String> texts) {
+    if (startIndex + 4 >= texts.size()) {
+      return false;
+    }
 
-    // 을구 마커 확인
-    boolean hasEulguMarker = tableTexts.stream()
-        .anyMatch(text -> text.contains("을") && (text.contains("구") || text.contains("】")));
+    String token1 = texts.get(startIndex).trim();
+    String token2 = texts.get(startIndex + 1).trim();
 
-    // ✅ 강력한 을구 키워드 확인 (하나라도 있으면 을구로 분류)
-    boolean hasStrongEulguKeyword = strongEulguKeywords.stream()
-        .anyMatch(keyword -> tableTexts.stream()
-            .anyMatch(text -> text.contains(keyword)) ||
-            combinedText.contains(keyword.toLowerCase()));
+    // "을" + "구" 패턴 확인
+    if (token1.equals("을") && token2.equals("구")) {
+      // 다음 몇 개 토큰에서 "소유권 이외의" 확인 (실제 을구 섹션인지 검증)
+      for (int i = startIndex + 2; i < Math.min(startIndex + 10, texts.size()); i++) {
+        String checkText = texts.get(i).trim();
+        if (checkText.contains("소유권") && checkText.contains("이외")) {
+          log.debug("을구 패턴 확인: '{}' + '{}' + '소유권 이외의' 발견", token1, token2);
+          return true;
+        }
+        if (checkText.contains("권리에") && checkText.contains("관한")) {
+          log.debug("을구 패턴 확인: '{}' + '{}' + '권리에 관한' 발견", token1, token2);
+          return true;
+        }
+      }
+    }
 
-    // 금액 패턴 확인 (을구에 많이 나타남)
-    boolean hasMoneyPattern = tableTexts.stream()
-        .anyMatch(text -> text.contains("금") && (text.contains("원") || text.contains(",")));
+    // "을구" 단일 토큰 + "소유권 이외의" 확인
+    if (token1.equals("을구")) {
+      for (int i = startIndex + 1; i < Math.min(startIndex + 8, texts.size()); i++) {
+        String checkText = texts.get(i).trim();
+        if (checkText.contains("소유권") && checkText.contains("이외")) {
+          log.debug("을구 단일 토큰 + 소유권 이외의 확인");
+          return true;
+        }
+      }
+    }
 
-    // 은행 관련 키워드 (을구에 자주 나타남)
-    boolean hasBankPattern = tableTexts.stream()
-        .anyMatch(text -> text.contains("은행") || text.contains("금고") || text.contains("조합"));
-
-    log.debug("을구 내용 검사 - 마커: {}, 강력키워드: {}, 금액패턴: {}, 은행패턴: {}",
-        hasEulguMarker, hasStrongEulguKeyword, hasMoneyPattern, hasBankPattern);
-
-    // ✅ 강력한 키워드가 있으면 바로 을구로 분류
-    return hasEulguMarker || hasStrongEulguKeyword || (hasMoneyPattern && hasBankPattern);
+    return false;
   }
 
-  // ✅ 표제부 내용 확인
-  private boolean isTableBuContent(String combinedText, List<String> tableTexts) {
-    // 표제부 고유 키워드들
-    List<String> tableBuKeywords = List.of(
-        "건물의 표시", "소재지번", "도로명주소", "건물내역", "철근콘크리트", "층", "m2"
-    );
+  // 마커 텍스트들 건너뛰기
+  private int skipMarkerTexts(int startIndex, List<String> texts, String sectionType) {
+    int skipCount = 1; // 기본적으로 1개 건너뛰기
 
-    // 표제부 마커 확인
-    boolean hasTableBuMarker = tableTexts.stream()
-        .anyMatch(text -> text.contains("표제부"));
+    if ("갑구".equals(sectionType)) {
+      // "| 갑" + "구" 패턴인 경우 2개 건너뛰기
+      if (startIndex + 1 < texts.size() && texts.get(startIndex).contains("|")
+          || texts.get(startIndex).equals("갑")) {
+        skipCount = 2;
+      }
+    } else if ("을구".equals(sectionType)) {
+      // "을" + "구" 패턴인 경우 2개 건너뛰기
+      if (startIndex + 1 < texts.size()
+          && texts.get(startIndex).equals("을")
+          && texts.get(startIndex + 1).equals("구")) {
+        skipCount = 2;
+      }
+    }
 
-    // 표제부 키워드 확인
-    boolean hasTableBuKeyword = tableBuKeywords.stream()
-        .anyMatch(keyword -> combinedText.contains(keyword.toLowerCase()));
-
-    // 주소 패턴 확인
-    boolean hasAddressPattern = tableTexts.stream()
-        .anyMatch(text -> (text.contains("서울") || text.contains("동소문")) &&
-            (text.contains("구") || text.contains("동")));
-
-    log.debug("표제부 내용 검사 - 마커: {}, 키워드: {}, 주소패턴: {}",
-        hasTableBuMarker, hasTableBuKeyword, hasAddressPattern);
-
-    return hasTableBuMarker || (hasTableBuKeyword && hasAddressPattern);
+    return Math.min(startIndex + skipCount, texts.size() - 1);
   }
 
-  // ✅ 테이블에서 텍스트 추출 로직 분리
+  // 텍스트 정리
+  private List<String> cleanTexts(List<String> texts) {
+    return texts.stream()
+        .filter(text -> text != null && !text.trim().isEmpty())
+        .filter(text -> !isNoiseText(text))
+        .map(String::trim)
+        .collect(Collectors.toList());
+  }
+
+  // 테이블에서 텍스트 추출
   private List<String> extractTextsFromTable(JsonNode table) {
     List<String> inferTexts = new ArrayList<>();
     JsonNode cells = table.path("cells");
@@ -415,199 +389,21 @@ public class NaverOcrService {
     return inferTexts;
   }
 
-  // ✅ 중복 제거하며 텍스트 추가
-  private void addTextsWithoutDuplication(List<String> currentSectionTexts, List<String> newTexts) {
-    for (String text : newTexts) {
-      if (!currentSectionTexts.contains(text)) {
-        currentSectionTexts.add(text);
-      }
-    }
-  }
-
-  // ✅ 섹션별 후처리 및 정리
-  private Map<String, List<String>> refineSections(Map<String, List<String>> originalSections) {
-    Map<String, List<String>> refinedSections = new LinkedHashMap<>();
-
-    // 표제부 정리 (기본 정리만)
-    refinedSections.put("표제부", refineBasicSection(originalSections.get("표제부")));
-
-    // 갑구 정리 (시작점 탐지 + 정리)
-    refinedSections.put("갑구", refineGapguSection(originalSections.get("갑구")));
-
-    // 을구 정리 (시작점 탐지 + 정리)
-    refinedSections.put("을구", refineEulguSection(originalSections.get("을구")));
-
-    return refinedSections;
-  }
-
-  // ✅ 갑구 섹션 정리 - 실제 갑구 시작점부터 추출
-  private List<String> refineGapguSection(List<String> gapguTexts) {
-    if (gapguTexts == null || gapguTexts.isEmpty()) {
-      return new ArrayList<>();
-    }
-
-    List<String> refinedGapgu = new ArrayList<>();
-    boolean foundGapguStart = false;
-
-    for (int i = 0; i < gapguTexts.size(); i++) {
-      String text = gapguTexts.get(i).trim();
-
-      // 갑구 시작 마커 찾기
-      if (!foundGapguStart) {
-        if (isGapguStartMarker(text, i, gapguTexts)) {
-          foundGapguStart = true;
-          log.info("갑구 시작점 발견: 인덱스 {}, 텍스트: '{}'", i, text);
-          if (!isSymbolOnly(text)) {
-            refinedGapgu.add(text);
-          }
-          continue;
-        }
-      }
-
-      // 갑구 시작점을 찾은 후부터 데이터 수집
-      if (foundGapguStart) {
-        // 을구 시작 마커 발견시 중단
-        if (isEulguStartMarker(text, i, gapguTexts)) {
-          log.info("을구 시작으로 갑구 종료: '{}'", text);
-          break;
-        }
-
-        if (!text.isEmpty() && !isNoiseText(text)) {
-          refinedGapgu.add(text);
-        }
-      }
-    }
-
-    log.info("갑구 정리 완료: 원본 {}개 -> 정리된 {}개", gapguTexts.size(), refinedGapgu.size());
-    return refinedGapgu;
-  }
-
-  // ✅ 을구 섹션 정리 - 실제 을구 시작점부터 추출
-  private List<String> refineEulguSection(List<String> eulguTexts) {
-    if (eulguTexts == null || eulguTexts.isEmpty()) {
-      return new ArrayList<>();
-    }
-
-    List<String> refinedEulgu = new ArrayList<>();
-    boolean foundEulguStart = false;
-
-    for (int i = 0; i < eulguTexts.size(); i++) {
-      String text = eulguTexts.get(i).trim();
-
-      // 을구 시작 마커 찾기
-      if (!foundEulguStart) {
-        if (isEulguStartMarker(text, i, eulguTexts)) {
-          foundEulguStart = true;
-          log.info("을구 시작점 발견: 인덱스 {}, 텍스트: '{}'", i, text);
-          if (!isSymbolOnly(text)) {
-            refinedEulgu.add(text);
-          }
-          continue;
-        }
-      }
-
-      // 을구 시작점을 찾은 후부터 데이터 수집
-      if (foundEulguStart) {
-        // 문서 끝 마커 발견시 중단
-        if (isDocumentEndMarker(text)) {
-          log.info("문서 끝으로 을구 종료: '{}'", text);
-          break;
-        }
-
-        if (!text.isEmpty() && !isNoiseText(text)) {
-          refinedEulgu.add(text);
-        }
-      }
-    }
-
-    log.info("을구 정리 완료: 원본 {}개 -> 정리된 {}개", eulguTexts.size(), refinedEulgu.size());
-    return refinedEulgu;
-  }
-
-  // ✅ 기본 섹션 정리 (표제부용)
-  private List<String> refineBasicSection(List<String> sectionTexts) {
-    if (sectionTexts == null) {
-      return new ArrayList<>();
-    }
-
-    return sectionTexts.stream()
-        .filter(text -> text != null && !text.trim().isEmpty())
-        .filter(text -> !isNoiseText(text))
-        .collect(Collectors.toList());
-  }
-
-  // ✅ 갑구 시작 마커 확인
-  private boolean isGapguStartMarker(String currentText, int currentIndex, List<String> texts) {
-    // "| 갑", "구", "】" 패턴 확인
-    if (currentText.contains("갑") || currentText.equals("|")) {
-      for (int i = currentIndex; i < Math.min(currentIndex + 4, texts.size()); i++) {
-        String nextText = texts.get(i).trim();
-        if (nextText.contains("구") && (nextText.contains("】") || nextText.contains("]"))) {
-          return true;
-        }
-      }
-    }
-
-    // 직접적인 "갑구" 텍스트 또는 갑구 특징 키워드
-    return currentText.contains("갑구") ||
-        (currentText.contains("순위번호") && !currentText.contains("을구")) ||
-        currentText.contains("소유권에 관한 사항");
-  }
-
-  // ✅ 을구 시작 마커 확인
-  private boolean isEulguStartMarker(String currentText, int currentIndex, List<String> texts) {
-    // "| 을", "구", "】" 패턴 확인
-    if (currentText.contains("을") || currentText.equals("|")) {
-      for (int i = currentIndex; i < Math.min(currentIndex + 4, texts.size()); i++) {
-        String nextText = texts.get(i).trim();
-        if (nextText.contains("구") && (nextText.contains("】") || nextText.contains("]"))) {
-          String prevText = i > 0 ? texts.get(i-1).trim() : "";
-          if (prevText.contains("을") && !prevText.contains("갑")) {
-            return true;
-          }
-        }
-      }
-    }
-
-    // 을구 특징 키워드들
-    return currentText.contains("을구") ||
-        currentText.contains("소유권 이외의") ||
-        currentText.contains("권리에 관한 사항") ||
-        currentText.contains("근저당권") ||
-        currentText.contains("저당권") ||
-        currentText.contains("전세권") ||
-        currentText.contains("임차권") ||
-        (currentText.contains("순위번호") && isPreviouslyGapguProcessed(currentIndex, texts));
-  }
-
-  // ✅ 이전에 갑구가 처리되었는지 확인
-  private boolean isPreviouslyGapguProcessed(int currentIndex, List<String> texts) {
-    for (int i = Math.max(0, currentIndex - 10); i < currentIndex; i++) {
-      if (texts.get(i).contains("소유권보존") || texts.get(i).contains("주식회사")) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // ✅ 기호만 있는 텍스트 확인
-  private boolean isSymbolOnly(String text) {
-    return text.equals("|") || text.equals("】") || text.equals("]") ||
-        text.equals("(") || text.equals(")");
-  }
-
-  // ✅ 문서 끝 마커 확인
-  private boolean isDocumentEndMarker(String text) {
-    return text.contains("기록사항 없음") || text.contains("여백") ||
-        text.contains("끝") || text.contains("등기완료");
-  }
-
-  // ✅ 노이즈 텍스트 필터링
+  // 노이즈 텍스트 필터링
   private boolean isNoiseText(String text) {
     String trimmed = text.trim();
-    return trimmed.equals("(") || trimmed.equals(")") || trimmed.equals("】") ||
-        trimmed.equals("[") || trimmed.equals("]") || trimmed.equals("|") ||
-        (trimmed.length() == 1 && !Character.isDigit(trimmed.charAt(0)));
+    return trimmed.equals("(")
+        || trimmed.equals(")")
+        || trimmed.equals("】")
+        || trimmed.equals("【")
+        || trimmed.equals("[")
+        || trimmed.equals("]")
+        || trimmed.equals("|")
+        || trimmed.equals("■")
+        || trimmed.equals("▣")
+        || (trimmed.length() == 1
+            && !Character.isDigit(trimmed.charAt(0))
+            && !trimmed.matches("[가-힣a-zA-Z]")); // 한글, 영문, 숫자가 아닌 한 글자
   }
 
   // 도로명 주소만 파싱 (codef api 호출용) -> codef api 사용 안하기로 결정

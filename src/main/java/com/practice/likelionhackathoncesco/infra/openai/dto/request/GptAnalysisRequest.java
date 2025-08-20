@@ -36,5 +36,4 @@ public class GptAnalysisRequest {
 
   @Schema(description = "예시 파일 여부", example = "0/1/2/3")
   private Integer isExample;
-
 }

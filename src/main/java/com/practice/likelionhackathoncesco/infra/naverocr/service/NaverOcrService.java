@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -93,31 +94,6 @@ public class NaverOcrService {
     }
   }
 
-  /*// S3에서 사용자가 업로드한 등기부등본 pdf파일 다운로드
-  // 인코딩 진행 X -> image를 url로 ocr api한테 보내면 인코딩 필요 없음 (s3 객체 url로 전송 -> 누구나 접근 가능함)
-  protected InputStream downloadPdfFromS3(Long reportId) {
-    log.info("S3에서 PDF 다운로드 시작: reportId={}", reportId);
-
-    AnalysisReport analysisReport = analysisReportRepository.findById(reportId)
-        .orElseThrow(() -> new CustomException(S3ErrorCode.FILE_NOT_FOUND));
-
-    String s3Key = analysisReport.getS3Key();
-
-    try {
-      if (!amazonS3.doesObjectExist(s3Config.getBucket(), s3Key)) {
-        throw new CustomException(S3ErrorCode.FILE_NOT_FOUND);
-      }
-
-      S3Object s3Object = amazonS3.getObject(s3Config.getBucket(), s3Key); // 파일을 가져올 때 getObject()를 사용함
-
-      return s3Object.getObjectContent();
-
-    } catch (CustomException e) {
-      log.error("S3 파일 다운로드 실패: {}", s3Key, e);
-      throw new CustomException(S3ErrorCode.FILE_DOWNLOAD_FAIL);
-    }
-  }*/
-
   // pdf 전용 ocr 요청 생성
   protected OcrRequest createOcrRequest(String s3key, String fileName) {
 
@@ -174,59 +150,260 @@ public class NaverOcrService {
 
   protected OcrResponse parseResponse(ResponseEntity<String> response) throws IOException {
     ObjectMapper objectMapper = new ObjectMapper();
-    JsonNode root = objectMapper.readTree(response.getBody()); // 응답 바디를 트리 구조로 파싱해서 jsonNode 객체로 생성
+    JsonNode root = objectMapper.readTree(response.getBody());
 
-    Map<String, List<String>> result = new LinkedHashMap<>(); // 표제부, 갑구, 을구 순서 보장
-    List<String> fallbackNames = List.of("표제부", "갑구", "을구");
-    RoadAddress roadAddress = null; // 도로명주소 객체
+    JsonNode imagesNode = root.path("images"); // 이미지 배열로 저장되어 있음
+    log.info("총 페이지 수: {}", imagesNode.size());
 
-    // 응답 바디의 image 배열의 첫번째 요소(ocr한 첫 페이지)의 table(표)를 가져옴
-    JsonNode tablesNode = root.path("images").get(0).path("tables");
+    // 모든 텍스트를 순서대로 수집
+    List<String> allTexts = new ArrayList<>();
 
-    int index = 0;
+    // 모든 페이지를 순회하여 텍스트 수집
+    for (int pageIndex = 0; pageIndex < imagesNode.size(); pageIndex++) {
+      JsonNode currentPage = imagesNode.get(pageIndex);
+      JsonNode tablesNode = currentPage.path("tables");
 
-    if (tablesNode.isArray()) {
-      for (JsonNode table : tablesNode) {
-        // 테이블 제목 추출: "표제부", "갑구", "을구"
-        String sectionName = table.path("title").path("inferText").asText().trim();
+      log.info("페이지 {} 처리 중, 테이블 수: {}", pageIndex + 1, tablesNode.size());
 
-        if (sectionName.isEmpty()) {
-          sectionName = fallbackNames.get(index);
+      if (tablesNode.isArray()) {
+        for (JsonNode table : tablesNode) {
+          List<String> tableTexts = extractTextsFromTable(table);
+          allTexts.addAll(tableTexts);
+          log.info("테이블에서 {}개 텍스트 추출", tableTexts.size());
+        }
+      }
+    }
+
+    log.info("전체 텍스트 수집 완료: {}개", allTexts.size());
+
+    // 마커 기반으로 섹션 구분 (표제부, 갑구, 을구)
+    Map<String, List<String>> sections = parseByMarkers(allTexts);
+
+    log.info("전체 처리 완료 - 총 섹션 수: {}", sections.size());
+
+    return OcrResponse.builder()
+        .sections(sections)
+        .processingStatus(ProcessingStatus.OCR_COMPLETED)
+        .build();
+  }
+
+  // 마커 기반 섹션 파싱
+  private Map<String, List<String>> parseByMarkers(List<String> allTexts) {
+    Map<String, List<String>> sections = new LinkedHashMap<>();
+
+    String currentSection = "표제부"; // 기본적으로 표제부로 시작
+    List<String> currentTexts = new ArrayList<>();
+
+    for (int i = 0; i < allTexts.size(); i++) {
+      String text = allTexts.get(i).trim();
+
+      // 섹션 마커 감지
+      String detectedMarker = detectSectionMarker(i, allTexts);
+
+      if (detectedMarker != null) {
+        // 이전 섹션 저장
+        if (!currentTexts.isEmpty()) {
+          List<String> cleanedTexts = cleanTexts(currentTexts);
+          if (!cleanedTexts.isEmpty()) {
+            sections.put(currentSection, cleanedTexts);
+            log.info("섹션 완료: {}, 텍스트 수: {}", currentSection, cleanedTexts.size());
+          }
         }
 
-        index++;
+        // 새 섹션 시작
+        currentSection = detectedMarker;
+        currentTexts = new ArrayList<>();
+        log.info("새 섹션 시작: {} (인덱스: {})", currentSection, i);
 
-        List<String> inferTexts = new ArrayList<>();
-        JsonNode cells = table.path("cells");
-        if (cells.isArray()) {
-          for (JsonNode cell : cells) {
-            JsonNode cellTextLines = cell.path("cellTextLines");
-            if (cellTextLines.isArray()) {
-              for (JsonNode line : cellTextLines) {
-                JsonNode cellWords = line.path("cellWords");
-                if (cellWords.isArray()) {
-                  for (JsonNode word : cellWords) {
-                    String text = word.path("inferText").asText();
-                    inferTexts.add(text);
-                  }
+        // 마커 텍스트들 건너뛰기
+        i = skipMarkerTexts(i, allTexts, detectedMarker);
+        continue;
+      }
+
+      // 현재 섹션에 텍스트 추가
+      if (!text.isEmpty()) {
+        currentTexts.add(text);
+      }
+    }
+
+    // 마지막 섹션 저장
+    if (!currentTexts.isEmpty()) {
+      List<String> cleanedTexts = cleanTexts(currentTexts);
+      if (!cleanedTexts.isEmpty()) {
+        sections.put(currentSection, cleanedTexts);
+        log.info("마지막 섹션 완료: {}, 텍스트 수: {}", currentSection, cleanedTexts.size());
+      }
+    }
+
+    return sections;
+  }
+
+  // 섹션 마커 감지 (【 표 제 부 】, 【 갑 구 】, 【 을 구 】)
+  private String detectSectionMarker(int startIndex, List<String> texts) {
+    // 최소 2개 토큰 필요
+    if (startIndex + 1 >= texts.size()) {
+      return null;
+    }
+
+    // 갑구 마커 감지: "| 갑" + "구" 또는 "갑" + "구"
+    if (isGapguMarkerPattern(startIndex, texts)) {
+      log.info("갑구 마커 발견 (인덱스: {})", startIndex);
+      return "갑구";
+    }
+
+    // 을구 마커 감지: "을" + "구" + "소유권 이외의" 패턴
+    if (isEulguMarkerPattern(startIndex, texts)) {
+      log.info("을구 마커 발견 (인덱스: {})", startIndex);
+      return "을구";
+    }
+
+    // 표제부 마커 감지: "표제부" 직접 언급
+    String currentText = texts.get(startIndex).trim();
+    if (currentText.equals("표제부")) {
+      log.info("표제부 마커 발견 (인덱스: {})", startIndex);
+      return "표제부";
+    }
+
+    return null;
+  }
+
+  // 갑구 마커 패턴 확인
+  private boolean isGapguMarkerPattern(int startIndex, List<String> texts) {
+    String token1 = texts.get(startIndex).trim();
+    String token2 = startIndex + 1 < texts.size() ? texts.get(startIndex + 1).trim() : "";
+
+    // "| 갑" + "구" 패턴
+    if ((token1.equals("|") || token1.contains("갑")) && token2.equals("구")) {
+      log.debug("갑구 패턴: '{}' + '{}'", token1, token2);
+      return true;
+    }
+
+    // "갑" + "구" 직접 패턴
+    if (token1.equals("갑") && token2.equals("구")) {
+      log.debug("갑구 직접 패턴: '{}' + '{}'", token1, token2);
+      return true;
+    }
+
+    // "갑구" 단일 토큰
+    if (token1.equals("갑구")) {
+      log.debug("갑구 단일 토큰: '{}'", token1);
+      return true;
+    }
+
+    return false;
+  }
+
+  // 을구 마커 패턴 확인
+  private boolean isEulguMarkerPattern(int startIndex, List<String> texts) {
+    if (startIndex + 4 >= texts.size()) {
+      return false;
+    }
+
+    String token1 = texts.get(startIndex).trim();
+    String token2 = texts.get(startIndex + 1).trim();
+
+    // "을" + "구" 패턴 확인
+    if (token1.equals("을") && token2.equals("구")) {
+      // 다음 몇 개 토큰에서 "소유권 이외의" 확인 (실제 을구 섹션인지 검증)
+      for (int i = startIndex + 2; i < Math.min(startIndex + 10, texts.size()); i++) {
+        String checkText = texts.get(i).trim();
+        if (checkText.contains("소유권") && checkText.contains("이외")) {
+          log.debug("을구 패턴 확인: '{}' + '{}' + '소유권 이외의' 발견", token1, token2);
+          return true;
+        }
+        if (checkText.contains("권리에") && checkText.contains("관한")) {
+          log.debug("을구 패턴 확인: '{}' + '{}' + '권리에 관한' 발견", token1, token2);
+          return true;
+        }
+      }
+    }
+
+    // "을구" 단일 토큰 + "소유권 이외의" 확인
+    if (token1.equals("을구")) {
+      for (int i = startIndex + 1; i < Math.min(startIndex + 8, texts.size()); i++) {
+        String checkText = texts.get(i).trim();
+        if (checkText.contains("소유권") && checkText.contains("이외")) {
+          log.debug("을구 단일 토큰 + 소유권 이외의 확인");
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  // 마커 텍스트들 건너뛰기
+  private int skipMarkerTexts(int startIndex, List<String> texts, String sectionType) {
+    int skipCount = 1; // 기본적으로 1개 건너뛰기
+
+    if ("갑구".equals(sectionType)) {
+      // "| 갑" + "구" 패턴인 경우 2개 건너뛰기
+      if (startIndex + 1 < texts.size() && texts.get(startIndex).contains("|")
+          || texts.get(startIndex).equals("갑")) {
+        skipCount = 2;
+      }
+    } else if ("을구".equals(sectionType)) {
+      // "을" + "구" 패턴인 경우 2개 건너뛰기
+      if (startIndex + 1 < texts.size()
+          && texts.get(startIndex).equals("을")
+          && texts.get(startIndex + 1).equals("구")) {
+        skipCount = 2;
+      }
+    }
+
+    return Math.min(startIndex + skipCount, texts.size() - 1);
+  }
+
+  // 텍스트 정리
+  private List<String> cleanTexts(List<String> texts) {
+    return texts.stream()
+        .filter(text -> text != null && !text.trim().isEmpty())
+        .filter(text -> !isNoiseText(text))
+        .map(String::trim)
+        .collect(Collectors.toList());
+  }
+
+  // 테이블에서 텍스트 추출
+  private List<String> extractTextsFromTable(JsonNode table) {
+    List<String> inferTexts = new ArrayList<>();
+    JsonNode cells = table.path("cells");
+
+    if (cells.isArray()) {
+      for (JsonNode cell : cells) {
+        JsonNode cellTextLines = cell.path("cellTextLines");
+        if (cellTextLines.isArray()) {
+          for (JsonNode line : cellTextLines) {
+            JsonNode cellWords = line.path("cellWords");
+            if (cellWords.isArray()) {
+              for (JsonNode word : cellWords) {
+                String text = word.path("inferText").asText().trim();
+                if (!text.isEmpty()) {
+                  inferTexts.add(text);
                 }
               }
             }
           }
         }
-
-        result.put(sectionName, inferTexts);
-
-        /*if ("표제부".equals(sectionName)) {
-          roadAddress = extractRoadAddress(inferTexts);
-        }*/
       }
     }
-    return OcrResponse.builder()
-        .sections(result)
-        // .roadAddress(roadAddress)
-        .processingStatus(ProcessingStatus.OCR_COMPLETED)
-        .build();
+    return inferTexts;
+  }
+
+  // 노이즈 텍스트 필터링
+  private boolean isNoiseText(String text) {
+    String trimmed = text.trim();
+    return trimmed.equals("(")
+        || trimmed.equals(")")
+        || trimmed.equals("】")
+        || trimmed.equals("【")
+        || trimmed.equals("[")
+        || trimmed.equals("]")
+        || trimmed.equals("|")
+        || trimmed.equals("■")
+        || trimmed.equals("▣")
+        || (trimmed.length() == 1
+            && !Character.isDigit(trimmed.charAt(0))
+            && !trimmed.matches("[가-힣a-zA-Z]")); // 한글, 영문, 숫자가 아닌 한 글자
   }
 
   // 도로명 주소만 파싱 (codef api 호출용) -> codef api 사용 안하기로 결정

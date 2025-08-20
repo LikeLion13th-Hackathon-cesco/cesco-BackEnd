@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
 public class GptOwnerListResponse { // Wrapper DTO
   private List<FakerInfo> faker;
 

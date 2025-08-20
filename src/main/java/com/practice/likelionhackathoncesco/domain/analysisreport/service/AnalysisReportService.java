@@ -73,12 +73,13 @@ public class AnalysisReportService {
                         .address(report.getAddress())
                         .safetyScore(report.getSafetyScore())
                         .summary(report.getSummary())
-                        .comment(report.getComment().getMessage())
+                        .comment(report.getComment())
                         .build())
             .toList();
 
     return MyPageResponse.builder()
         .credit(user.getCredit()) // 해당 사용자의 크레딧
+        .postCount(user.getPostCount())
         .reports(analysisResponses) // 해당 사용자의 분석 리포트 리스트
         .build();
   }
@@ -92,7 +93,7 @@ public class AnalysisReportService {
 
     return AnalysisReportResponse.builder()
         .analysisReportUrl(amazonS3.getUrl(s3Config.getBucket(), report.getS3Key()).toString())
-        .comment(report.getComment().getMessage())
+        .comment(report.getComment())
         .safetyScore(report.getSafetyScore())
         .address(report.getAddress())
         .processingStatus(report.getProcessingStatus())
@@ -206,15 +207,37 @@ public class AnalysisReportService {
     return toAnalysisReportResponse(analysisReport);
   }
 
+  private Integer parseInteger(String value) {
+    if (value == null || value.trim().isEmpty()) {
+      throw new NumberFormatException("빈 값은 파싱할 수 없습니다: " + value);
+    }
+
+    try {
+      // 숫자가 아닌 모든 문자 제거 (원, 쉼표, 공백 등)
+      String numericOnly = value.replaceAll("[^0-9]", "");
+
+      if (numericOnly.isEmpty()) {
+        throw new NumberFormatException("숫자를 찾을 수 없습니다: " + value);
+      }
+
+      return Integer.valueOf(numericOnly);
+
+    } catch (NumberFormatException e) {
+      log.error("숫자 파싱 실패: {}", value, e);
+      throw new NumberFormatException("숫자 파싱 실패: " + value);
+    }
+  }
+
   public AnalysisReportResponse toAnalysisReportResponse(AnalysisReport analysisReport) {
 
     return AnalysisReportResponse.builder()
+        .reportId(analysisReport.getReportId())
         .analysisReportUrl(
             amazonS3.getUrl(s3Config.getBucket(), analysisReport.getS3Key()).toString())
         .address(analysisReport.getAddress())
         .safetyScore(analysisReport.getSafetyScore())
         .summary(analysisReport.getSummary())
-        .comment(analysisReport.getComment().getMessage())
+        .comment(analysisReport.getComment())
         .safetyDescription(analysisReport.getSafetyDescription())
         .insuranceDescription(analysisReport.getInsuranceDescription())
         .processingStatus(analysisReport.getProcessingStatus())

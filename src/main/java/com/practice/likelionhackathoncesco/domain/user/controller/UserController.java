@@ -1,7 +1,7 @@
 package com.practice.likelionhackathoncesco.domain.user.controller;
 
-import com.practice.likelionhackathoncesco.domain.analysisreport.dto.response.AnalysisReportResponse;
 import com.practice.likelionhackathoncesco.domain.analysisreport.service.AnalysisReportService;
+import com.practice.likelionhackathoncesco.domain.user.dto.response.MyPageAnalysisResponse;
 import com.practice.likelionhackathoncesco.domain.user.dto.response.MyPageResponse;
 import com.practice.likelionhackathoncesco.domain.user.dto.response.PayResponse;
 import com.practice.likelionhackathoncesco.domain.user.service.UserPayService;
@@ -49,12 +49,12 @@ public class UserController {
 
   @Operation(summary = "마이페이지 목록에서 분석레포트 조회 API", description = "사용자가 업로드한 등기부등본에 대한 분석레포트 조회")
   @GetMapping("/{reportId}/analysis-reports")
-  public ResponseEntity<BaseResponse<AnalysisReportResponse>> getAnalysisReport(
+  public ResponseEntity<BaseResponse<MyPageAnalysisResponse>> getAnalysisReport(
       @Parameter(description = "분석레포트 ID") @PathVariable Long reportId) {
 
     log.info("마이페이지의 분석레로프 데이터 조회 요청: reportId={}", reportId);
 
-    AnalysisReportResponse result = analysisReportService.getAnalysisReport(reportId);
+    MyPageAnalysisResponse result = analysisReportService.getAnalysisReport(reportId);
 
     return ResponseEntity.ok(BaseResponse.success("분석레포트 조회 성공", result));
   }

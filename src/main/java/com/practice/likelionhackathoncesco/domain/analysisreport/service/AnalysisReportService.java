@@ -84,19 +84,19 @@ public class AnalysisReportService {
         .build();
   }
 
-  public AnalysisReportResponse getAnalysisReport(Long reportId) {
+  public MyPageAnalysisResponse getAnalysisReport(Long reportId) {
 
     AnalysisReport report =
         analysisReportRepository
             .findById(reportId)
             .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.REPORT_NOT_FOUND));
 
-    return AnalysisReportResponse.builder()
+    return MyPageAnalysisResponse.builder()
+        .reportId(report.getReportId())
         .analysisReportUrl(amazonS3.getUrl(s3Config.getBucket(), report.getS3Key()).toString())
         .comment(report.getComment())
         .safetyScore(report.getSafetyScore())
         .address(report.getAddress())
-        .processingStatus(report.getProcessingStatus())
         .summary(report.getSummary())
         .safetyDescription(report.getSafetyDescription())
         .insuranceDescription(report.getInsuranceDescription())
@@ -232,16 +232,7 @@ public class AnalysisReportService {
 
     return AnalysisReportResponse.builder()
         .reportId(analysisReport.getReportId())
-        .analysisReportUrl(
-            amazonS3.getUrl(s3Config.getBucket(), analysisReport.getS3Key()).toString())
-        .address(analysisReport.getAddress())
-        .safetyScore(analysisReport.getSafetyScore())
-        .summary(analysisReport.getSummary())
-        .comment(analysisReport.getComment())
-        .safetyDescription(analysisReport.getSafetyDescription())
-        .insuranceDescription(analysisReport.getInsuranceDescription())
         .processingStatus(analysisReport.getProcessingStatus())
-        .warning(analysisReport.getWarning())
         .build();
   }
 

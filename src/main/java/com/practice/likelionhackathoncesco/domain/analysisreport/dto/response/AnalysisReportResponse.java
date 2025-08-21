@@ -1,8 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.analysisreport.dto.response;
 
-import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Comment;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
-import com.practice.likelionhackathoncesco.domain.analysisreport.entity.Warning;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;

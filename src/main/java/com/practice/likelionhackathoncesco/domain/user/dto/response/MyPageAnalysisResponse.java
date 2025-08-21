@@ -36,5 +36,4 @@ public class MyPageAnalysisResponse { // 나중에 AnalysisResponse로 묶어도
 
   @Schema(description = "신고당한 이력이 있는 임대인인지 여부", example = "WARN")
   private Warning warning;
-
 }

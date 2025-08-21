@@ -1,7 +1,10 @@
 package com.practice.likelionhackathoncesco.domain.post.entity;
 
+import com.practice.likelionhackathoncesco.domain.comment.entity.Comment;
+import com.practice.likelionhackathoncesco.domain.like.entity.Like;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.global.common.BaseTimeEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,7 +13,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -43,6 +49,12 @@ public class Post extends BaseTimeEntity {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   private User user; // 사용자 ID(FK)
+
+  @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
+  private List<Like> likes = new ArrayList<>();
+
+  @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
+  private List<Comment> comments = new ArrayList<>();
 
   public void update(String content) {
     this.content = content;

@@ -2,6 +2,7 @@ package com.practice.likelionhackathoncesco.infra.openai.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
@@ -40,11 +41,11 @@ public class GptService {
   private final NaverOcrService naverOcrService;
   private final AnalysisReportRepository analysisReportRepository;
 
-  // 보증보험 심사에서 긍정적/부정적으로 심사될 수 있다는 느낌으로 + 주소 반환하게
 
-  // 프롬프트 생성 메소드
-  public List<Map<String, String>> createPrompt(
-      GptAnalysisRequest gptAnalysisRequest, Long reportId) throws JsonProcessingException {
+
+  // 근저당 총액을 알아내기 위한 프롬프트 생성 메소드
+  public List<Map<String, String>> createPromptForDept(
+      GptAnalysisRequest gptAnalysisRequest, Long reportId)throws JsonProcessingException {
 
     Integer officalPrice = 340000000;
 
@@ -55,6 +56,71 @@ public class GptService {
     } else if (gptAnalysisRequest.getIsExample() == 3) { // 예시: 위험
       officalPrice = 150000000;
     }
+
+    // ocr로 추출한 택스트 바로 가져오기
+    OcrResponse ocrResponse = naverOcrService.extractText(reportId);
+    Map<String, List<String>> text = ocrResponse.getSections();
+    ObjectMapper objectMapper = new ObjectMapper();
+    String jsonText = objectMapper.writeValueAsString(text);
+
+    List<Map<String, String>> prompts = new ArrayList<>();
+
+    // 전월세 여부 문자열로 변환
+    String rentType = gptAnalysisRequest.getIsMonthlyRent() == 1 ? "월세" : "전세";
+
+    // 분석 상태 수정 -> GPT 설명 생성 중
+    AnalysisReport analysisReport =
+        analysisReportRepository
+            .findById(reportId)
+            .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.REPORT_NOT_FOUND));
+    analysisReport.updateProcessingStatus(ProcessingStatus.GPT_PROCESSING);
+
+    // gpt에게 행동지침을 주는 역할의 프롬프트
+    prompts.add(Map.of("role", "system", "content", "너는 부동산 등기부 등본을 분석해서 위험요소를 판단하는 전문가야."));
+
+    prompts.add(
+        Map.of(
+            "role",
+            "user",
+            "content",
+            String.format("""
+                아래는 ocr로 추출한 부동산 등기부 등본 택스트야.
+                
+                %s
+                
+                위에 ocr로 추출한 텍스트를 보고
+                을구에서 말소되지 않은 근저당권 설정 내역을 모두 찾아서, 모든 근저당 채권최고액을 합산한 근저당 총액을 숫자로 정확히 추출해줘.
+                
+                여기서 "말소되지 않은" 상태란 다음을 의미한다.
+                - 을구 영역 내 텍스트 안에 해당 항목에 대해 '말소', '말소기입','해지' 등의 단어가 전혀 없는 경우만 "말소되지 않음으로 간주한다.
+                - 만약 해당 항목이 존재하지만 말소 관련 단어가 함께 기재되어 있다면 반드시 “존재하지 않는 것”으로 처리해야 한다.
+                
+                이제 택스트를 분석해서 결과를 다음 JSON 형식으로 응답해주고, 이외의 다른 설명은 하지 마:
+                {
+                  "dept":"말소되지 않은 근저당의 총액"
+                }
+                """, jsonText)));
+    return prompts;
+  }
+
+  // 근저당 총액을 파싱하는 메소드
+  public Long parseDept(String deptContent){
+    try {
+      JsonNode node = objectMapper.readTree(deptContent);
+      long dept = Long.parseLong(node.get("dept").asText());
+      return dept;
+    } catch (JsonProcessingException e) {
+      throw new CustomException(GptErrorCode.GPT_RESPONSE_PARSING_FAILED);
+    }
+  }
+
+
+
+  // 프롬프트 생성 메소드
+  public List<Map<String, String>> createPrompt(
+      GptAnalysisRequest gptAnalysisRequest, Long reportId) throws JsonProcessingException {
+
+
 
     // ocr로 추출한 택스트 바로 가져오기
     OcrResponse ocrResponse = naverOcrService.extractText(reportId);

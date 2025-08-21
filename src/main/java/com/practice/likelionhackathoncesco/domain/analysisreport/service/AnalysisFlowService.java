@@ -53,7 +53,32 @@ public class AnalysisFlowService {
       Long reportId, GptAnalysisRequest gptAnalysisRequest) {
 
     // 프롬프트 제작
+    List<Map<String, String>> promptsForDept;
     List<Map<String, String>> prompts;
+
+    try {
+      promptsForDept = gptService.createPrompt(gptAnalysisRequest, reportId);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+      promptsForDept = new ArrayList<>();
+    }
+
+    // gpt-4o api 호출
+    String content = gptService.callGptAPI(promptsForDept, String.valueOf(reportId));
+
+    // 근저당 총액 gpt 응답을 파싱하는 메소드
+    Long dept = gptService.parseDept(content);
+
+    // 로직이용 추가 request
+
+
+
+
+
+
+
+
+
 
     try {
       prompts = gptService.createPrompt(gptAnalysisRequest, reportId);

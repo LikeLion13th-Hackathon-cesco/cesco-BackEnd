@@ -1,6 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.post.service;
 
-import com.practice.likelionhackathoncesco.domain.like.repository.LikeRepository;
+import com.practice.likelionhackathoncesco.domain.comment.repository.CommentRepository;
 import com.practice.likelionhackathoncesco.domain.post.dto.request.CreatePostRequest;
 import com.practice.likelionhackathoncesco.domain.post.dto.request.UpdatePostRequest;
 import com.practice.likelionhackathoncesco.domain.post.dto.response.PostResponse;
@@ -25,8 +25,8 @@ public class PostService {
 
   private final PostRepository postRepository;
   private final PostMapper postMapper;
-  private final LikeRepository likeRepository;
   private final UserRepository userRepository;
+  private final CommentRepository commentRepository;
 
   // 게시글 생성
   @Transactional
@@ -75,7 +75,6 @@ public class PostService {
             .build();
 
     postRepository.save(post);
-    long likeCount = likeRepository.countByPost(post); // toPostResponse에 좋아요 개수 계산해서 넣기 위해 -> 여기선 0
 
     log.info(
         "[PostService] 게시글 생성 완료 : postId={}, userId={}, content={}, roadCode={}, buildingNumber={}",
@@ -85,7 +84,7 @@ public class PostService {
         post.getRoadCode(),
         post.getBuildingNumber());
 
-    return postMapper.toPostResponse(post, likeCount);
+    return postMapper.toPostResponse(post, post.getLikeCount(), 0L);
   }
 
   // 게시글 삭제 - 댓글 좋아요 같이 삭제 되야함 ^^^^^^^^^^^^^^^^^
@@ -123,11 +122,11 @@ public class PostService {
 
     post.update(updatePostRequest.getContent());
 
-    long likeCount = likeRepository.countByPost(post); // toPostResponse에 좋아요 개수 계산해서 넣기 위해
+    long commentCount = commentRepository.countByPostPostId(postId);
 
     log.info("[PostService] 게시글 수정 완료 : postId={}, content = {}", postId, post.getContent());
 
-    return postMapper.toPostResponse(post, likeCount);
+    return postMapper.toPostResponse(post, post.getLikeCount(), commentCount);
   }
 
   // 게시글 단일 조회 기능
@@ -139,11 +138,11 @@ public class PostService {
             .findById(postId)
             .orElseThrow(() -> new CustomException(PostErrorCode.POST_NOT_FOUND));
 
-    long likeCount = likeRepository.countByPost(post); // toPostResponse에 좋아요 개수 계산해서 넣기 위해
+    long commentCount = commentRepository.countByPostPostId(postId);
 
     log.info("[PostService] 게시글 단일 조회 완료 : postId = {}", postId);
 
-    return postMapper.toPostResponse(post, likeCount);
+    return postMapper.toPostResponse(post, post.getLikeCount(), commentCount);
   }
 
   // (도로명코드+건물본번) 별 게시글 전체 조회 기능
@@ -160,8 +159,8 @@ public class PostService {
     return postList.stream()
         .map(
             post -> {
-              long likeCount = likeRepository.countByPost(post);
-              return postMapper.toPostResponse(post, likeCount);
+              long commentCount = commentRepository.countByPostPostId(post.getPostId());
+              return postMapper.toPostResponse(post, post.getLikeCount(), commentCount);
             })
         .toList();
   }
@@ -178,8 +177,8 @@ public class PostService {
     return postListCreatedAtDesc.stream()
         .map(
             post -> {
-              long likeCount = likeRepository.countByPost(post);
-              return postMapper.toPostResponse(post, likeCount);
+              long commentCount = commentRepository.countByPostPostId(post.getPostId());
+              return postMapper.toPostResponse(post, post.getLikeCount(), commentCount);
             })
         .toList();
   }
@@ -196,7 +195,8 @@ public class PostService {
     return postListLikeCount.stream()
         .map(
             post -> {
-              return postMapper.toPostResponse(post, post.getLikeCount());
+              long commentCount = commentRepository.countByPostPostId(post.getPostId());
+              return postMapper.toPostResponse(post, post.getLikeCount(), commentCount);
             })
         .toList();
   }

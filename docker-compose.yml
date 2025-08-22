@@ -7,13 +7,6 @@ services:
       - .env
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/setbangsari?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-      - SPRING_DATASOURCE_USERNAME=cesco
-      - SPRING_DATASOURCE_PASSWORD=cesco07
-      - DB_HOST=cesco
-      - DB_PASSWORD=cesco07
-      - SPRING_CONFIG_USERNAME=cesco
-      - SPRING_CONFIG_PASSWORD=1234
     command:
       - java -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} -jar app.jar
       # 실행 명령어: jar 파일을 실행하면서 Spring 프로필 활성화

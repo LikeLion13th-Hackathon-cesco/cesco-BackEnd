@@ -65,6 +65,8 @@ jobs:
       # 3. 배포 디렉토리 설정
       - name: Setup deployment directory
         run: |
+          echo "Current user: $(whoami)"
+          echo "Home directory: $HOME"
           mkdir -p /home/ec2-user/cesco-BackEnd
           cp docker-compose.yml /home/ec2-user/cesco-BackEnd/
           cp .env /home/ec2-user/cesco-BackEnd/

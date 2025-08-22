@@ -71,7 +71,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/ubuntu/actions-runner/_work/cesco-BackEnd/cesco-BackEnd
+            cd /home/ec2-user/actions-runner/_work/cesco-BackEnd/cesco-BackEnd
             docker compose down
             docker compose pull
             docker compose up -d --build

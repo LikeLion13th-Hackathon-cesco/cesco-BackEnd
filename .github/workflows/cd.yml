@@ -62,16 +62,17 @@ jobs:
         run: |
           echo "${{ secrets.ENV_DEV }}" > .env
 
-      # 3. 서버에 접속하여 docker compose 재배포
-      - name: Deploy on server
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /home/ec2-user/actions-runner/_work/cesco-BackEnd/cesco-BackEnd
-            docker compose down
-            docker compose pull
-            docker compose up -d --build
+      # 3. 배포 디렉토리 설정
+      - name: Setup deployment directory
+        run: |
+          mkdir -p /home/ec2-user/cesco-BackEnd
+          cp docker-compose.yml /home/ec2-user/cesco-BackEnd/
+          cp .env /home/ec2-user/cesco-BackEnd/
+          
+      # 4. Docker 배포 실행
+      - name: Deploy with Docker
+        run: |
+          cd /home/ec2-user/cesco-BackEnd
+          docker compose down
+          docker compose pull
+          docker compose up -d --build

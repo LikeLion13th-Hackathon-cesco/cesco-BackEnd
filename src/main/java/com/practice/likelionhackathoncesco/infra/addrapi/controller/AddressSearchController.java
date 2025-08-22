@@ -10,8 +10,8 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,9 +25,10 @@ public class AddressSearchController {
   private final AddressSearchService addressSearchService;
 
   @Operation(summary = "커뮤니티 주소 검색 결과 반환 API", description = "커뮤니티 페이지에서 검색 했을때 검색 결과 반환")
-  @PostMapping("/address-search")
+  @GetMapping("/address-search")
   public ResponseEntity<BaseResponse<List<AddressSearchResponse>>> searchCommunity(
-      @RequestBody AddressSearchRequest addressSearchRequest) {
+      @ModelAttribute
+          AddressSearchRequest addressSearchRequest) { // get으로 바꾸고 여러 필드를 입력받으려면 @ModelAttribute
 
     List<AddressSearchResponse> addressSearchResponseList =
         addressSearchService.searchAddress(addressSearchRequest);

@@ -11,18 +11,18 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class CorsConfig {
 
   @Value("${cors.allowed-origins}")
-  private String[] allowedOrigins;
+  private String allowedOrigins;
 
   @Bean
   public UrlBasedCorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
 
-    // 환경 변수에 정의된 출처만 허용
-    configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
-    // 리스트에 작성한 HTTP 메소드 요청만 허용
-    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH"));
-    // 리스트에 작성한 헤더들이 포함된 요청만 허용
-    configuration.setAllowedHeaders(Arrays.asList("Content-Type", "Accept"));
+    // 쉼표로 분할해서 배열로 변환
+    configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+    // OPTIONS 메소드 추가 (CORS preflight 요청을 위해 필수)
+    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+    // 모든 헤더 허용 (Swagger에서 필요할 수 있는 헤더들 때문에)
+    configuration.setAllowedHeaders(Arrays.asList("*"));
     // 쿠키나 인증 정보를 포함하는 요청 허용
     configuration.setAllowCredentials(true);
     // 모든 경로에 대해 위의 CORS 설정을 적용

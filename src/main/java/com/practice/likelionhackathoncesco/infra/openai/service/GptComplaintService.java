@@ -115,6 +115,13 @@ public class GptComplaintService {
         OCR 결과:
         %s
 
+        너는 오직 아래 JSON형식으로만 응답해야해. 그리고 절대 형식을 벗어나지 말아야해.
+        {
+          "faker": [
+            {"fakerName": "이름", "residentNum": "주민등록번호 앞6자리"}
+          ]
+        }
+
         반환 형식 예시:
         {
           "faker" : [

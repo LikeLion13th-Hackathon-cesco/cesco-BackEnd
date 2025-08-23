@@ -13,7 +13,6 @@ import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.infra.naverocr.dto.ImageDto;
 import com.practice.likelionhackathoncesco.infra.naverocr.dto.request.OcrRequest;
 import com.practice.likelionhackathoncesco.infra.naverocr.dto.response.OcrResponse;
-import com.practice.likelionhackathoncesco.infra.naverocr.dto.response.RoadAddress;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -240,24 +239,30 @@ public class NaverOcrService {
 
   // 섹션 마커 감지 (【 표 제 부 】, 【 갑 구 】, 【 을 구 】)
   private String detectSectionMarker(int startIndex, List<String> texts) {
-    // 최소 2개 토큰 필요
-    if (startIndex + 1 >= texts.size()) {
+    // 최소 검사 범위 확보
+    if (startIndex >= texts.size()) {
       return null;
     }
 
-    // 갑구 마커 감지: "| 갑" + "구" 또는 "갑" + "구"
-    if (isGapguMarkerPattern(startIndex, texts)) {
-      log.info("갑구 마커 발견 (인덱스: {})", startIndex);
+    // "( 소유권에" + "관한 사항 )" 패턴으로 갑구 확실히 감지 (최우선)
+    if (isOwnershipRightsPattern(startIndex, texts)) {
+      log.info("갑구 마커 발견 - '소유권에 관한 사항' 패턴 (인덱스: {})", startIndex);
       return "갑구";
     }
 
-    // 을구 마커 감지: "을" + "구" + "소유권 이외의" 패턴
+    // "을" + "구" 패턴으로 을구 감지 (갑구보다 우선)
     if (isEulguMarkerPattern(startIndex, texts)) {
       log.info("을구 마커 발견 (인덱스: {})", startIndex);
       return "을구";
     }
 
-    // 표제부 마커 감지: "표제부" 직접 언급
+    // 갑구 마커 감지 (표제부보다 먼저)
+    if (isGapguMarkerPattern(startIndex, texts)) {
+      log.info("갑구 마커 발견 (인덱스: {})", startIndex);
+      return "갑구";
+    }
+
+    // 표제부 마커 감지 (가장 나중에 확인)
     String currentText = texts.get(startIndex).trim();
     if (currentText.equals("표제부")) {
       log.info("표제부 마커 발견 (인덱스: {})", startIndex);
@@ -267,27 +272,58 @@ public class NaverOcrService {
     return null;
   }
 
-  // 갑구 마커 패턴 확인
-  private boolean isGapguMarkerPattern(int startIndex, List<String> texts) {
-    String token1 = texts.get(startIndex).trim();
-    String token2 = startIndex + 1 < texts.size() ? texts.get(startIndex + 1).trim() : "";
+  // "( 소유권에" + "관한 사항 )" 패턴 감지 (갑구의 확실한 신호)
+  private boolean isOwnershipRightsPattern(int startIndex, List<String> texts) {
+    // 현재 위치부터 앞뒤로 검색
+    int searchStart = Math.max(0, startIndex - 2);
+    int searchEnd = Math.min(texts.size() - 1, startIndex + 10);
 
-    // "| 갑" + "구" 패턴
-    if ((token1.equals("|") || token1.contains("갑")) && token2.equals("구")) {
-      log.debug("갑구 패턴: '{}' + '{}'", token1, token2);
-      return true;
+    log.debug("소유권에 관한 사항 패턴 검사 범위: {} ~ {}", searchStart, searchEnd);
+
+    boolean foundOwnership = false;
+    boolean foundRights = false;
+    boolean foundMatter = false;
+
+    // "소유권에", "관한", "사항" 패턴 찾기
+    for (int i = searchStart; i <= searchEnd; i++) {
+      String token = texts.get(i).trim();
+
+      if (token.contains("소유권에") || token.equals("( 소유권에") || token.equals("소유권에")) {
+        foundOwnership = true;
+        log.debug("'소유권에' 토큰 발견: 인덱스 {}, 텍스트: '{}'", i, token);
+      }
+
+      if (token.contains("관한") || token.equals("관한")) {
+        foundRights = true;
+        log.debug("'관한' 토큰 발견: 인덱스 {}, 텍스트: '{}'", i, token);
+      }
+
+      if (token.contains("사항")
+          || token.equals("사항")
+          || token.equals("사항 )")
+          || token.contains("사항 )")) {
+        foundMatter = true;
+        log.debug("'사항' 토큰 발견: 인덱스 {}, 텍스트: '{}'", i, token);
+      }
     }
 
-    // "갑" + "구" 직접 패턴
-    if (token1.equals("갑") && token2.equals("구")) {
-      log.debug("갑구 직접 패턴: '{}' + '{}'", token1, token2);
-      return true;
-    }
+    // 세 키워드가 모두 발견되고 "이외의"가 없으면 갑구
+    if (foundOwnership && foundRights && foundMatter) {
+      // "이외의" 키워드가 주변에 있는지 확인 (을구와 구분)
+      boolean hasEoiOe = false;
+      for (int i = searchStart; i <= searchEnd; i++) {
+        String token = texts.get(i).trim();
+        if (token.contains("이외의") || token.contains("이외")) {
+          hasEoiOe = true;
+          log.debug("'이외의' 키워드 발견 - 을구로 판단");
+          break;
+        }
+      }
 
-    // "갑구" 단일 토큰
-    if (token1.equals("갑구")) {
-      log.debug("갑구 단일 토큰: '{}'", token1);
-      return true;
+      if (!hasEoiOe) {
+        log.debug("갑구 확정: '소유권에 관한 사항' 패턴 (이외의 키워드 없음)");
+        return true;
+      }
     }
 
     return false;
@@ -327,6 +363,39 @@ public class NaverOcrService {
           return true;
         }
       }
+    }
+
+    return false;
+  }
+
+  // 갑구 마커 패턴 확인 - 기존 갑구 패턴들
+  private boolean isGapguMarkerPattern(int startIndex, List<String> texts) {
+    // 기본 범위 체크
+    if (startIndex + 1 >= texts.size()) {
+      return false;
+    }
+
+    String token1 = texts.get(startIndex).trim();
+    String token2 = texts.get(startIndex + 1).trim();
+
+    log.debug("갑구 패턴 검사: '{}' + '{}'", token1, token2);
+
+    // "갑" + "구" 직접 패턴
+    if (token1.equals("갑") && token2.equals("구")) {
+      log.debug("갑구 직접 패턴 발견: '{}' + '{}'", token1, token2);
+      return true;
+    }
+
+    // "갑구" 단일 토큰
+    if (token1.equals("갑구")) {
+      log.debug("갑구 단일 토큰 발견: '{}'", token1);
+      return true;
+    }
+
+    // "| 갑" + "구" 패턴
+    if ((token1.equals("|") || token1.contains("갑")) && token2.equals("구")) {
+      log.debug("갑구 특수 패턴: '{}' + '{}'", token1, token2);
+      return true;
     }
 
     return false;
@@ -404,71 +473,5 @@ public class NaverOcrService {
         || (trimmed.length() == 1
             && !Character.isDigit(trimmed.charAt(0))
             && !trimmed.matches("[가-힣a-zA-Z]")); // 한글, 영문, 숫자가 아닌 한 글자
-  }
-
-  // 도로명 주소만 파싱 (codef api 호출용) -> codef api 사용 안하기로 결정
-  private RoadAddress extractRoadAddress(List<String> inferTexts) {
-    log.info("도로명주소 추출 시작, 총 텍스트 개수: {}", inferTexts.size());
-
-    int roadAddressIndex = -1;
-    for (int i = 0; i < inferTexts.size(); i++) {
-      String text = inferTexts.get(i).trim();
-      log.info("검사중인 텍스트: '{}'", text);
-
-      // 여러 패턴으로 매칭 시도
-      if (text.contains("도로명주소") || text.contains("[도로명주소]") || text.equals("[도로명주소]")) {
-        roadAddressIndex = i;
-        log.info("도로명주소 키워드 발견! 인덱스: {}, 텍스트: '{}'", i, text);
-        break;
-      }
-    }
-
-    if (roadAddressIndex == -1) {
-      log.warn("도로명주소 키워드를 찾을 수 없습니다");
-      return null; // 도로명주소를 찾을 수 없음
-    }
-
-    try {
-      // 인덱스 범위 체크
-      if (roadAddressIndex + 4 >= inferTexts.size()) {
-        log.warn(
-            "도로명주소 다음 요소들이 부족합니다. 필요: {}, 실제: {}", roadAddressIndex + 4, inferTexts.size() - 1);
-        return null;
-      }
-
-      // [도로명주소] 다음 4개 요소가 시도, 시군구, 도로명, 건물번호
-      String sido = inferTexts.get(roadAddressIndex + 1).trim();
-      String sigungu = inferTexts.get(roadAddressIndex + 2).trim();
-      String roadName = inferTexts.get(roadAddressIndex + 3).trim();
-      String buildingNumber = inferTexts.get(roadAddressIndex + 4).trim();
-
-      log.info(
-          "추출된 도로명주소 정보 - 시도: '{}', 시군구: '{}', 도로명: '{}', 건물번호: '{}'",
-          sido,
-          sigungu,
-          roadName,
-          buildingNumber);
-
-      // 빈 값 체크
-      if (sido.isEmpty() || sigungu.isEmpty() || roadName.isEmpty() || buildingNumber.isEmpty()) {
-        log.warn("도로명주소 정보 중 빈 값이 있습니다");
-        return null;
-      }
-
-      RoadAddress result =
-          RoadAddress.builder()
-              .sido(sido)
-              .sigungu(sigungu)
-              .roadName(roadName)
-              .buildingNumber(buildingNumber)
-              .build();
-
-      log.info("도로명주소 추출 성공: {}", result);
-      return result;
-
-    } catch (IndexOutOfBoundsException e) {
-      // 도로명주소 정보가 불완전한 경우
-      return null;
-    }
   }
 }

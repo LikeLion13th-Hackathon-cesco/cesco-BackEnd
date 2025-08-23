@@ -34,9 +34,9 @@ public class FraudController {
       description = "신고 관련 문서 모두 업로드 후 제출하기 버튼을 클릭하면 업로드 상태를 리턴하는 API")
   @PostMapping(value = "/reports-result", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<BaseResponse<List<FakerResponse>>> saveFakerInfo(
-      @Parameter(description = "고소장 업로드") @RequestParam("complaint file")
+      @Parameter(description = "고소장 업로드") @RequestParam("complaint_file")
           MultipartFile complaintFile,
-      @Parameter(description = "신고할 등기부등본 업로드") @RequestParam("fraud report file")
+      @Parameter(description = "신고할 등기부등본 업로드") @RequestParam("fraud_report_file")
           MultipartFile fraudReportFile,
       @Parameter(description = "예시 파일 여부") @RequestParam("isExample") Integer isExample) {
 

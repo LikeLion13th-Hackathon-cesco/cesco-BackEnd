@@ -18,9 +18,6 @@ public class OcrResponse {
   @Schema(description = "추출된 텍스트", example = ".")
   private Map<String, List<String>> sections;
 
-  @Schema(description = "표제부의 도로명 주소", example = ".")
-  private RoadAddress roadAddress;
-
   @Schema(description = "진행 상태", example = "OCR_COMPLETED")
   private ProcessingStatus processingStatus;
 }

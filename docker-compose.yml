@@ -24,6 +24,11 @@ services:
       - MYSQL_USER=cesco
       - MYSQL_PASSWORD=cesco07
       - MYSQL_ROOT_PASSWORD=1234  # 루트 계정의 비밀번호
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --init-connect=SET NAMES utf8mb4
     volumes:
       - mysql-data:/var/lib/mysql
         # MySQL의 데이터 파일을 호스트에 볼륨으로 영구 저장

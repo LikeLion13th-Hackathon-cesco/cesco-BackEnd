@@ -185,7 +185,8 @@ public class NaverOcrService {
 
   // 마커 기반 섹션 파싱
   private Map<String, List<String>> parseByMarkers(List<String> allTexts) {
-    Map<String, List<String>> sections = new LinkedHashMap<>();
+    // 임시 저장용 맵 (파싱 순서대로 저장)
+    Map<String, List<String>> tempSections = new LinkedHashMap<>();
 
     String currentSection = "표제부"; // 기본적으로 표제부로 시작
     List<String> currentTexts = new ArrayList<>();
@@ -201,7 +202,7 @@ public class NaverOcrService {
         if (!currentTexts.isEmpty()) {
           List<String> cleanedTexts = cleanTexts(currentTexts);
           if (!cleanedTexts.isEmpty()) {
-            sections.put(currentSection, cleanedTexts);
+            tempSections.put(currentSection, cleanedTexts);
             log.info("섹션 완료: {}, 텍스트 수: {}", currentSection, cleanedTexts.size());
           }
         }
@@ -226,12 +227,34 @@ public class NaverOcrService {
     if (!currentTexts.isEmpty()) {
       List<String> cleanedTexts = cleanTexts(currentTexts);
       if (!cleanedTexts.isEmpty()) {
-        sections.put(currentSection, cleanedTexts);
+        tempSections.put(currentSection, cleanedTexts);
         log.info("마지막 섹션 완료: {}, 텍스트 수: {}", currentSection, cleanedTexts.size());
       }
     }
 
-    return sections;
+    // 원하는 순서대로 재정렬: 표제부 -> 갑구 -> 을구
+    Map<String, List<String>> orderedSections = new LinkedHashMap<>();
+
+    // 1. 표제부 먼저
+    if (tempSections.containsKey("표제부")) {
+      orderedSections.put("표제부", tempSections.get("표제부"));
+      log.info("표제부 섹션 순서 배치 완료");
+    }
+
+    // 2. 갑구 두 번째
+    if (tempSections.containsKey("갑구")) {
+      orderedSections.put("갑구", tempSections.get("갑구"));
+      log.info("갑구 섹션 순서 배치 완료");
+    }
+
+    // 3. 을구 마지막
+    if (tempSections.containsKey("을구")) {
+      orderedSections.put("을구", tempSections.get("을구"));
+      log.info("을구 섹션 순서 배치 완료");
+    }
+
+    log.info("섹션 순서 재정렬 완료: {}", orderedSections.keySet());
+    return orderedSections;
   }
 
   // 섹션 마커 감지 (【 표 제 부 】, 【 갑 구 】, 【 을 구 】)

@@ -13,7 +13,6 @@ import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.infra.naverocr.dto.ImageDto;
 import com.practice.likelionhackathoncesco.infra.naverocr.dto.request.OcrRequest;
 import com.practice.likelionhackathoncesco.infra.naverocr.dto.response.OcrResponse;
-import com.practice.likelionhackathoncesco.infra.naverocr.dto.response.RoadAddress;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -137,7 +136,7 @@ public class NaverOcrService {
               HttpMethod.POST, // http 메서드
               requestEntity, // 헤더와 생성한 요청
               String.class // 응답 타입
-          );
+              );
 
       // 응답에서 텍스트 파싱 (응답을 정리한다고 생각) 하여 반환
       return parseResponse(response);
@@ -299,7 +298,10 @@ public class NaverOcrService {
         log.debug("'관한' 토큰 발견: 인덱스 {}, 텍스트: '{}'", i, token);
       }
 
-      if (token.contains("사항") || token.equals("사항") || token.equals("사항 )") || token.contains("사항 )")) {
+      if (token.contains("사항")
+          || token.equals("사항")
+          || token.equals("사항 )")
+          || token.contains("사항 )")) {
         foundMatter = true;
         log.debug("'사항' 토큰 발견: 인덱스 {}, 텍스트: '{}'", i, token);
       }
@@ -469,7 +471,7 @@ public class NaverOcrService {
         || trimmed.equals("■")
         || trimmed.equals("▣")
         || (trimmed.length() == 1
-        && !Character.isDigit(trimmed.charAt(0))
-        && !trimmed.matches("[가-힣a-zA-Z]")); // 한글, 영문, 숫자가 아닌 한 글자
+            && !Character.isDigit(trimmed.charAt(0))
+            && !trimmed.matches("[가-힣a-zA-Z]")); // 한글, 영문, 숫자가 아닌 한 글자
   }
 }

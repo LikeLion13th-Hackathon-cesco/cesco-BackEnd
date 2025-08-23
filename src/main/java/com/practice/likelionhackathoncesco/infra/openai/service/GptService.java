@@ -2,6 +2,7 @@ package com.practice.likelionhackathoncesco.infra.openai.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.AnalysisReport;
 import com.practice.likelionhackathoncesco.domain.analysisreport.entity.ProcessingStatus;
@@ -11,6 +12,8 @@ import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.infra.naverocr.dto.response.OcrResponse;
 import com.practice.likelionhackathoncesco.infra.naverocr.service.NaverOcrService;
 import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptAnalysisRequest;
+import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptSecRequest;
+import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptDeptResponse;
 import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptResponse;
 import com.practice.likelionhackathoncesco.infra.openai.exception.GptErrorCode;
 import com.practice.likelionhackathoncesco.infra.openai.global.config.GptConfig;
@@ -40,10 +43,8 @@ public class GptService {
   private final NaverOcrService naverOcrService;
   private final AnalysisReportRepository analysisReportRepository;
 
-  // 보증보험 심사에서 긍정적/부정적으로 심사될 수 있다는 느낌으로 + 주소 반환하게
-
-  // 프롬프트 생성 메소드
-  public List<Map<String, String>> createPrompt(
+  // 근저당 총액을 알아내기 위한 프롬프트 생성 메소드
+  public List<Map<String, String>> createPromptForDept(
       GptAnalysisRequest gptAnalysisRequest, Long reportId) throws JsonProcessingException {
 
     Integer officalPrice = 340000000;
@@ -77,6 +78,88 @@ public class GptService {
     // gpt에게 행동지침을 주는 역할의 프롬프트
     prompts.add(Map.of("role", "system", "content", "너는 부동산 등기부 등본을 분석해서 위험요소를 판단하는 전문가야."));
 
+    prompts.add(
+        Map.of(
+            "role",
+            "user",
+            "content",
+            String.format(
+                """
+                아래는 ocr로 추출한 부동산 등기부 등본 택스트야.
+
+                [
+                %s
+                ]
+
+                위에 ocr로 추출한 텍스트를 보고
+                을구에서 말소되지 않은 근저당권 설정 내역을 모두 찾아서, 모든 근저당 채권최고액을 합산한 근저당 총액을 숫자로 정확히 추출해줘.
+                근저당이 없는 경우에는 0을 반환해.
+
+                여기서 "말소되지 않은" 상태란 다음을 의미한다.
+                - 을구 영역 내 텍스트 안에 해당 항목에 대해 '말소', '말소기입','해지' 등의 단어가 전혀 없는 경우만 "말소되지 않음으로 간주한다.
+                - 만약 해당 항목이 존재하지만 말소 관련 단어가 함께 기재되어 있다면 반드시 “존재하지 않는 것”으로 처리해야 한다.
+
+                이제 택스트를 분석해서 결과를 다음 JSON 형식으로 응답해주고, 이외의 다른 설명은 하지 마:
+                {
+                  "dept":"말소되지 않은 근저당의 총액"
+                }
+                """,
+                jsonText)));
+    return prompts;
+  }
+
+  // 근저당 총액을 파싱해서 GptDeptResponse로 반환하는 메소드
+  public GptDeptResponse parseDeptResponse(String deptContent) {
+    try {
+      JsonNode node = objectMapper.readTree(deptContent);
+      String originValue = node.get("dept").asText();
+
+      String cleanedValue = originValue.replaceAll("[^0-9]", ""); // 숫자만 남기도록 수정
+
+      Long dept;
+      if (cleanedValue.isEmpty()) {
+        dept = 0L;
+      } else {
+        dept = Long.parseLong(cleanedValue);
+      }
+
+      return new GptDeptResponse(dept);
+
+    } catch (JsonProcessingException e) {
+      throw new CustomException(GptErrorCode.GPT_RESPONSE_PARSING_FAILED);
+    } catch (NumberFormatException e) {
+      throw new CustomException(GptErrorCode.GPT_RESPONSE_PARSING_FAILED);
+    }
+  }
+
+  // -----------------------------
+
+  // 프롬프트 생성 메소드
+  public List<Map<String, String>> createPrompt(
+      GptAnalysisRequest gptAnalysisRequest, GptSecRequest gptSecRequest, Long reportId)
+      throws JsonProcessingException {
+
+    // ocr로 추출한 택스트 바로 가져오기
+    OcrResponse ocrResponse = naverOcrService.extractText(reportId);
+    Map<String, List<String>> text = ocrResponse.getSections();
+    ObjectMapper objectMapper = new ObjectMapper();
+    String jsonText = objectMapper.writeValueAsString(text);
+
+    List<Map<String, String>> prompts = new ArrayList<>();
+
+    // 전월세 여부 문자열로 변환
+    String rentType = gptAnalysisRequest.getIsMonthlyRent() == 1 ? "월세" : "전세";
+
+    // 분석 상태 수정 -> GPT 설명 생성 중
+    AnalysisReport analysisReport =
+        analysisReportRepository
+            .findById(reportId)
+            .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.REPORT_NOT_FOUND));
+    analysisReport.updateProcessingStatus(ProcessingStatus.GPT_PROCESSING);
+
+    // gpt에게 행동지침을 주는 역할의 프롬프트
+    prompts.add(Map.of("role", "system", "content", "너는 부동산 등기부 등본을 분석해서 위험요소를 판단하는 전문가야."));
+
     // gpt에게 사용자가 질문하거나 지시하는 메시지 -> JSON 형식으로 응답해달라는 것 반드시 명시
     prompts.add(
         Map.of(
@@ -85,19 +168,26 @@ public class GptService {
             "content",
             String.format(
                 """
-        이 부동산은 %s 계약을 하려는 중이야. 이 부동산의 보증금은 %d 원이고, 공시가격은 %d 원이야.
+        이 부동산은 %s 계약을 하려는 중이야.
         아래는 ocr로 추출한 부동산 등기부 등본 택스트야.
 
-        이 택스트를 보고 다음조건을 만족하면 숫자 1만 반환해줘:
-        - 갑구에서 가처분, 가등기, 가압류, 압류 이 네가지 항목이 전혀 없거나, 존재하더라도 모두 '말소', '말소기입', '해지' 등이 표시되어있는 경우
-        - 을구에서 근저당권 설정 내역을 모두 찾아서, 모든 근저당 채권최고액을 합산한 근저당 총액을 숫자로 정확히 추출하고, 제공된 공시가격 %d 와 비교하였을 때, 공시가격이 근저당 총액보다 크거나 같은 경우
+        다음은 ‘dangerNum’에 해당하는 점수총합을 산출하는 방식이다.
+        ‘dangerNum’은 1단계 무조건 안전 처리 조건과 2단계 점수 산정 규칙에 따라 계산된 총합 정수를 의미하며,
+        응답 JSON에서 ‘dangerNum’ 필드로 반드시 포함되어야 한다.
 
-        위 조건을 만족하지 않으면 다음과 같은 점수를 매겨서 총합을 계산한 뒤, 그 **합계 값 하나만 정수로 반환**해줘:
-        - 공시지가가 근저당보다 작으면 0
+        ocr로 추출한 부동산 등기부 등본 텍스트를 보고 **다음조건을 만족하면 'dangerNum'은 숫자 1이어야만해**:
+        ### 1단계: 무조건 안전 처리 규칙(반드시 '갑구' 영역에만 해당하는 내용입니다)
+        - '갑구'영역 내에 "가처분, 가등기, 가압류, 압류" 네 가지 항목이 전혀 없거나
+        - 모든 "가처분, 가등기, 가압류, 압류" 네 가지 항목에 대해 말소(말소, 말소기입, 해지) 표시가 되어 있다면, 다른 어떠한 조건도 보지 말고 무조건 숫자 1만 반환한다.
+
+        ### 2단계: 1단계 조건 미충족 시 점수 산정
+        아래 조건을 엄격히 적용해 점수를 계산하고, 그 **합계 값 하나만 ‘dangerNum’으로 반환**해줘. 단, 반드시 "갑구"에 한정해서만 검토한다. "을구(근저당, 저당권 등)"는 점수 계산과 전혀 무관하다.:
+        - safetyData의 값인 %d 가 0이면 0
         - '말소되지 않은 가처분'이 있으면 0
         - '말소되지 않은 가등기'가 있으면 0
         - '말소되지 않은 가압류'가 있으면 -1
         - '말소되지 않은 압류'가 있으면 -2
+
 
         여기서 "말소되지 않은" 상태란 다음을 의미한다:
         - OCR 텍스트에 '가처분','가등기','가압류','압류'라는 단어가 반드시 존재하면서
@@ -107,17 +197,14 @@ public class GptService {
         말소된 항목은 전혀 포함하지 말고, 최종 결과는 꼭 숫자 하나만 출력해줘. 예: 1, 0, -1, -2, -3
 
         위 내용처럼 숫자 반환한 다음에는 이제 등기부등본 택스트를 분석해서 아래 내용을 정확히 순서대로 작성해줘:
-        1. **현재 거래가 안전한지 여부를 두 줄로 요약해서 말해줘. 단, 위에서 계산한 점수 총합이 양수가 아니면 위험하니까 계약을 하지 않도록 권유해야해** - 예시: "이 부동산은 안전하게 거래할 수 있습니다." 또는 "이 부동산은 거래에 주의가 필요합니다."
+        1. **현재 거래가 안전한지 여부를 두 줄로 요약해서 말해줘. 단, 위에서 계산한 점수 총합이 양수가 아니면 위험하니까 계약을 하지 않도록 권유해야해.** - 예시: "이 부동산은 안전하게 거래할 수 있습니다." 또는 "이 부동산은 거래에 주의가 필요합니다."
         2. **그 판단의 이유를 다음을 기반으로 10줄 정도로 설명해줘:**
           - 갑구에 존재하는 가처분, 가등기, 가압류, 압류의 유무 및 말소 여부
           - 근저당 금액 그리고 보증금과의 비교
           - 단, 공시가격에 대한 직접적인 금액은 언급하지 않는다
         3. **말소되지 않은 근저당 금액의 총합**
         """,
-                rentType,
-                gptAnalysisRequest.getDeposit(),
-                officalPrice,
-                officalPrice))); // 위치 어디로 바꾸지?
+                rentType, gptSecRequest.getSafetyData()))); // 위치 어디로 바꾸지?
 
     if (gptAnalysisRequest.getIsMonthlyRent() == 0) { // 전세 계약의 경우
 
@@ -128,29 +215,25 @@ public class GptService {
               "content",
               String.format(
                   """
-        이 부동산의 시세는 %d야.
-        다음 조건들을 보고 보증보험 가입 가능 여부를 판단해줘:
-        - 위에서 매긴 점수총합이 양수가 아니라면 보증보험 가입이 불가하고
-        - 보증금이 7억 이하여야만 보증보험 가입이 가능하고
-        - 말소되지 않은 근저당의 총합이 시세의 0.6배를 넘으면 보증보험 가입이 불가하고
-        - 말소되지 않은 근저당의 총합과 보증금의 합이 시세의 0.9배를 넘으면 보증보험 가입이 불가하고
-        - 이 부동산이 아파트, 주거용 오피스텔, 연립·다세대주택, 단독·다중·다가구주택, 노인복지주택에 해당해야 가입이 가능해
+        보증보험 가입이 가능한 다음 조건들을 보고 보증보험 가입 가능여부를 명확히 판단해줘:
+        - 점수총합(dangerNum)이 1인 경우에만 보증보험 가입이 불가해.
+        - insuranceData 값인 %d가 1인 경우만 보증보험 가입이 가능해.
+        - 이 부동산이 아파트, 주거용 오피스텔, 연립·다세대주택, 단독·다중·다가구주택, 노인복지주택 중 하나여야만 해.
 
-        이제 아래 등기부등본 택스트를 분석해서 결과를 다음 JSON 형식으로 응답해줘:
+        이제 아래 등기부등본 택스트를 분석해서 각 조건을 엄격히 적용하여 판단하고, 다음 JSON 형식으로 결과를 응답:
         {
           "dangerNum":"점수총합" 예시 : "-2"
           "address":"표제부에 있는 이 부동산의 주소"
-          "summary":"거래에 대한 두줄 요약"
-          "safetyDescription":"두줄 요약 판단의 이유 10줄 정도를 공인중개사처럼 부드러운 상담톤으로  듣는 사람이 최대한 이해하기 쉽게 해줘"
+          "summary":"거래에 대한 세줄 요약 (점수총합이 음수면 거래가 위험하다고 명확히 표시해. 점수총합이 1 이상이지만 dept가 200000000 이상이면 불안한 상황임을 표현하고 절대 "안전"이라는 단어를 쓰지마. 점수총합이 1 이상이고 dept가 200000000보다 작으면 안전한 편이라고 평가해)"
+          "safetyDescription":"두줄 요약 판단의 이유 10줄 정도를 공인중개사처럼 부드러운 상담톤으로 듣는 사람이 최대한 이해하기 쉽게 해줘"
           "dept":"말소되지 않은 근저당 금액의 총합"
-          "insuranceDescription":"위 조건들을 바탕으로 이 부동산이 보증보험 심사에서 긍정적 혹은 부정적으로 평가될 수 있는 이유를 10줄 정도로 점수나 수치를 언급하지 않고 이해하기 쉽게 말하는 부드러운 상담톤으로 적어주고,
-           만약 보증보험 가입이 가능하다면 임대인의 세금 체납과 신용은 고려하지 않은 결과이기에 더 정확한 결과는 직접 주택도시보증공사에서 자세한 상담이 필요하다는 말을 추가해줘"
+          "insuranceDescription":"보증보험 가입 가능 여부를 조건에 맞게 명확히 판단하여 작성해. 가입 불가 시에는 반드시 ‘보증보험 가입이 불가합니다’라는 문장 포함해. 가입 가능 시에는 ‘임대인의 세금 체납 및 신용 상태는 고려하지 않은 결과이므로 주택도시보증공사에서 상세 상담 권고’ 문구를 넣어 10줄 정도로 부드럽게 설명해. **보증보험 가입여부 판단 사유를 설명할 때 점수총합은 절대 언급하지마.**"
           "ownerName" : "해당 부동산의 소유자 이름 (만약, 공동 소유자라면 더 지분이 높은 소유자의 이름)"
           "residentNum" : "주민등록번호 앞6자리(생년월일 부분)"
         }
         다음은 등기부등본 텍스트야:
         """,
-                  Math.round(officalPrice * 1.3)))); // 형변환 필요
+                  gptSecRequest.getInsuranceData()))); // 형변환 필요
 
     } else if (gptAnalysisRequest.getIsMonthlyRent() == 1) { // 월세 계약인 경우
       prompts.add(
@@ -160,31 +243,25 @@ public class GptService {
               "content",
               String.format(
                   """
-          이 부동산의 시세는 %d야. 전월세변환율을 적용해서 가공한 보증금은 %d야.
-          다음 조건들을 보고 보증보험 가입 가능 여부를 판단해줘:
-          - 위에서 매긴 점수총합이 양수가 아니라면 보증보험 가입이 불가하고
-          - 전월세변환율 적용 보증금이 7억 이하여야만 보증보험 가입이 가능하고
-          - 말소되지 않은 근저당의 총합이 시세의 0.6배를 넘으면 보증보험 가입이 불가하고
-          - 말소되지 않은 근저당의 총합과 전월세변환율 적용 보증금의 합이 시세의 0.9배를 넘으면 보증보험 가입이 불가하고
-          - 이 부동산이 아파트, 주거용 오피스텔, 연립·다세대주택, 단독·다중·다가구주택, 노인복지주택에 해당해야 가입이 가능해
+        다음 조건들을 보고 보증보험 가입 가능 여부를 판단해줘:
+        - 점수총합(dangerNum)이 1인 경우에만 보증보험 가입이 불가해.
+        - insuranceData 값인 %d가 1인 경우만 보증보험 가입이 가능해.
+        - 이 부동산이 아파트, 주거용 오피스텔, 연립·다세대주택, 단독·다중·다가구주택, 노인복지주택 중 하나여야만 해.
 
-        이제 아래 등기부등본 택스트를 분석해서 결과를 다음 JSON 형식으로 응답해줘:
+        이제 아래 등기부등본 택스트를 분석해서 각 조건을 엄격히 적용하여 판단하고, 다음 JSON 형식으로 결과를 응답:
         {
           "dangerNum":"점수총합" 예시 : "-2"
           "address":"표제부에 있는 이 부동산의 주소"
-          "summary":"거래에 대한 두줄 요약"
+          "summary":"거래에 대한 세줄 요약 (점수총합이 음수면 거래가 위험하다고 명확히 표시해. 점수총합이 1 이상이지만 dept가 200000000 이상이면 불안한 상황임을 표현하고 절대 "안전"이라는 단어를 쓰지마. 점수총합이 1 이상이고 dept가 200000000 이하면 안전한 편이라고 평가해)"
           "safetyDescription":"두줄 요약 판단의 이유 10줄 정도를 공인중개사처럼 부드러운 상담톤으로 듣는 사람이 최대한 이해하기 쉽게 해줘"
           "dept":"말소되지 않은 근저당 금액의 총합"
-          "insuranceDescription":"위 조건들을 바탕으로 이 부동산이 보증보험 심사에서 긍정적 혹은 부정적으로 평가될 수 있는 이유를 10줄 정도로 점수나 수치를 언급하지 않고 이해하기 쉽게 말하는 부드러운 상담톤으로 적어주고,
-           만약 보증보험 가입이 가능하다면 임대인의 세금 체납과 신용은 고려하지 않은 결과이기에 더 정확한 결과는 직접 주택도시보증공사에서 자세한 상담이 필요하다는 말을 추가해줘"
+          "insuranceDescription":"보증보험 가입 가능 여부를 조건에 맞게 명확히 판단하여 작성해. 가입 불가 시에는 반드시 ‘보증보험 가입이 불가합니다’라는 문장 포함해. 가입 가능 시에는 ‘임대인의 세금 체납 및 신용 상태는 고려하지 않은 결과이므로 주택도시보증공사에서 상세 상담 권고’ 문구를 넣어  10줄 정도로 부드럽게 설명해. **보증보험 가입여부 판단 사유를 설명할때 점수총합은 언급하지마.**"
           "ownerName" : "해당 부동산의 소유자 이름 (만약, 공동 소유자라면 더 지분이 높은 소유자의 이름)"
           "residentNum" : "주민등록번호 앞6자리(생년월일 부분)"
         }
         다음은 등기부등본 텍스트야:
         """,
-                  Math.round(officalPrice * 1.3),
-                  gptAnalysisRequest.getMonthlyRent() * 12 * 100 / 6
-                      + gptAnalysisRequest.getDeposit())));
+                  gptSecRequest.getInsuranceData())));
     }
     // gpt에게 추출된 택스트 입력
     prompts.add(Map.of("role", "user", "content", jsonText));

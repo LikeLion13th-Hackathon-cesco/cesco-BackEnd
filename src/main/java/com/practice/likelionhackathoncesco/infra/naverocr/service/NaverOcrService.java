@@ -70,9 +70,6 @@ public class NaverOcrService {
 
         log.info("OCR 처리 완료: reportId={}", reportId);
 
-        /*// 추출된 텍스트 DB에 저장
-        analysisReport.updateOcrText(ocrResult.getSections().toString()); // toString()으로 저장*/
-
         // DB에 진행 상태 필드 업데이트
         analysisReport.updateProcessingStatus(ProcessingStatus.OCR_COMPLETED);
         analysisReportRepository.save(analysisReport);
@@ -188,7 +185,8 @@ public class NaverOcrService {
 
   // 마커 기반 섹션 파싱
   private Map<String, List<String>> parseByMarkers(List<String> allTexts) {
-    Map<String, List<String>> sections = new LinkedHashMap<>();
+    // 임시 저장용 맵 (파싱 순서대로 저장)
+    Map<String, List<String>> tempSections = new LinkedHashMap<>();
 
     String currentSection = "표제부"; // 기본적으로 표제부로 시작
     List<String> currentTexts = new ArrayList<>();
@@ -204,7 +202,7 @@ public class NaverOcrService {
         if (!currentTexts.isEmpty()) {
           List<String> cleanedTexts = cleanTexts(currentTexts);
           if (!cleanedTexts.isEmpty()) {
-            sections.put(currentSection, cleanedTexts);
+            tempSections.put(currentSection, cleanedTexts);
             log.info("섹션 완료: {}, 텍스트 수: {}", currentSection, cleanedTexts.size());
           }
         }
@@ -229,12 +227,34 @@ public class NaverOcrService {
     if (!currentTexts.isEmpty()) {
       List<String> cleanedTexts = cleanTexts(currentTexts);
       if (!cleanedTexts.isEmpty()) {
-        sections.put(currentSection, cleanedTexts);
+        tempSections.put(currentSection, cleanedTexts);
         log.info("마지막 섹션 완료: {}, 텍스트 수: {}", currentSection, cleanedTexts.size());
       }
     }
 
-    return sections;
+    // 원하는 순서대로 재정렬: 표제부 -> 갑구 -> 을구
+    Map<String, List<String>> orderedSections = new LinkedHashMap<>();
+
+    // 1. 표제부 먼저
+    if (tempSections.containsKey("표제부")) {
+      orderedSections.put("표제부", tempSections.get("표제부"));
+      log.info("표제부 섹션 순서 배치 완료");
+    }
+
+    // 2. 갑구 두 번째
+    if (tempSections.containsKey("갑구")) {
+      orderedSections.put("갑구", tempSections.get("갑구"));
+      log.info("갑구 섹션 순서 배치 완료");
+    }
+
+    // 3. 을구 마지막
+    if (tempSections.containsKey("을구")) {
+      orderedSections.put("을구", tempSections.get("을구"));
+      log.info("을구 섹션 순서 배치 완료");
+    }
+
+    log.info("섹션 순서 재정렬 완료: {}", orderedSections.keySet());
+    return orderedSections;
   }
 
   // 섹션 마커 감지 (【 표 제 부 】, 【 갑 구 】, 【 을 구 】)
@@ -331,38 +351,48 @@ public class NaverOcrService {
 
   // 을구 마커 패턴 확인
   private boolean isEulguMarkerPattern(int startIndex, List<String> texts) {
-    if (startIndex + 4 >= texts.size()) {
+    // 기본 범위 체크
+    if (startIndex + 1 >= texts.size()) {
       return false;
     }
 
     String token1 = texts.get(startIndex).trim();
     String token2 = texts.get(startIndex + 1).trim();
 
-    // "을" + "구" 패턴 확인
+    log.debug("을구 패턴 검사: '{}' + '{}'", token1, token2);
+
+    // 1. "을" + "구" 직접 패턴
     if (token1.equals("을") && token2.equals("구")) {
-      // 다음 몇 개 토큰에서 "소유권 이외의" 확인 (실제 을구 섹션인지 검증)
-      for (int i = startIndex + 2; i < Math.min(startIndex + 10, texts.size()); i++) {
+      log.debug("을구 직접 패턴 발견: '{}' + '{}'", token1, token2);
+
+      // 추가 검증: "소유권 이외의" 패턴이 근처에 있는지 확인
+      boolean hasEulguKeywords = false;
+      for (int i = startIndex; i < Math.min(startIndex + 15, texts.size()); i++) {
         String checkText = texts.get(i).trim();
-        if (checkText.contains("소유권") && checkText.contains("이외")) {
-          log.debug("을구 패턴 확인: '{}' + '{}' + '소유권 이외의' 발견", token1, token2);
-          return true;
-        }
-        if (checkText.contains("권리에") && checkText.contains("관한")) {
-          log.debug("을구 패턴 확인: '{}' + '{}' + '권리에 관한' 발견", token1, token2);
-          return true;
+        if ((checkText.contains("소유권") && checkText.contains("이외의"))
+            || checkText.contains("근저당권")
+            || checkText.contains("임차권")
+            || checkText.contains("전세권")
+            || checkText.contains("채권최고액")) {
+          hasEulguKeywords = true;
+          log.debug("을구 키워드 확인: '{}'", checkText);
+          break;
         }
       }
+
+      if (hasEulguKeywords) {
+        return true;
+      }
+
+      // 키워드가 없어도 "을" + "구" 패턴이 명확하면 을구로 판단
+      log.debug("을구 패턴 확정: 명확한 '을' + '구' 조합");
+      return true;
     }
 
-    // "을구" 단일 토큰 + "소유권 이외의" 확인
+    // 2. "을구" 단일 토큰
     if (token1.equals("을구")) {
-      for (int i = startIndex + 1; i < Math.min(startIndex + 8, texts.size()); i++) {
-        String checkText = texts.get(i).trim();
-        if (checkText.contains("소유권") && checkText.contains("이외")) {
-          log.debug("을구 단일 토큰 + 소유권 이외의 확인");
-          return true;
-        }
-      }
+      log.debug("을구 단일 토큰 발견: '{}'", token1);
+      return true;
     }
 
     return false;

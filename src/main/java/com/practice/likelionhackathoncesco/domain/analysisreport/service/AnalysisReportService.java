@@ -20,6 +20,8 @@ import com.practice.likelionhackathoncesco.domain.user.repository.UserRepository
 import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptAnalysisRequest;
+import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptSecRequest;
+import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptDeptResponse;
 import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -106,7 +108,10 @@ public class AnalysisReportService {
   // 전월세 안전지수 로직 + 완전한 분석 리포트 반환 메소드 -> gptResponse 응답을 파싱해서 DB에 집어넣어야 함
   @Transactional
   public AnalysisReportResponse updateAnalysisReport(
-      GptResponse gptResponse, GptAnalysisRequest gptAnalysisRequest, Long reportId) {
+      GptResponse gptResponse,
+      GptAnalysisRequest gptAnalysisRequest,
+      GptDeptResponse gptDeptResponse,
+      Long reportId) {
 
     log.info("[AnalysisReportService] 분석리포트 결과 업데이트 시도 : reportId={}", reportId);
     if (gptResponse.getAddress() == null || gptResponse.getAddress().isBlank()) {
@@ -133,7 +138,7 @@ public class AnalysisReportService {
     analysisReport.updateProcessingStatus(ProcessingStatus.ANALYZING);
 
     Integer dangerNum = Integer.valueOf(gptResponse.getDangerNum()); // 위험수치의 합
-    Integer dept = Integer.valueOf(gptResponse.getDept().replaceAll(",", ""));
+    Long dept = gptDeptResponse.getDept();
     Integer officalPrice = 340000000;
 
     if (gptAnalysisRequest.getIsExample() == 1) { // 예시: 안전
@@ -143,6 +148,9 @@ public class AnalysisReportService {
     } else if (gptAnalysisRequest.getIsExample() == 3) { // 예시: 위험
       officalPrice = 150000000;
     }
+
+    System.out.println("officePrice : " + officalPrice);
+    System.out.println("dept : " + dept);
 
     Double realSafetyScore;
 
@@ -159,12 +167,14 @@ public class AnalysisReportService {
             3.0
                 + 4
                     * (1
-                        - ((double) (gptAnalysisRequest.getDeposit() - officalPrice - dept))
+                        - ((double) (gptAnalysisRequest.getDeposit() - officalPrice + dept))
                             / (officalPrice - dept));
       }
     } else { // 위험 : 0~3점
       realSafetyScore = 3.0 + dangerNum;
     }
+
+    System.out.println("realSafetyScore : " + realSafetyScore);
 
     if (realSafetyScore >= 7) {
       analysisReport.updateComment(Comment.SAFE);
@@ -261,5 +271,54 @@ public class AnalysisReportService {
       return true;
     }
     return false;
+  }
+
+  // 근저당 총액을 가지고 해당 거래가 전세 or 월세 인지에 따라 gpt에게 넘기는 값을 반환하는 메소드
+  public GptSecRequest getGptSecRequest(GptAnalysisRequest gptAnalysisRequest, Long dept) {
+
+    Integer safetyData;
+    Integer insuranceData;
+    Integer officalPrice = 340000000;
+    Long isMonthlyDeposit =
+        (long)
+            Math.round(
+                gptAnalysisRequest.getMonthlyRent() * 12 * 100 / 6
+                    + gptAnalysisRequest.getDeposit()); // 전월세 변환율 적용한 보증금
+
+    if (gptAnalysisRequest.getIsExample() == 1) { // 예시: 안전
+      officalPrice = 129000000;
+    } else if (gptAnalysisRequest.getIsExample() == 2) { // 예시: 불안
+      officalPrice = 700000000;
+    } else if (gptAnalysisRequest.getIsExample() == 3) { // 예시: 위험
+      officalPrice = 150000000;
+    }
+
+    // 전월세 안전지수를 위한 데이터
+    if (officalPrice < dept) {
+      safetyData = 0;
+    } else {
+      safetyData = 1;
+    }
+
+    // 전세일때
+    if (gptAnalysisRequest.getIsMonthlyRent() == 0) {
+      if (dept > Math.round(officalPrice * 1.3 * 0.6)
+          || dept + gptAnalysisRequest.getDeposit() > Math.round(officalPrice * 1.3 * 0.9)) {
+        insuranceData = 0;
+      } else {
+        insuranceData = 1;
+      }
+    } else { // 월세일때
+      if (isMonthlyDeposit > 700000000
+          || dept > Math.round(officalPrice * 1.3 * 0.6)
+          || dept + isMonthlyDeposit > officalPrice * 1.3 * 0.9) {
+        insuranceData = 0;
+      } else {
+        insuranceData = 1;
+      }
+    }
+    System.out.println("safetyData: " + safetyData);
+    System.out.println("insuranceData: " + insuranceData);
+    return GptSecRequest.builder().safetyData(safetyData).insuranceData(insuranceData).build();
   }
 }

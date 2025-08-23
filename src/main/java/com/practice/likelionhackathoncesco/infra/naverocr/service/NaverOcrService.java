@@ -369,9 +369,11 @@ public class NaverOcrService {
       boolean hasEulguKeywords = false;
       for (int i = startIndex; i < Math.min(startIndex + 15, texts.size()); i++) {
         String checkText = texts.get(i).trim();
-        if ((checkText.contains("소유권") && checkText.contains("이외의")) ||
-            checkText.contains("근저당권") || checkText.contains("임차권") ||
-            checkText.contains("전세권") || checkText.contains("채권최고액")) {
+        if ((checkText.contains("소유권") && checkText.contains("이외의"))
+            || checkText.contains("근저당권")
+            || checkText.contains("임차권")
+            || checkText.contains("전세권")
+            || checkText.contains("채권최고액")) {
           hasEulguKeywords = true;
           log.debug("을구 키워드 확인: '{}'", checkText);
           break;

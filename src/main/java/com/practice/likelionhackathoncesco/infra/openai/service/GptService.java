@@ -75,7 +75,6 @@ public class GptService {
             .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.REPORT_NOT_FOUND));
     analysisReport.updateProcessingStatus(ProcessingStatus.GPT_PROCESSING);
 
-
     // gpt에게 행동지침을 주는 역할의 프롬프트
     prompts.add(Map.of("role", "system", "content", "너는 부동산 등기부 등본을 분석해서 위험요소를 판단하는 전문가야."));
 
@@ -128,7 +127,7 @@ public class GptService {
   public GptDeptResponse parseDeptResponse(String deptContent) {
     try {
       JsonNode node = objectMapper.readTree(deptContent);
-      
+
       // dept 파싱
       String originDept = node.get("dept").asText();
       String cleanedDept = originDept.replaceAll("[^0-9]", ""); // 숫자만 남기도록 수정
@@ -201,7 +200,15 @@ public class GptService {
           - %s가 '위험'이라면 해당 부동산은 가처분, 가등기, 가압류, 압류 중 하나 이상 말소되지 않고 존재하고 있거나 혹은 근저당 총액이 공시가격보다 높은 부동산이야.
           - 안전점수는 10점 만점에 %f야
         """,
-                rentType, gptSecRequest.getSafetyScoreStatus(),gptSecRequest.getSafetyScoreStatus(),gptSecRequest.getSafetyScoreStatus(), gptSecRequest.getSafetyScoreStatus(),gptSecRequest.getSafetyScoreStatus(),gptSecRequest.getSafetyScoreStatus(),gptSecRequest.getSafetyScoreStatus(),gptSecRequest.getSafetyScore()))); // 위치 어디로 바꾸지?
+                rentType,
+                gptSecRequest.getSafetyScoreStatus(),
+                gptSecRequest.getSafetyScoreStatus(),
+                gptSecRequest.getSafetyScoreStatus(),
+                gptSecRequest.getSafetyScoreStatus(),
+                gptSecRequest.getSafetyScoreStatus(),
+                gptSecRequest.getSafetyScoreStatus(),
+                gptSecRequest.getSafetyScoreStatus(),
+                gptSecRequest.getSafetyScore()))); // 위치 어디로 바꾸지?
 
     if (gptAnalysisRequest.getIsMonthlyRent() == 0) { // 전세 계약의 경우
 
@@ -215,7 +222,7 @@ public class GptService {
         보증보험 가입이 가능한 다음 조건들을 보고 보증보험 가입 가능여부를 명확히 판단하고 그 판단의 이유를 다음을 기반으로 10줄 정도로 작성해서 insuranceDescription에 넣어줘:
         - insuranceData 값인 %d가 1인 경우만 보증보험 가입이 가능해.(왜냐하면 근저당, 시세, 보증금을 비교했을때 보증보험 가입 가능 여부를 충족해야지만 insuranceData가 1일 수 있기 때문)
         - 이 부동산이 아파트, 주거용 오피스텔, 연립·다세대주택, 단독·다중·다가구주택, 노인복지주택 중 하나여야만 해.
-        
+
         이제 아래 등기부등본 택스트를 분석해서 각 조건을 엄격히 적용하여 판단하고, 다음 JSON 형식으로 결과를 응답:
         {
           "address":"표제부에 있는 이 부동산의 주소"
@@ -240,7 +247,7 @@ public class GptService {
         보증보험 가입이 가능한 다음 조건들을 보고 보증보험 가입 가능여부를 명확히 판단하고 그 판단의 이유를 다음을 기반으로 10줄 정도로 작성해서 insuranceDescription에 넣어줘:
         - insuranceData 값인 %d가 1인 경우만 보증보험 가입이 가능해.(왜냐하면 근저당, 시세, 보증금을 비교했을때 보증보험 가입 가능 여부를 충족해야지만 insuranceData가 1일 수 있기 때문)
         - 이 부동산이 아파트, 주거용 오피스텔, 연립·다세대주택, 단독·다중·다가구주택, 노인복지주택 중 하나여야만 해.
-        
+
         이제 아래 등기부등본 택스트를 분석해서 각 조건을 엄격히 적용하여 판단하고, 다음 JSON 형식으로 결과를 응답:
         {
           "address":"표제부에 있는 이 부동산의 주소"

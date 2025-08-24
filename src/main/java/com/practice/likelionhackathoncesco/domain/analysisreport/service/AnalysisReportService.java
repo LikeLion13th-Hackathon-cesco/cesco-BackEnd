@@ -108,7 +108,8 @@ public class AnalysisReportService {
 
   // 전월세 안전지수 로직 + 완전한 분석 리포트 반환 메소드 -> gptResponse 응답을 파싱해서 DB에 집어넣어야 함
   @Transactional
-  public AnalysisReportResponse updateAnalysisReport(GptResponse gptResponse, GptSecRequest gptSecRequest, Long reportId) {
+  public AnalysisReportResponse updateAnalysisReport(
+      GptResponse gptResponse, GptSecRequest gptSecRequest, Long reportId) {
 
     log.info("[AnalysisReportService] 분석리포트 결과 업데이트 시도 : reportId={}", reportId);
     if (gptResponse.getAddress() == null || gptResponse.getAddress().isBlank()) {
@@ -222,13 +223,14 @@ public class AnalysisReportService {
   }
 
   // 근저당 총액을 가지고 해당 거래가 전세 or 월세 인지에 따라 gpt에게 넘기는 값을 반환하는 메소드
-  public GptSecRequest getGptSecRequest(GptAnalysisRequest gptAnalysisRequest, GptDeptResponse gptDeptResponse, Long reportId) {
+  public GptSecRequest getGptSecRequest(
+      GptAnalysisRequest gptAnalysisRequest, GptDeptResponse gptDeptResponse, Long reportId) {
 
     String safetyScoreStatus;
     Integer insuranceData;
     Integer officalPrice = 340000000;
-    Long dept = gptDeptResponse.getDept();    // dept 받기
-    Integer dangerNum = gptDeptResponse.getDangerNum();   // dangerNum 받기
+    Long dept = gptDeptResponse.getDept(); // dept 받기
+    Integer dangerNum = gptDeptResponse.getDangerNum(); // dangerNum 받기
     Long isMonthlyDeposit =
         (long)
             Math.round(
@@ -242,12 +244,12 @@ public class AnalysisReportService {
     } else if (gptAnalysisRequest.getIsExample() == 3) { // 예시: 위험
       officalPrice = 150000000;
     }
-    
+
     // 전월세 지수 판단하기
     // dangerNum <= 0 이면 safetyData 따질것도 없이 dangerNum 유지
     // dangerNum == 1 이고 officalPrice > dept 이면 dangerNum 유지
     // dangerNum == 1 이고 officalPrice <= dept 일때만 dangerNum = 0 으로 변경!!
-    if(officalPrice <= dept) {
+    if (officalPrice <= dept) {
       dangerNum = 0;
     }
 
@@ -257,30 +259,28 @@ public class AnalysisReportService {
       if (dept >= Math.round(officalPrice * 1.3 * 0.6)
           || dept + gptAnalysisRequest.getDeposit() > Math.round(officalPrice * 1.3 * 0.9)) {
         insuranceData = 0;
-      } else {  // insuranceDate == 1 일때
-        if(dangerNum <= 0) {  // 아무리 insuranceDate == 1 이어도 dangerNum <= 0 이면 insuranceData도 0
+      } else { // insuranceDate == 1 일때
+        if (dangerNum <= 0) { // 아무리 insuranceDate == 1 이어도 dangerNum <= 0 이면 insuranceData도 0
           insuranceData = 0;
-        }else{
+        } else {
           insuranceData = 1;
         }
       }
-    }
-    else { // 월세일때
+    } else { // 월세일때
       if (isMonthlyDeposit > 700000000
           || dept > Math.round(officalPrice * 1.3 * 0.6)
           || dept + isMonthlyDeposit > officalPrice * 1.3 * 0.9) {
         insuranceData = 0;
       } else {
-        if(dangerNum <= 0) {  // 아무리 insuranceDate == 1 이어도 dangerNum <= 0 이면 insuranceData도 0
+        if (dangerNum <= 0) { // 아무리 insuranceDate == 1 이어도 dangerNum <= 0 이면 insuranceData도 0
           insuranceData = 0;
-        }else{
+        } else {
           insuranceData = 1;
         }
       }
     }
     System.out.println("dangerNum: " + dangerNum);
     System.out.println("insuranceData: " + insuranceData);
-
 
     // 분석 상태 수정 -> 위험도 분석 중
     AnalysisReport analysisReport =
@@ -298,16 +298,16 @@ public class AnalysisReportService {
         realSafetyScore =
             7.0
                 + 3
-                * ((double) (officalPrice - dept - gptAnalysisRequest.getDeposit()))
-                / (officalPrice - dept);
+                    * ((double) (officalPrice - dept - gptAnalysisRequest.getDeposit()))
+                    / (officalPrice - dept);
 
       } else { // 불안 : 3~7점
         realSafetyScore =
             3.0
                 + 4
-                * (1
-                - ((double) (gptAnalysisRequest.getDeposit() - officalPrice + dept))
-                / (officalPrice - dept));
+                    * (1
+                        - ((double) (gptAnalysisRequest.getDeposit() - officalPrice + dept))
+                            / (officalPrice - dept));
       }
     } else { // 위험 : 0~3점
       realSafetyScore = 3.0 + dangerNum;
@@ -316,8 +316,7 @@ public class AnalysisReportService {
     System.out.println("realSafetyScore : " + realSafetyScore);
 
     Double safetyScore = Math.round(realSafetyScore * 10) / 10.0;
-    analysisReport.updateSafetyScore(safetyScore);  // DB에 안전점수 저장
-
+    analysisReport.updateSafetyScore(safetyScore); // DB에 안전점수 저장
 
     if (safetyScore >= 7) {
       safetyScoreStatus = "안전";
@@ -327,7 +326,10 @@ public class AnalysisReportService {
       safetyScoreStatus = "위험";
     }
 
-
-    return GptSecRequest.builder().safetyScore(safetyScore).safetyScoreStatus(safetyScoreStatus).insuranceData(insuranceData).build();
+    return GptSecRequest.builder()
+        .safetyScore(safetyScore)
+        .safetyScoreStatus(safetyScoreStatus)
+        .insuranceData(insuranceData)
+        .build();
   }
 }

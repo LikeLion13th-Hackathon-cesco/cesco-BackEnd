@@ -71,11 +71,14 @@ public class AnalysisFlowService {
 
     // 근저당 총액 gpt 응답을 파싱하는 메소드
     GptDeptResponse gptDeptResponse = gptService.parseDeptResponse(contentForDept);
-    log.info("[AnalysisFlowService] gpt api에게 dept, dangerNum 응답 받은 후 파싱 완료: dept={}, dangerNum={}", gptDeptResponse.getDept(), gptDeptResponse.getDangerNum());
-    
+    log.info(
+        "[AnalysisFlowService] gpt api에게 dept, dangerNum 응답 받은 후 파싱 완료: dept={}, dangerNum={}",
+        gptDeptResponse.getDept(),
+        gptDeptResponse.getDangerNum());
 
     // gpt 에게 전달할 값 세개
-    GptSecRequest gptSecRequest = analysisReportService.getGptSecRequest(gptAnalysisRequest, gptDeptResponse, reportId);
+    GptSecRequest gptSecRequest =
+        analysisReportService.getGptSecRequest(gptAnalysisRequest, gptDeptResponse, reportId);
 
     System.out.println(gptSecRequest.getSafetyScoreStatus());
 
@@ -95,8 +98,7 @@ public class AnalysisFlowService {
 
     // 분석 리포트 분석 후 DB 업데이트
     AnalysisReportResponse analysisReportResponse =
-        analysisReportService.updateAnalysisReport(
-            gptResponse,gptSecRequest, reportId);
+        analysisReportService.updateAnalysisReport(gptResponse, gptSecRequest, reportId);
 
     return analysisReportResponse;
   }

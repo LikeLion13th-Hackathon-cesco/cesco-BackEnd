@@ -68,15 +68,16 @@ public class AnalysisFlowService {
 
     // gpt-4o api 호출로 근저당 총액 응답 받기
     String contentForDept = gptService.callGptAPI(promptsForDept, String.valueOf(reportId));
-    System.out.println("gpt한테 받은 근저당 총액" + contentForDept);
 
     // 근저당 총액 gpt 응답을 파싱하는 메소드
     GptDeptResponse gptDeptResponse = gptService.parseDeptResponse(contentForDept);
-    Long dept = gptDeptResponse.getDept();
-    System.out.println("파싱하고 난 dept" + dept);
+    log.info("[AnalysisFlowService] gpt api에게 dept, dangerNum 응답 받은 후 파싱 완료: dept={}, dangerNum={}", gptDeptResponse.getDept(), gptDeptResponse.getDangerNum());
+    
 
-    // gpt 에게 전달할 값 두개
-    GptSecRequest gptSecRequest = analysisReportService.getGptSecRequest(gptAnalysisRequest, dept);
+    // gpt 에게 전달할 값 세개
+    GptSecRequest gptSecRequest = analysisReportService.getGptSecRequest(gptAnalysisRequest, gptDeptResponse, reportId);
+
+    System.out.println(gptSecRequest.getSafetyScoreStatus());
 
     // gpt에게 필요한 정보 추가해서 최종 프롬프트 생성
     try {
@@ -95,7 +96,7 @@ public class AnalysisFlowService {
     // 분석 리포트 분석 후 DB 업데이트
     AnalysisReportResponse analysisReportResponse =
         analysisReportService.updateAnalysisReport(
-            gptResponse, gptAnalysisRequest, gptDeptResponse, reportId);
+            gptResponse,gptSecRequest, reportId);
 
     return analysisReportResponse;
   }

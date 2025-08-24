@@ -70,16 +70,18 @@ public class AnalysisReport extends BaseFileEntity {
     this.comment = comment;
   }
 
+  public void updateSafetyScore(Double safetyScore) {
+    this.safetyScore = safetyScore;
+  }
+
   // 분석 후 DB 업데이트
   public void update(
       String address,
-      Double safetyScore,
       String summary,
       String safetyDescription,
       String insuranceDescription,
       Warning warning) {
     this.address = address;
-    this.safetyScore = safetyScore;
     this.summary = summary;
     this.safetyDescription = safetyDescription;
     this.insuranceDescription = insuranceDescription;

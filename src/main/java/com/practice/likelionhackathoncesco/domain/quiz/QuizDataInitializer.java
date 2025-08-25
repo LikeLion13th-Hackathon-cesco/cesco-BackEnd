@@ -15,26 +15,6 @@ public class QuizDataInitializer {
     System.out.println("Quiz 더미 데이터 초기화를 시작합니다...");
 
     try {
-      // 기존 데이터 정리 (선택사항)
-      // jdbcTemplate.execute("DELETE FROM quiz");
-
-      // Quiz 1 - 자바의 정석 문제
-      String quiz1 =
-          """
-                INSERT INTO quiz (quiz_id, title, option_one, option_two, option_three, option_four, correct_answer, explanation, is_solved)
-                VALUES (1, '자바의 정석 문제', '선택지1', '선택지2', '선택지3', '선택지4', 2, '정답 해설', 0)
-                ON DUPLICATE KEY UPDATE
-                title = VALUES(title),
-                option_one = VALUES(option_one),
-                option_two = VALUES(option_two),
-                option_three = VALUES(option_three),
-                option_four = VALUES(option_four),
-                correct_answer = VALUES(correct_answer),
-                explanation = VALUES(explanation),
-                is_solved = 0
-                """;
-      jdbcTemplate.execute(quiz1);
-
       // Quiz 1 업데이트 (전입신고 문제로 덮어쓰기)
       String quiz1Update =
           """

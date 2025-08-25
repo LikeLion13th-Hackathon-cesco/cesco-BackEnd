@@ -29,9 +29,11 @@ public class QuizAnswer {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long quizAnswerId;
 
+  // 선택지
   @Column(nullable = false)
   private Integer selectedOption;
 
+  // 정답 여부
   @Column(nullable = false)
   private Boolean isCorrect;
 

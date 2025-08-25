@@ -52,7 +52,7 @@ public class AnalysisReportController {
     new Thread(
             () -> {
               try {
-                emitter.send(progress(10, "분석 시작",null));
+                emitter.send(progress(10, "분석 시작", null));
 
                 AnalysisReport savedReport =
                     analysisFlowService.uploadDocuments(

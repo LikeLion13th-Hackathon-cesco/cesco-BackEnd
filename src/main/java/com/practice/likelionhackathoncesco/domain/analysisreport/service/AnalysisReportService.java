@@ -20,6 +20,8 @@ import com.practice.likelionhackathoncesco.domain.user.repository.UserRepository
 import com.practice.likelionhackathoncesco.global.config.S3Config;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
 import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptAnalysisRequest;
+import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptSecRequest;
+import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptDeptResponse;
 import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -100,13 +102,14 @@ public class AnalysisReportService {
         .summary(report.getSummary())
         .safetyDescription(report.getSafetyDescription())
         .insuranceDescription(report.getInsuranceDescription())
+        .warning(report.getWarning())
         .build();
   }
 
   // 전월세 안전지수 로직 + 완전한 분석 리포트 반환 메소드 -> gptResponse 응답을 파싱해서 DB에 집어넣어야 함
   @Transactional
   public AnalysisReportResponse updateAnalysisReport(
-      GptResponse gptResponse, GptAnalysisRequest gptAnalysisRequest, Long reportId) {
+      GptResponse gptResponse, GptSecRequest gptSecRequest, Long reportId) {
 
     log.info("[AnalysisReportService] 분석리포트 결과 업데이트 시도 : reportId={}", reportId);
     if (gptResponse.getAddress() == null || gptResponse.getAddress().isBlank()) {
@@ -132,43 +135,10 @@ public class AnalysisReportService {
 
     analysisReport.updateProcessingStatus(ProcessingStatus.ANALYZING);
 
-    Integer dangerNum = Integer.valueOf(gptResponse.getDangerNum()); // 위험수치의 합
-    Integer dept = Integer.valueOf(gptResponse.getDept().replaceAll(",", ""));
-    Integer officalPrice = 340000000;
-
-    if (gptAnalysisRequest.getIsExample() == 1) { // 예시: 안전
-      officalPrice = 129000000;
-    } else if (gptAnalysisRequest.getIsExample() == 2) { // 예시: 불안
-      officalPrice = 700000000;
-    } else if (gptAnalysisRequest.getIsExample() == 3) { // 예시: 위험
-      officalPrice = 150000000;
-    }
-
-    Double realSafetyScore;
-
-    if (dangerNum == 1) { // 안전 또는 불안 범위
-      if ((officalPrice - dept) >= gptAnalysisRequest.getDeposit()) { // 안전 : 7~10점
-        realSafetyScore =
-            7.0
-                + 3
-                    * ((double) (officalPrice - dept - gptAnalysisRequest.getDeposit()))
-                    / (officalPrice - dept);
-
-      } else { // 불안 : 3~7점
-        realSafetyScore =
-            3.0
-                + 4
-                    * (1
-                        - ((double) (gptAnalysisRequest.getDeposit() - officalPrice - dept))
-                            / (officalPrice - dept));
-      }
-    } else { // 위험 : 0~3점
-      realSafetyScore = 3.0 + dangerNum;
-    }
-
-    if (realSafetyScore >= 7) {
+    Double safetyScore = gptSecRequest.getSafetyScore();
+    if (safetyScore >= 7) {
       analysisReport.updateComment(Comment.SAFE);
-    } else if (realSafetyScore >= 3) {
+    } else if (safetyScore >= 3) {
       analysisReport.updateComment(Comment.CAUTION);
     } else {
       analysisReport.updateComment(Comment.DANGER);
@@ -184,15 +154,13 @@ public class AnalysisReportService {
     boolean warn =
         fakerRepository.existsByFakerNameAndResidentNum(
             gptResponse.getOwnerName(), gptResponse.getResidentNum());
-    if (user.getPayStatus() == PAID || warn) {
+    if (user.getPayStatus() == PAID && warn) {
       warning = Warning.WARN;
     }
-    Double safetyScore = Math.round(realSafetyScore * 10) / 10.0;
 
     // 분석결과로 분석리포트 수정
     analysisReport.update(
         gptResponse.getAddress(),
-        safetyScore,
         gptResponse.getSummary(),
         gptResponse.getSafetyDescription(),
         gptResponse.getInsuranceDescription(),
@@ -252,5 +220,116 @@ public class AnalysisReportService {
       return true;
     }
     return false;
+  }
+
+  // 근저당 총액을 가지고 해당 거래가 전세 or 월세 인지에 따라 gpt에게 넘기는 값을 반환하는 메소드
+  public GptSecRequest getGptSecRequest(
+      GptAnalysisRequest gptAnalysisRequest, GptDeptResponse gptDeptResponse, Long reportId) {
+
+    String safetyScoreStatus;
+    Integer insuranceData;
+    Integer officalPrice = 340000000;
+    Long dept = gptDeptResponse.getDept(); // dept 받기
+    Integer dangerNum = gptDeptResponse.getDangerNum(); // dangerNum 받기
+    Long isMonthlyDeposit =
+        (long)
+            Math.round(
+                gptAnalysisRequest.getMonthlyRent() * 12 * 100 / 6
+                    + gptAnalysisRequest.getDeposit()); // 전월세 변환율 적용한 보증금
+
+    if (gptAnalysisRequest.getIsExample() == 1) { // 예시: 안전
+      officalPrice = 129000000;
+    } else if (gptAnalysisRequest.getIsExample() == 2) { // 예시: 불안
+      officalPrice = 700000000;
+    } else if (gptAnalysisRequest.getIsExample() == 3) { // 예시: 위험
+      officalPrice = 150000000;
+    }
+
+    // 전월세 지수 판단하기
+    // dangerNum <= 0 이면 safetyData 따질것도 없이 dangerNum 유지
+    // dangerNum == 1 이고 officalPrice > dept 이면 dangerNum 유지
+    // dangerNum == 1 이고 officalPrice <= dept 일때만 dangerNum = 0 으로 변경!!
+    if (officalPrice <= dept) {
+      dangerNum = 0;
+    }
+
+    // 보증보험 가입 가능여부 판단
+    // 전세일때
+    if (gptAnalysisRequest.getIsMonthlyRent() == 0) {
+      if (dept >= Math.round(officalPrice * 1.3 * 0.6)
+          || dept + gptAnalysisRequest.getDeposit() > Math.round(officalPrice * 1.3 * 0.9)) {
+        insuranceData = 0;
+      } else { // insuranceDate == 1 일때
+        if (dangerNum <= 0) { // 아무리 insuranceDate == 1 이어도 dangerNum <= 0 이면 insuranceData도 0
+          insuranceData = 0;
+        } else {
+          insuranceData = 1;
+        }
+      }
+    } else { // 월세일때
+      if (isMonthlyDeposit > 700000000
+          || dept > Math.round(officalPrice * 1.3 * 0.6)
+          || dept + isMonthlyDeposit > officalPrice * 1.3 * 0.9) {
+        insuranceData = 0;
+      } else {
+        if (dangerNum <= 0) { // 아무리 insuranceDate == 1 이어도 dangerNum <= 0 이면 insuranceData도 0
+          insuranceData = 0;
+        } else {
+          insuranceData = 1;
+        }
+      }
+    }
+    System.out.println("dangerNum: " + dangerNum);
+    System.out.println("insuranceData: " + insuranceData);
+
+    // 분석 상태 수정 -> 위험도 분석 중
+    AnalysisReport analysisReport =
+        analysisReportRepository
+            .findById(reportId)
+            .orElseThrow(() -> new CustomException(AnalysisReportErrorCode.REPORT_NOT_FOUND));
+
+    analysisReport.updateProcessingStatus(ProcessingStatus.ANALYZING);
+
+    // safetyScore 로직 계산하기
+    Double realSafetyScore;
+
+    if (dangerNum == 1) { // 안전 또는 불안 범위
+      if ((officalPrice - dept) >= gptAnalysisRequest.getDeposit()) { // 안전 : 7~10점
+        realSafetyScore =
+            7.0
+                + 3
+                    * ((double) (officalPrice - dept - gptAnalysisRequest.getDeposit()))
+                    / (officalPrice - dept);
+
+      } else { // 불안 : 3~7점
+        realSafetyScore =
+            3.0
+                + 4
+                    * (1
+                        - ((double) (gptAnalysisRequest.getDeposit() - officalPrice + dept))
+                            / (officalPrice - dept));
+      }
+    } else { // 위험 : 0~3점
+      realSafetyScore = 3.0 + dangerNum;
+    }
+
+    System.out.println("realSafetyScore : " + realSafetyScore);
+
+    Double safetyScore = Math.round(realSafetyScore * 10) / 10.0;
+    analysisReport.updateSafetyScore(safetyScore); // DB에 안전점수 저장
+
+    if (safetyScore >= 7) {
+      safetyScoreStatus = "안전";
+    } else if (safetyScore >= 3) {
+      safetyScoreStatus = "불안";
+    } else {
+      safetyScoreStatus = "위험";
+    }
+
+    return GptSecRequest.builder()
+        .safetyScore(safetyScore)
+        .safetyScoreStatus(safetyScoreStatus)
+        .insuranceData(insuranceData)
+        .build();
   }
 }

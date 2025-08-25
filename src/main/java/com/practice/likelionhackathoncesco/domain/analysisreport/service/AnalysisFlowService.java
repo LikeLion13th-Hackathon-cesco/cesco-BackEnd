@@ -9,6 +9,8 @@ import com.practice.likelionhackathoncesco.domain.analysisreport.repository.Anal
 import com.practice.likelionhackathoncesco.domain.commonfile.service.FileService;
 import com.practice.likelionhackathoncesco.domain.user.service.UserPayService;
 import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptAnalysisRequest;
+import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptSecRequest;
+import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptDeptResponse;
 import com.practice.likelionhackathoncesco.infra.openai.dto.response.GptResponse;
 import com.practice.likelionhackathoncesco.infra.openai.service.GptService;
 import java.util.ArrayList;
@@ -53,10 +55,36 @@ public class AnalysisFlowService {
       Long reportId, GptAnalysisRequest gptAnalysisRequest) {
 
     // 프롬프트 제작
-    List<Map<String, String>> prompts;
+    List<Map<String, String>> promptsForDept; // 근저당 프롬프트
+    List<Map<String, String>> prompts; // 분석레포트 프롬프트
 
+    // 근저당 총액을 알아내기 위한 프롬프트
     try {
-      prompts = gptService.createPrompt(gptAnalysisRequest, reportId);
+      promptsForDept = gptService.createPromptForDept(gptAnalysisRequest, reportId);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+      promptsForDept = new ArrayList<>();
+    }
+
+    // gpt-4o api 호출로 근저당 총액 응답 받기
+    String contentForDept = gptService.callGptAPI(promptsForDept, String.valueOf(reportId));
+
+    // 근저당 총액 gpt 응답을 파싱하는 메소드
+    GptDeptResponse gptDeptResponse = gptService.parseDeptResponse(contentForDept);
+    log.info(
+        "[AnalysisFlowService] gpt api에게 dept, dangerNum 응답 받은 후 파싱 완료: dept={}, dangerNum={}",
+        gptDeptResponse.getDept(),
+        gptDeptResponse.getDangerNum());
+
+    // gpt 에게 전달할 값 세개
+    GptSecRequest gptSecRequest =
+        analysisReportService.getGptSecRequest(gptAnalysisRequest, gptDeptResponse, reportId);
+
+    System.out.println(gptSecRequest.getSafetyScoreStatus());
+
+    // gpt에게 필요한 정보 추가해서 최종 프롬프트 생성
+    try {
+      prompts = gptService.createPrompt(gptAnalysisRequest, gptSecRequest, reportId);
     } catch (JsonProcessingException e) {
       e.printStackTrace();
       prompts = new ArrayList<>();
@@ -70,7 +98,7 @@ public class AnalysisFlowService {
 
     // 분석 리포트 분석 후 DB 업데이트
     AnalysisReportResponse analysisReportResponse =
-        analysisReportService.updateAnalysisReport(gptResponse, gptAnalysisRequest, reportId);
+        analysisReportService.updateAnalysisReport(gptResponse, gptSecRequest, reportId);
 
     return analysisReportResponse;
   }

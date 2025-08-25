@@ -60,32 +60,21 @@ jobs:
       # 2. .env 파일 생성
       - name: Create .env file
         run: |
-          cat > .env << EOF
-          DB_HOST=cesco
-          DB_PASSWORD=cesco07
-          SPRING_CONFIG_USERNAME=cesco
-          SPRING_CONFIG_PASSWORD=1234
-          AWS_ACESS_KEY=dummy_aws_key
-          AWS_SECRET_KEY=dummy_aws_secret
-          NAVER_OCR_INVOKE_URL=http://dummy.url
-          NAVER_OCR_SECRET_KEY=dummy_key
-          OPENAI_SECRET_KEY=dummy_openai_key
-          OPENAI_URL=https://api.openai.com/v1/chat/completions
-          OPENAI_MODEL=gpt-4o
-          ADDR_URL=https://business.juso.go.kr/addrlink/addrLinkApi.do
-          ADDR_KEY=dummy_addr_key
-          EOF
+          echo "${{ secrets.ENV_DEV }}" > .env
 
-      # 3. 서버에 접속하여 docker compose 재배포
-      - name: Deploy on server
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /home/ubuntu/actions-runner/_work/cesco-BackEnd/cesco-BackEnd
-            docker compose down
-            docker compose pull
-            docker compose up -d --build
+      # 3. 배포 디렉토리 설정
+      - name: Setup deployment directory
+        run: |
+          echo "Current user: $(whoami)"
+          echo "Home directory: $HOME"
+          mkdir -p /home/ec2-user/cesco-BackEnd
+          cp docker-compose.yml /home/ec2-user/cesco-BackEnd/
+          cp .env /home/ec2-user/cesco-BackEnd/
+          
+      # 4. Docker 배포 실행
+      - name: Deploy with Docker
+        run: |
+          cd /home/ec2-user/cesco-BackEnd
+          docker compose down
+          docker compose pull
+          docker compose up -d --build

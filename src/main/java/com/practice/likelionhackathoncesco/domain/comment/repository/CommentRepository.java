@@ -8,4 +8,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
   // 게시글 별 댓글 전체 조회
   List<Comment> findAllByPostPostId(Long postId);
+
+  // 게시글 별 댓글 개수 조회
+  long countByPostPostId(Long postId);
 }

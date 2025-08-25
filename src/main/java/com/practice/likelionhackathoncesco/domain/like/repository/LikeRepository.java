@@ -14,6 +14,9 @@ public interface LikeRepository extends JpaRepository<Like, Long> {
   // (사용자 + 게시글) 별 좋아요 조회
   Optional<Like> findByUserAndPost(User user, Post post);
 
+  // 사용자, 게시글 별 좋아요 존재 여부 확인 메소드
+  Boolean existsByUserUserIdAndPost(Long userId, Post post);
+
   // 좋아요 개수 조회를 위해
   long countByPost(Post post);
 }

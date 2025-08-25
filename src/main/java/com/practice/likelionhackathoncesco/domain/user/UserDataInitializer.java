@@ -1,6 +1,6 @@
 package com.practice.likelionhackathoncesco.domain.user;
 
-import static com.practice.likelionhackathoncesco.domain.user.entity.PayStatus.UNPAID;
+import static com.practice.likelionhackathoncesco.domain.user.entity.PayStatus.PAID;
 
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.domain.user.repository.UserRepository;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DataInitializer {
+public class UserDataInitializer {
 
   private final UserRepository userRepository;
 
@@ -27,7 +27,7 @@ public class DataInitializer {
           User.builder()
               .username(defaultUsername) // 고정 사용자 이름
               .credit(0) // 크레딧 초기 값 0
-              .payStatus(UNPAID) // 초기 미결제 상태
+              .payStatus(PAID) // 초기 미결제 상태
               .build();
 
       userRepository.save(defaultUser);

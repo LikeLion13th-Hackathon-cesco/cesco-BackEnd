@@ -68,7 +68,7 @@ public class AddressSearchService {
       String jsonResponse =
           restTemplate.postForObject(addrApiConfig.getConfmUrl(), requestEntity, String.class);
 
-      log.info("API 응답 원본: {}", jsonResponse); // 원본 응답 로그
+      log.info("[AddressSearchService] 검색 {} 응답 성공 : ", addressSearchRequest.getKeyword());
 
       // JSON 배열 형태로 파싱
       JsonNode root = objectMapper.readTree(jsonResponse);

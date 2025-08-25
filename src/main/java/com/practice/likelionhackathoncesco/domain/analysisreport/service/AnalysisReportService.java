@@ -313,10 +313,15 @@ public class AnalysisReportService {
       realSafetyScore = 3.0 + dangerNum;
     }
 
-    System.out.println("realSafetyScore : " + realSafetyScore);
+    log.info("[AnalysisReportService] realSafetyScore 계산 성공 : " + realSafetyScore);
+
+    // 안전점수 최소 0.0 , 최대 10.0 으로 설정
+    realSafetyScore = Math.max(0.0, Math.min(10.0, realSafetyScore));
 
     Double safetyScore = Math.round(realSafetyScore * 10) / 10.0;
     analysisReport.updateSafetyScore(safetyScore); // DB에 안전점수 저장
+
+    log.info("[AnalysisReportService] safetyScore 소수점 첫째자리로 계산 성공: " + safetyScore);
 
     if (safetyScore >= 7) {
       safetyScoreStatus = "안전";

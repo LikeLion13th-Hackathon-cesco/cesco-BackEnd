@@ -10,6 +10,7 @@ import com.practice.likelionhackathoncesco.infra.openai.dto.request.GptAnalysisR
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,13 +52,13 @@ public class AnalysisReportController {
     new Thread(
             () -> {
               try {
-                emitter.send(progress(10, "분석 시작"));
+                emitter.send(progress(10, "분석 시작",null));
 
                 AnalysisReport savedReport =
                     analysisFlowService.uploadDocuments(
-                        PathName.PROPERTYREGISTRY, file); // S3 업로드 + DB 저장
+                        PathName.PROPERTYREGISTRY, file); // S3 업로드 + DB 저장(reportId 저장은 x)
 
-                emitter.send(progress(30, "s3 업로드 완료"));
+                emitter.send(progress(30, "s3 업로드 완료", null));
 
                 // ptAnalysisRequest 생성 (파일 제외하고)
                 GptAnalysisRequest gptAnalysisRequest =
@@ -73,14 +74,14 @@ public class AnalysisReportController {
                     analysisFlowService.processAnalysisReport(
                         savedReport.getReportId(), gptAnalysisRequest);
 
-                emitter.send(progress(60, "등기부등본 분석 완료"));
+                emitter.send(progress(60, "등기부등본 분석 완료", null));
 
                 emitter.send(progress(100, "분석리포트 결과 반환 완료", analysisReportResponse));
                 emitter.complete();
 
               } catch (Exception e) {
                 try {
-                  emitter.send(progress(-1, "에러 발생: " + e.getMessage()));
+                  emitter.send(progress(-1, "에러 발생: " + e.getMessage(), null));
                 } catch (Exception ignore) {
                 }
                 emitter.completeWithError(e);
@@ -119,11 +120,15 @@ public class AnalysisReportController {
     return ResponseEntity.ok(BaseResponse.success("파일이 삭제되었습니다.", result));
   }
 
-  private Map<String, Object> progress(int percent, String message) {
+  /*private Map<String, Object> progress(int percent, String message) {
     return Map.of("progress", percent, "message", message);
-  }
+  }*/
 
   private Map<String, Object> progress(int percent, String message, Object data) {
-    return Map.of("progress", percent, "message", message, "data", data);
+    Map<String, Object> result = new HashMap<>();
+    result.put("progress", percent);
+    result.put("message", message);
+    result.put("data", data); // null이어도 문제없음
+    return result;
   }
 }

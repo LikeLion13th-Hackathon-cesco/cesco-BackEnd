@@ -2,14 +2,13 @@ package com.practice.likelionhackathoncesco.domain.quiz;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
 
 @Component
 public class QuizDataInitializer {
 
-  @Autowired
-  private JdbcTemplate jdbcTemplate;
+  @Autowired private JdbcTemplate jdbcTemplate;
 
   @PostConstruct
   public void initializeQuizData() {
@@ -20,8 +19,9 @@ public class QuizDataInitializer {
       // jdbcTemplate.execute("DELETE FROM quiz");
 
       // Quiz 1 - 자바의 정석 문제
-      String quiz1 = """
-                INSERT INTO quiz (quiz_id, title, option_one, option_two, option_three, option_four, correct_answer, explanation, is_solved) 
+      String quiz1 =
+          """
+                INSERT INTO quiz (quiz_id, title, option_one, option_two, option_three, option_four, correct_answer, explanation, is_solved)
                 VALUES (1, '자바의 정석 문제', '선택지1', '선택지2', '선택지3', '선택지4', 2, '정답 해설', 0)
                 ON DUPLICATE KEY UPDATE
                 title = VALUES(title),
@@ -36,7 +36,8 @@ public class QuizDataInitializer {
       jdbcTemplate.execute(quiz1);
 
       // Quiz 1 업데이트 (전입신고 문제로 덮어쓰기)
-      String quiz1Update = """
+      String quiz1Update =
+          """
                 INSERT INTO quiz (
                     quiz_id,
                     title,
@@ -71,7 +72,8 @@ public class QuizDataInitializer {
       jdbcTemplate.execute(quiz1Update);
 
       // Quiz 2 - 임대인 문제
-      String quiz2 = """
+      String quiz2 =
+          """
                 INSERT INTO quiz (
                     quiz_id,
                     title,
@@ -106,7 +108,8 @@ public class QuizDataInitializer {
       jdbcTemplate.execute(quiz2);
 
       // Quiz 3 - 임차인 문제
-      String quiz3 = """
+      String quiz3 =
+          """
                 INSERT INTO quiz (
                     quiz_id,
                     title,
@@ -141,7 +144,8 @@ public class QuizDataInitializer {
       jdbcTemplate.execute(quiz3);
 
       // Quiz 4 - 등기부등본 문제
-      String quiz4 = """
+      String quiz4 =
+          """
                 INSERT INTO quiz (
                     quiz_id,
                     title,

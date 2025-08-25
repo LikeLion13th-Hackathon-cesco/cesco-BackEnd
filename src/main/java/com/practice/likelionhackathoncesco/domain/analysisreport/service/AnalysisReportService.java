@@ -313,8 +313,8 @@ public class AnalysisReportService {
       realSafetyScore = 3.0 + dangerNum;
     }
 
-    log.info("[AnalysisReportService] realSafetyScore 계산 성공 : "+ realSafetyScore);
-    
+    log.info("[AnalysisReportService] realSafetyScore 계산 성공 : " + realSafetyScore);
+
     // 안전점수 최소 0.0 , 최대 10.0 으로 설정
     realSafetyScore = Math.max(0.0, Math.min(10.0, realSafetyScore));
 

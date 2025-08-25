@@ -1,6 +1,7 @@
 package com.practice.likelionhackathoncesco.domain.post.service;
 
 import com.practice.likelionhackathoncesco.domain.comment.repository.CommentRepository;
+import com.practice.likelionhackathoncesco.domain.like.repository.LikeRepository;
 import com.practice.likelionhackathoncesco.domain.post.dto.request.CreatePostRequest;
 import com.practice.likelionhackathoncesco.domain.post.dto.request.UpdatePostRequest;
 import com.practice.likelionhackathoncesco.domain.post.dto.response.PostResponse;
@@ -27,6 +28,7 @@ public class PostService {
   private final PostMapper postMapper;
   private final UserRepository userRepository;
   private final CommentRepository commentRepository;
+  private final LikeRepository likeRepository;
 
   // 게시글 생성
   @Transactional
@@ -141,8 +143,11 @@ public class PostService {
     long commentCount = commentRepository.countByPostPostId(postId);
 
     log.info("[PostService] 게시글 단일 조회 완료 : postId = {}", postId);
+    Long userId = 1L;
 
-    return postMapper.toPostResponse(post, post.getLikeCount(), commentCount);
+    boolean likedByUser = likeRepository.existsByUserUserIdAndPost(userId, post);
+
+    return postMapper.toGetPostResponse(post, post.getLikeCount(), commentCount, likedByUser);
   }
 
   // (도로명코드+건물본번) 별 게시글 전체 조회 기능
@@ -156,11 +161,14 @@ public class PostService {
     if (postList == null || postList.isEmpty()) {
       throw new CustomException(PostErrorCode.POST_NOT_FOUND);
     }
+    Long userId = 1L;
     return postList.stream()
         .map(
             post -> {
               long commentCount = commentRepository.countByPostPostId(post.getPostId());
-              return postMapper.toPostResponse(post, post.getLikeCount(), commentCount);
+              boolean likedByUser = likeRepository.existsByUserUserIdAndPost(userId, post);
+              return postMapper.toGetPostResponse(
+                  post, post.getLikeCount(), commentCount, likedByUser);
             })
         .toList();
   }
@@ -173,12 +181,14 @@ public class PostService {
     List<Post> postListCreatedAtDesc =
         postRepository.findAllByRoadCodeAndBuildingNumberOrderByCreatedAtDesc(
             roadCode, buildingNumber);
-
+    Long userId = 1L;
     return postListCreatedAtDesc.stream()
         .map(
             post -> {
               long commentCount = commentRepository.countByPostPostId(post.getPostId());
-              return postMapper.toPostResponse(post, post.getLikeCount(), commentCount);
+              boolean likedByUser = likeRepository.existsByUserUserIdAndPost(userId, post);
+              return postMapper.toGetPostResponse(
+                  post, post.getLikeCount(), commentCount, likedByUser);
             })
         .toList();
   }
@@ -192,11 +202,14 @@ public class PostService {
         postRepository.findAllByRoadCodeAndBuildingNumberOrderByLikeCountDesc(
             roadCode, buildingNumber);
 
+    Long userId = 1L;
     return postListLikeCount.stream()
         .map(
             post -> {
               long commentCount = commentRepository.countByPostPostId(post.getPostId());
-              return postMapper.toPostResponse(post, post.getLikeCount(), commentCount);
+              boolean likedByUser = likeRepository.existsByUserUserIdAndPost(userId, post);
+              return postMapper.toGetPostResponse(
+                  post, post.getLikeCount(), commentCount, likedByUser);
             })
         .toList();
   }

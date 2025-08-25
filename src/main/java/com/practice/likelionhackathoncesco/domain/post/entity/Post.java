@@ -44,7 +44,7 @@ public class Post extends BaseTimeEntity {
   private String buildingNumber; // 건물 본번
 
   @Column(nullable = false)
-  private Integer likeCount; // 좋아요 수
+  private Integer likeCount = 0; // 좋아요 수
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)

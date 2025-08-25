@@ -46,4 +46,8 @@ public class Quiz {
 
   @Column(nullable = false)
   private Integer isSolved; // 고정 사용자가 이미 풀었는지 아닌지 여부
+
+  public void updateIsSolved() { // 퀴즈 풀이 여부
+    this.isSolved = 0;
+  }
 }

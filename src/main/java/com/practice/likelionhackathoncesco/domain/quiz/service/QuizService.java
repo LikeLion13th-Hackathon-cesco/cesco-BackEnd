@@ -8,14 +8,17 @@ import com.practice.likelionhackathoncesco.domain.quiz.entity.QuizAnswer;
 import com.practice.likelionhackathoncesco.domain.quiz.exception.QuizErrorCode;
 import com.practice.likelionhackathoncesco.domain.quiz.repository.QuizAnswerRepository;
 import com.practice.likelionhackathoncesco.domain.quiz.repository.QuizRepository;
+import com.practice.likelionhackathoncesco.domain.user.entity.PayStatus;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.domain.user.exception.UserErrorCode;
 import com.practice.likelionhackathoncesco.domain.user.repository.UserRepository;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,6 +73,25 @@ public class QuizService {
         user.getCredit());
 
     return toQuizAnswerResponse(quiz, answer);
+  }
+
+  @Transactional
+  @Scheduled(cron = "0 1 0 * * *") // 매일 00:01분에 실행
+  public void quizSolvedCheck() {
+    log.info("=== 퀴즈 풀이 여부 체크 시작 ===");
+    List<Quiz> isSolvedQuiz =
+        quizRepository.findAllByIsSolved(1);
+
+    for (Quiz quiz : isSolvedQuiz) {
+      quiz.updateIsSolved();
+      log.info("퀴즈 풀이 여부가 초기화 되었습니다.");
+    }
+
+    if (!isSolvedQuiz.isEmpty()) {
+      quizRepository.saveAll(isSolvedQuiz);
+    }
+
+    log.info("=== 퀴즈 풀이 여부 체크 완료: {}건 처리 ===", isSolvedQuiz.size());
   }
 
   // 고정 사용자가 풀었는지 여부 변수값이 0 or 1인지에 따라서 퀴즈 전체 조회 메소드

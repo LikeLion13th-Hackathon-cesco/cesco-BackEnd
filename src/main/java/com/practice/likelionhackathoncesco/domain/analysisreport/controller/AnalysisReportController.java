@@ -48,42 +48,49 @@ public class AnalysisReportController {
 
     SseEmitter emitter = new SseEmitter();
 
-    new Thread(() -> {
-      try {
-        emitter.send(progress(10, "분석 시작"));
+    new Thread(
+            () -> {
+              try {
+                emitter.send(progress(10, "분석 시작"));
 
-        AnalysisReport savedReport =
-            analysisFlowService.uploadDocuments(PathName.PROPERTYREGISTRY, file); // S3 업로드 + DB 저장
+                AnalysisReport savedReport =
+                    analysisFlowService.uploadDocuments(
+                        PathName.PROPERTYREGISTRY, file); // S3 업로드 + DB 저장
 
-        emitter.send(progress(30, "s3 업로드 완료"));
+                emitter.send(progress(30, "s3 업로드 완료"));
 
-        // ptAnalysisRequest 생성 (파일 제외하고)
-        GptAnalysisRequest gptAnalysisRequest =
-            new GptAnalysisRequest(
-                null, // file은 이미 처리했으므로 null
-                isMonthlyRent,
-                deposit,
-                monthlyRent,
-                detailAddress,
-                isExample);
+                // ptAnalysisRequest 생성 (파일 제외하고)
+                GptAnalysisRequest gptAnalysisRequest =
+                    new GptAnalysisRequest(
+                        null, // file은 이미 처리했으므로 null
+                        isMonthlyRent,
+                        deposit,
+                        monthlyRent,
+                        detailAddress,
+                        isExample);
 
-        AnalysisReportResponse analysisReportResponse =
-            analysisFlowService.processAnalysisReport(savedReport.getReportId(), gptAnalysisRequest);
+                AnalysisReportResponse analysisReportResponse =
+                    analysisFlowService.processAnalysisReport(
+                        savedReport.getReportId(), gptAnalysisRequest);
 
-        emitter.send(progress(60, "등기부등본 분석 완료"));
+                emitter.send(progress(60, "등기부등본 분석 완료"));
 
-        emitter.send(progress(100, "분석리포트 결과 반환 완료", analysisReportResponse));
-        emitter.complete();
+                emitter.send(progress(100, "분석리포트 결과 반환 완료", analysisReportResponse));
+                emitter.complete();
 
-      } catch (Exception e) {
-        try { emitter.send(progress(-1, "에러 발생: " + e.getMessage())); } catch (Exception ignore) {}
-        emitter.completeWithError(e);
-      }
-    }).start();
+              } catch (Exception e) {
+                try {
+                  emitter.send(progress(-1, "에러 발생: " + e.getMessage()));
+                } catch (Exception ignore) {
+                }
+                emitter.completeWithError(e);
+              }
+            })
+        .start();
 
     return emitter;
 
-   /* AnalysisReport savedReport =
+    /* AnalysisReport savedReport =
         analysisFlowService.uploadDocuments(PathName.PROPERTYREGISTRY, file); // S3 업로드 + DB 저장
 
     // ptAnalysisRequest 생성 (파일 제외하고)
@@ -119,5 +126,4 @@ public class AnalysisReportController {
   private Map<String, Object> progress(int percent, String message, Object data) {
     return Map.of("progress", percent, "message", message, "data", data);
   }
-
 }

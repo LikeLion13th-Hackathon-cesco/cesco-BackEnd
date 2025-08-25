@@ -2,14 +2,13 @@ package com.practice.likelionhackathoncesco.domain.quiz;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
 
 @Component
 public class QuizDataInitializer {
 
-  @Autowired
-  private JdbcTemplate jdbcTemplate;
+  @Autowired private JdbcTemplate jdbcTemplate;
 
   @PostConstruct
   public void initializeQuizData() {
@@ -17,7 +16,8 @@ public class QuizDataInitializer {
 
     try {
       // Quiz 1 업데이트 (전입신고 문제로 덮어쓰기)
-      String quiz1Update = """
+      String quiz1Update =
+          """
                 INSERT INTO quiz (
                     quiz_id,
                     title,
@@ -52,7 +52,8 @@ public class QuizDataInitializer {
       jdbcTemplate.execute(quiz1Update);
 
       // Quiz 2 - 임대인 문제
-      String quiz2 = """
+      String quiz2 =
+          """
                 INSERT INTO quiz (
                     quiz_id,
                     title,
@@ -87,7 +88,8 @@ public class QuizDataInitializer {
       jdbcTemplate.execute(quiz2);
 
       // Quiz 3 - 임차인 문제
-      String quiz3 = """
+      String quiz3 =
+          """
                 INSERT INTO quiz (
                     quiz_id,
                     title,
@@ -122,7 +124,8 @@ public class QuizDataInitializer {
       jdbcTemplate.execute(quiz3);
 
       // Quiz 4 - 등기부등본 문제
-      String quiz4 = """
+      String quiz4 =
+          """
                 INSERT INTO quiz (
                     quiz_id,
                     title,

@@ -8,12 +8,10 @@ import com.practice.likelionhackathoncesco.domain.quiz.entity.QuizAnswer;
 import com.practice.likelionhackathoncesco.domain.quiz.exception.QuizErrorCode;
 import com.practice.likelionhackathoncesco.domain.quiz.repository.QuizAnswerRepository;
 import com.practice.likelionhackathoncesco.domain.quiz.repository.QuizRepository;
-import com.practice.likelionhackathoncesco.domain.user.entity.PayStatus;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.domain.user.exception.UserErrorCode;
 import com.practice.likelionhackathoncesco.domain.user.repository.UserRepository;
 import com.practice.likelionhackathoncesco.global.exception.CustomException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
 import lombok.RequiredArgsConstructor;
@@ -79,8 +77,7 @@ public class QuizService {
   @Scheduled(cron = "0 1 0 * * *") // 매일 00:01분에 실행
   public void quizSolvedCheck() {
     log.info("=== 퀴즈 풀이 여부 체크 시작 ===");
-    List<Quiz> isSolvedQuiz =
-        quizRepository.findAllByIsSolved(1);
+    List<Quiz> isSolvedQuiz = quizRepository.findAllByIsSolved(1);
 
     for (Quiz quiz : isSolvedQuiz) {
       quiz.updateIsSolved();

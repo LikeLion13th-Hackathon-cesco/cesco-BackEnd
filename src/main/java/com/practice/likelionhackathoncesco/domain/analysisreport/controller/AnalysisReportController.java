@@ -38,7 +38,7 @@ public class AnalysisReportController {
   // 안전지수, 지피티 분석 설명 반환하는 api -> 단, s3 url 가지고 파일 객체
   // 생성해야함!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   @Operation(summary = "등기부등본 분석 결과 API", description = "분석리포트 페이지에 결과 반환")
-  @PostMapping(value = "/analysis-result", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PostMapping(value = "/analysis-result", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   public SseEmitter getAnalysisReport(
       @Parameter(description = "업로드할 파일") @RequestParam("file") MultipartFile file,
       @Parameter(description = "전월세 여부") @RequestParam("isMonthlyRent") Integer isMonthlyRent,
@@ -47,7 +47,7 @@ public class AnalysisReportController {
       @Parameter(description = "상세 주소") @RequestParam("detailAddress") String detailAddress,
       @Parameter(description = "예시 파일 여부") @RequestParam("isExample") Integer isExample) {
 
-    SseEmitter emitter = new SseEmitter();
+    SseEmitter emitter = new SseEmitter(1000L * 60 * 10); // 10분;
 
     new Thread(
             () -> {

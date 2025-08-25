@@ -223,6 +223,7 @@ public class AnalysisReportService {
   }
 
   // 근저당 총액을 가지고 해당 거래가 전세 or 월세 인지에 따라 gpt에게 넘기는 값을 반환하는 메소드
+  @Transactional
   public GptSecRequest getGptSecRequest(
       GptAnalysisRequest gptAnalysisRequest, GptDeptResponse gptDeptResponse, Long reportId) {
 

@@ -91,7 +91,7 @@ public class AnalysisReportController {
 
     return emitter;
 
-    /* AnalysisReport savedReport =
+     AnalysisReport savedReport =
         analysisFlowService.uploadDocuments(PathName.PROPERTYREGISTRY, file); // S3 업로드 + DB 저장
 
     // ptAnalysisRequest 생성 (파일 제외하고)
@@ -106,7 +106,7 @@ public class AnalysisReportController {
 
     AnalysisReportResponse analysisReportResponse =
         analysisFlowService.processAnalysisReport(savedReport.getReportId(), gptAnalysisRequest);
-    return ResponseEntity.ok(BaseResponse.success("분석리포트 결과 반환 완료", analysisReportResponse));*/
+    return ResponseEntity.ok(BaseResponse.success("분석리포트 결과 반환 완료", analysisReportResponse));
   }
 
   @Operation(summary = "등기부등본 파일 삭제 API", description = "X버튼을 눌러 업로드한 등기부등본 문서를 삭제하는 API")

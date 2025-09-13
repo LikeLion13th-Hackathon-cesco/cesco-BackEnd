@@ -20,6 +20,7 @@ jobs:
 
       # 2. 서브모듈 초기화
       - name: Update submodule
+        # 서브모듈을 초기화하고 최신 상태로 가져옴
         run: git submodule update --init --recursive
 
       # 3. JDK 21 설정
@@ -36,7 +37,7 @@ jobs:
       # 5. Gradle로 빌드 (bootJar 생성)
       - name: Build with Gradle
         run: |
-          ./gradlew clean bootjar -Pprofile=dev
+          ./gradlew clean bootjar -Pprofile=prod 
 
       # 6. Docker Hub 로그인
       - name: Log in to Docker Hub

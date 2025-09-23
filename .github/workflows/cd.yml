@@ -69,8 +69,8 @@ jobs:
           echo "Current user: $(whoami)"
           echo "Home directory: $HOME"
           mkdir -p $HOME/cesco-BackEnd
-          cp docker-compose.yml /home/ec2-user/cesco-BackEnd/
-          cp .env /home/ec2-user/cesco-BackEnd/
+          cp docker-compose.yml $HOME/cesco-BackEnd/
+          cp .env $HOME/cesco-BackEnd/
           
       # 4. Docker 배포 실행
       - name: Deploy with Docker

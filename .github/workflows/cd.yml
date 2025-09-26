@@ -20,6 +20,7 @@ jobs:
 
       # 2. 서브모듈 초기화
       - name: Update submodule
+        # 서브모듈을 초기화하고 최신 상태로 가져옴
         run: git submodule update --init --recursive
 
       # 3. JDK 21 설정
@@ -36,7 +37,7 @@ jobs:
       # 5. Gradle로 빌드 (bootJar 생성)
       - name: Build with Gradle
         run: |
-          ./gradlew clean bootjar -Pprofile=dev
+          ./gradlew clean bootjar -Pprofile=prod 
 
       # 6. Docker Hub 로그인
       - name: Log in to Docker Hub
@@ -67,14 +68,14 @@ jobs:
         run: |
           echo "Current user: $(whoami)"
           echo "Home directory: $HOME"
-          mkdir -p /home/ec2-user/cesco-BackEnd
-          cp docker-compose.yml /home/ec2-user/cesco-BackEnd/
-          cp .env /home/ec2-user/cesco-BackEnd/
+          mkdir -p $HOME/cesco-BackEnd
+          cp docker-compose.yml $HOME/cesco-BackEnd/
+          cp .env $HOME/cesco-BackEnd/
           
       # 4. Docker 배포 실행
       - name: Deploy with Docker
         run: |
-          cd /home/ec2-user/cesco-BackEnd
+          cd $HOME/cesco-BackEnd
           docker compose down
           docker compose pull
           docker compose up -d --build

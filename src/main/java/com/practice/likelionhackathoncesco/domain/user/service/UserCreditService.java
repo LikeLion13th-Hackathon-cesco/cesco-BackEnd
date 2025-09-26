@@ -1,6 +1,7 @@
 package com.practice.likelionhackathoncesco.domain.user.service;
 
 import com.practice.likelionhackathoncesco.domain.user.dto.response.CreditResponse;
+import com.practice.likelionhackathoncesco.domain.user.dto.response.UserCreditResponse;
 import com.practice.likelionhackathoncesco.domain.user.entity.User;
 import com.practice.likelionhackathoncesco.domain.user.exception.UserErrorCode;
 import com.practice.likelionhackathoncesco.domain.user.repository.UserRepository;
@@ -38,6 +39,17 @@ public class UserCreditService {
     } else {
       return toCreditResponse(true, true, true);
     }
+  }
+
+  @Transactional(readOnly = true)
+  public UserCreditResponse getUserCredit(Long userId) {
+    log.info("[UserCreditService] 사용자 크레딧 조회 시도");
+    User user = userRepository
+        .findById(userId)
+        .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+
+    log.info("[UserCreditService] 사용자 크레딧 조회 완료 : credit={}", user.getCredit());
+    return new UserCreditResponse(user.getCredit());
   }
 
   public CreditResponse toCreditResponse(Boolean one, Boolean five, Boolean fifteen) {

@@ -1,6 +1,7 @@
 package com.practice.likelionhackathoncesco.domain.user.controller;
 
 import com.practice.likelionhackathoncesco.domain.user.dto.response.CreditResponse;
+import com.practice.likelionhackathoncesco.domain.user.dto.response.UserCreditResponse;
 import com.practice.likelionhackathoncesco.domain.user.service.UserCreditService;
 import com.practice.likelionhackathoncesco.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,5 +28,13 @@ public class UserCreditController {
       @Parameter(description = "사용자 ID") @PathVariable Long userId) {
     CreditResponse creditResponse = userCreditService.PostCreditStep(userId);
     return ResponseEntity.ok(BaseResponse.success("크레딧 지급 기준 충족 여부 조회 완료", creditResponse));
+  }
+
+  @Operation(summary = "사용자 보유 크레딧 조회", description = "사용자의 보유 크레딧을 조회하는 API")
+  @GetMapping("/hascredit/{userId}")
+  public ResponseEntity<BaseResponse<UserCreditResponse>> getCredit(
+      @Parameter(description = "사용자 ID") @PathVariable Long userId) {
+    UserCreditResponse userCreditResponse = userCreditService.getUserCredit(userId);
+    return ResponseEntity.ok(BaseResponse.success("사용자 보유 크레딧 조회 완료", userCreditResponse));
   }
 }

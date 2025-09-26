@@ -37,5 +37,4 @@ public class UserCreditController {
     UserCreditResponse userCreditResponse = userCreditService.getUserCredit(userId);
     return ResponseEntity.ok(BaseResponse.success("사용자 보유 크레딧 조회 완료", userCreditResponse));
   }
-
 }

@@ -44,9 +44,10 @@ public class UserCreditService {
   @Transactional(readOnly = true)
   public UserCreditResponse getUserCredit(Long userId) {
     log.info("[UserCreditService] 사용자 크레딧 조회 시도");
-    User user = userRepository
-        .findById(userId)
-        .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
     log.info("[UserCreditService] 사용자 크레딧 조회 완료 : credit={}", user.getCredit());
     return new UserCreditResponse(user.getCredit());

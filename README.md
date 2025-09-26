@@ -59,4 +59,3 @@ git push origin main
 2. 컨테이너 중지 실행 중인 컨테이너의 CONTAINER ID를 찾아서 중지. ```docker stop <CONTAINER ID>```
 3. 컨테이너의 삭제가 필요할 경우 ```docker rm <CONTAINER ID>```
 4. 이미지 삭제가 필요할 경우 ```docker rmi <IMAGE ID or IMAGE NAME>```
-.

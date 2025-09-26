@@ -24,6 +24,7 @@ services:
       - MYSQL_USER=cesco
       - MYSQL_PASSWORD=cesco07
       - MYSQL_ROOT_PASSWORD=1234  # 루트 계정의 비밀번호
+      - TZ=Asia/Seoul
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
